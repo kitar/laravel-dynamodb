@@ -2,6 +2,35 @@
 
 This package provides QueryBuilder for DynamoDB.
 
+- [Motivation](#motivation)
+- [Installation](#installation)
+    - [Laravel](#laravel)
+    - [Non-Laravel Projects](#non-laravel-projects)
+- [Example Usage](#example-usage)
+    - [Sample Data](#sample-data)
+    - [Working with Items and Attributes](#working-with-items-and-attributes)
+        - [GetItem](#getitem)
+        - [PutItem](#putitem)
+        - [UpdateItem](#updateitem)
+        - [DeleteItem](#deleteitem)
+    - [Projection Expressions](#projection-expressions)
+    - [Condition Expressions](#condition-expressions)
+        - [Sample Item](#sample-item)
+        - [Preventing Overwrites of an Existing Item](#preventing-overwrites-of-an-existing-item)
+        - [Checking for Attributes in an Item](#checking-for-attributes-in-an-item)
+    - [Working with Queries in DynamoDB](#working-with-queries-in-dynamodb)
+        - [Key Condition Expression](#key-condition-expression)
+        - [Filter Expressions for Query](#filter-expressions-for-query)
+    - [Working with Scans in DynamoDB](#working-with-scans-in-dynamodb)
+        - [Filter Expressions for Scan](#filter-expressions-for-scan)
+    - [Using Global Secondary Indexes in DynamoDB](#using-global-secondary-indexes-in-dynamodb)
+        - [Querying a Global Secondary Index](#querying-a-global-secondary-index)
+- [Authentication (Custom User Provider)](#authentication-custom-user-provider)
+    - [Make User model](#make-user-model)
+    - [Make custom user provider](#make-custom-user-provider)
+    - [Register our custom user provider](#register-our-custom-user-provider)
+    - [Add config for user provider](#add-config-for-user-provider)
+
 ## Motivation
 
 I started trying to make simple QueryBuilder because:
