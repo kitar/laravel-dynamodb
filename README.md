@@ -473,3 +473,9 @@ Finally, we can add config for our custom user provider at `config/database.php`
     ],
 ],
 ```
+
+## Testing
+
+```
+$ ./vendor/bin/phpunit
+```
