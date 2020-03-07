@@ -1,0 +1,45 @@
+{
+    "name": "kitar/laravel-dynamodb",
+    "description": "DynamoDB QueryBuilder for Laravel.",
+    "keywords": [
+        "laravel",
+        "dynamodb",
+        "database",
+        "model",
+        "auth"
+    ],
+    "homepage": "https://github.com/kitar/laravel-dynamodb",
+    "authors": [
+        {
+            "name": "Satoshi Kita"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "illuminate/support": "^6.0",
+        "illuminate/container": "^6.0",
+        "illuminate/database": "^6.0",
+        "aws/aws-sdk-php": "^3.0"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^5.0",
+        "vlucas/phpdotenv": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kitar\\Dynamodb\\": "src/Kitar/Dynamodb/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kitar\\Dynamodb\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kitar\\Dynamodb\\DynamodbServiceProvider"
+            ]
+        }
+    }
+}
