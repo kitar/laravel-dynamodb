@@ -77,8 +77,7 @@ class BuilderTest extends TestCase
             ]
         ];
         $query = $this->builder
-                      ->where('foo', '=', 'bar')
-                      ->whereAsFilter()
+                      ->filter('foo', '=', 'bar')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -100,8 +99,7 @@ class BuilderTest extends TestCase
             ]
         ];
         $query = $this->builder
-                      ->where('foo', '=', 'bar')
-                      ->whereAsCondition()
+                      ->condition('foo', '=', 'bar')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -123,8 +121,7 @@ class BuilderTest extends TestCase
             ]
         ];
         $query = $this->builder
-                      ->where('foo', '=', 'bar')
-                      ->whereAsKeyCondition()
+                      ->keyCondition('foo', '=', 'bar')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -249,8 +246,7 @@ class BuilderTest extends TestCase
         $processor = 'processMultipleItems';
 
         $query = $this->builder
-                      ->where('foo', '=', 'bar')
-                      ->whereAsKeyCondition()
+                      ->keyCondition('foo', '=', 'bar')
                       ->query();
 
         $this->assertEquals($method, $query['method']);

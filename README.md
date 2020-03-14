@@ -168,16 +168,11 @@ DB::table('ProductCatalog')
 
 #### Preventing Overwrites of an Existing Item
 
-Use `where` clause to build Condition Expressions.
-
-We also need to call `whereAsCondition()` to let QueryBuilder know that `wheres` array should be compiled to `ConditionExpression`.
-
-> `where` clause also be used for `KeyConditionExpression` and `FilterExpression`.
+Use `condition` clause to build Condition Expressions. This works basically same as original `where` clause, but it's for the ConditionExpression.
 
 ```php
 DB::table('ProductCatalog')
-    ->where('Id', 'attribute_not_exists')
-    ->whereAsCondition()
+    ->condition('Id', 'attribute_not_exists')
     ->putItem([
         'Id' => 456,
         'ProductCategory' => 'Can I overwrite?'
@@ -188,14 +183,13 @@ DB::table('ProductCatalog')
 
 ```php
 DB::table('ProductCatalog')
-    ->where('Price', 'attribute_not_exists')
-    ->whereAsCondition()
+    ->condition('Price', 'attribute_not_exists')
     ->deleteItem([
         'Id' => 456
     ]);
 ```
 
-> We can also specify functions instead of operators in `where` clause. For this time, `attriute_not_exists`.
+> We can also specify functions instead of operators in `where` clause. In the case above, `attriute_not_exists`.
 
 ### Working with Queries in DynamoDB
 
@@ -203,34 +197,41 @@ DB::table('ProductCatalog')
 
 #### Key Condition Expression
 
+Use `keyCondition` clause to build Key Conditions.
+
 ```php
 $items = DB::table('Thread')
-             ->where('ForumName', '=', 'Amazon DynamoDB')
-             ->whereAsKeyCondition()
+             ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
              ->query();
 ```
 
 ```php
 $items = DB::table('Thread')
-             ->where('ForumName', '=', 'Amazon DynamoDB')
-             ->where('Subject', '=', 'DynamoDB Thread 1')
-             ->whereAsKeyCondition()
+             ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+             ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
              ->query();
 ```
 
 ```php
 $items = DB::table('Reply')
-             ->where('Id', '=', 'Amazon DynamoDB#DynamoDB Thread 1')
-             ->where('ReplyDateTime', 'begins_with', '2015-09')
-             ->whereAsKeyCondition()
+             ->keyCondition('Id', '=', 'Amazon DynamoDB#DynamoDB Thread 1')
+             ->keyCondition('ReplyDateTime', 'begins_with', '2015-09')
              ->query();
 ```
 
-> We called `whereAsKeyCondition()` for this case.
-
 #### Filter Expressions for Query
 
-Currently, we cant handle Filter Expressions with Query. If you want to use Filter Expressions, use it with Scan at this time.
+Use `filter` clause to build Filter Conditions.
+
+For `query`, KeyConditionExprssion is required, so we specify both KeyConditionExpression and FilterExpression.
+
+```php
+$itmes = DB::table('Thread')
+           ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+           ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
+           ->filter('Views', '>', 3)
+           ->query();
+```
 
 ### Working with Scans in DynamoDB
 
@@ -240,12 +241,9 @@ Currently, we cant handle Filter Expressions with Query. If you want to use Filt
 
 ```php
 $items = DB::table('Thread')
-             ->where('LastPostedBy', '=', 'User A')
-             ->whereAsFilter()
+             ->filter('LastPostedBy', '=', 'User A')
              ->scan();
 ```
-
-> We called `whereAsFilter()` for this case.
 
 ### Using Global Secondary Indexes in DynamoDB
 
@@ -258,9 +256,8 @@ Use `index` clause to specify IndexName.
 ```php
 $items = DB::table('Reply')
              ->index('PostedBy-Message-index')
-             ->where('PostedBy', '=', 'User A')
-             ->where('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
-             ->whereAsKeyCondition()
+             ->keyCondition('PostedBy', '=', 'User A')
+             ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
              ->query();
 ```
 

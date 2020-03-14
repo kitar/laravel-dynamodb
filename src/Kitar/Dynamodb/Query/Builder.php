@@ -17,7 +17,7 @@ class Builder extends BaseBuilder
      * Name of the index.
      * @var string|null
      */
-    public $index = null;
+    public $index;
 
     /**
      * The key.
@@ -32,16 +32,10 @@ class Builder extends BaseBuilder
     public $item = [];
 
     /**
-     * The source of ProjectionExpression.
-     * @var array
-     */
-    public $projections = [];
-
-    /**
      * ConsistentRead option.
      * @var boolean|null
      */
-    public $consistent_read = null;
+    public $consistent_read;
 
     /**
      * dry run option.
@@ -53,18 +47,36 @@ class Builder extends BaseBuilder
      * The attribute name to place compiled wheres.
      * @var string
      */
-    public $bind_wheres_to = 'FilterExpression';
+    public $where_as;
 
     /**
      * The ExpressionAttributes object.
      * @var Kitar\Dynamodb\Query\ExpressionAttributes
      */
-    public $expression_attributes = null;
+    public $expression_attributes;
+
+    /**
+     * Query for building FilterExpression.
+     * @var Kitar\Dynamodb\Query\Builder
+     */
+    public $filter_query;
+
+    /**
+     * Query for building ConditionExpression.
+     * @var Kitar\Dynamodb\Query\Builder
+     */
+    public $condition_query;
+
+    /**
+     * Query for building KeyConditionExpression.
+     * @var Kitar\Dynamodb\Query\Builder
+     */
+    public $key_condition_query;
 
     /**
      * @inheritdoc
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null)
+    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null, $is_nested_query = false)
     {
         $this->connection = $connection;
 
@@ -73,6 +85,12 @@ class Builder extends BaseBuilder
         $this->processor = $processor;
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes;
+
+        if (! $is_nested_query) {
+            $this->filter_query = $this->newQuery()->whereAs('FilterExpression');
+            $this->condition_query = $this->newQuery()->whereAs('ConditionExpression');
+            $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
+        }
     }
 
     /**
@@ -124,34 +142,46 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * If called, compiled wheres will be placed to FilterExpression.
+     * where for FilterExpression.
      * @return $this
      */
-    public function whereAsFilter()
+    public function filter($column, $operator = null, $value = null, $boolean = 'and')
     {
-        $this->bind_wheres_to = 'FilterExpression';
+        $this->filter_query = $this->filter_query->where($column, $operator, $value, $boolean);
 
         return $this;
     }
 
     /**
-     * If called, compiled wheres will be placed to ConditionExpression.
+     * where for ConditionExpression.
      * @return $this
      */
-    public function whereAsCondition()
+    public function condition($column, $operator = null, $value = null, $boolean = 'and')
     {
-        $this->bind_wheres_to = 'ConditionExpression';
+        $this->condition_query = $this->condition_query->where($column, $operator, $value, $boolean);
 
         return $this;
     }
 
     /**
-     * If called, compiled wheres will be placed to KeyConditionExpression.
+     * where for KeyConditionExpression.
      * @return $this
      */
-    public function whereAsKeyCondition()
+    public function keyCondition($column, $operator = null, $value = null, $boolean = 'and')
     {
-        $this->bind_wheres_to = 'KeyConditionExpression';
+        $this->key_condition_query = $this->key_condition_query->where($column, $operator, $value, $boolean);
+
+        return $this;
+    }
+
+    /**
+     * Set key name of wheres. eg. FilterExpression
+     * @param string $condition_key_name
+     * @return $this
+     */
+    public function whereAs($condition_key_name)
+    {
+        $this->where_as = $condition_key_name;
 
         return $this;
     }
@@ -263,7 +293,7 @@ class Builder extends BaseBuilder
      */
     public function newQuery()
     {
-        return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes);
+        return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes, true);
     }
 
     /**
@@ -280,7 +310,9 @@ class Builder extends BaseBuilder
         // so it need to run before compileExpressionAttributes.
         $params = array_merge(
             $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
-            $this->grammar->compileConditions($this),
+            $this->grammar->compileConditions($this->filter_query),
+            $this->grammar->compileConditions($this->condition_query),
+            $this->grammar->compileConditions($this->key_condition_query),
         );
 
         // Compile rest of attributes.

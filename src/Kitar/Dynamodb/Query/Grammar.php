@@ -170,10 +170,10 @@ class Grammar extends BaseGrammer
             return [];
         }
 
-        $param_key = $query->bind_wheres_to;
+        $key = $query->where_as;
 
         return [
-            $param_key => preg_replace('/^where\s/', '', $this->compileWheres($query))
+            $key => preg_replace('/^where\s/', '', $this->compileWheres($query))
         ];
     }
 
