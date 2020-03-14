@@ -18,7 +18,7 @@ class BuilderTest extends TestCase
     public function dry_run_is_disabled_by_default()
     {
         $builder = (new Connection([]))->table('test');
-        $this->assertFalse($builder->dynamo_params['dry_run']);
+        $this->assertFalse($builder->dry_run);
     }
 
     /** @test */

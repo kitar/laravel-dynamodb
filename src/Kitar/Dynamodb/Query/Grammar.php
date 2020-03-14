@@ -170,7 +170,7 @@ class Grammar extends BaseGrammer
             return [];
         }
 
-        $param_key = $query->dynamo_params['bind_wheres_to'];
+        $param_key = $query->bind_wheres_to;
 
         return [
             $param_key => preg_replace('/^where\s/', '', $this->compileWheres($query))
@@ -259,11 +259,11 @@ class Grammar extends BaseGrammer
      */
     protected function whereBetween($query, $where)
     {
-        $column = $query->dynamo_params['expression_attributes']->addName($where['column']);
+        $column = $query->expression_attributes->addName($where['column']);
 
-        $min = $query->dynamo_params['expression_attributes']->addValue(reset($where['values']));
+        $min = $query->expression_attributes->addValue(reset($where['values']));
 
-        $max = $query->dynamo_params['expression_attributes']->addValue(end($where['values']));
+        $max = $query->expression_attributes->addValue(end($where['values']));
 
         return "({$column} between {$min} and {$max})";
     }

@@ -14,63 +14,57 @@ class Builder extends BaseBuilder
 {
 
     /**
-     * DynamoDB params which expected to share across all subqueries.
+     * Name of the index.
+     * @var string|null
      */
-    public $dynamo_params = [
+    public $index = null;
 
-        /**
-         * Name of the index.
-         * @var string|null
-         */
-        'index' => null,
+    /**
+     * The key.
+     * @var array
+     */
+    public $key = [];
 
-        /**
-         * The key.
-         * @var array
-         */
-        'key' => [],
+    /**
+     * The item.
+     * @var array
+     */
+    public $item = [];
 
-        /**
-         * The item.
-         * @var array
-         */
-        'item' => [],
+    /**
+     * The source of ProjectionExpression.
+     * @var array
+     */
+    public $projections = [];
 
-        /**
-         * The source of ProjectionExpression.
-         * @var array
-         */
-        'projections' => [],
+    /**
+     * ConsistentRead option.
+     * @var boolean|null
+     */
+    public $consistent_read = null;
 
-        /**
-         * ConsistentRead option.
-         * @var boolean
-         */
-        'consistent_read' => null,
+    /**
+     * dry run option.
+     * @var boolean
+     */
+    public $dry_run = false;
 
-        /**
-         * dry run option.
-         * @var boolean
-         */
-        'dry_run' => false,
+    /**
+     * The attribute name to place compiled wheres.
+     * @var string
+     */
+    public $bind_wheres_to = 'FilterExpression';
 
-        /**
-         * The attribute name to place compiled wheres.
-         * @var string
-         */
-        'bind_wheres_to' => 'FilterExpression',
-
-        /**
-         * The ExpressionAttributes object.
-         * @var Kitar\Dynamodb\Query\ExpressionAttributes
-         */
-        'expression_attributes' => null,
-    ];
+    /**
+     * The ExpressionAttributes object.
+     * @var Kitar\Dynamodb\Query\ExpressionAttributes
+     */
+    public $expression_attributes = null;
 
     /**
      * @inheritdoc
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, array $dynamo_params = [])
+    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null)
     {
         $this->connection = $connection;
 
@@ -78,14 +72,7 @@ class Builder extends BaseBuilder
 
         $this->processor = $processor;
 
-        if (empty($dynamo_params['expression_attributes'])) {
-            $dynamo_params['expression_attributes'] = new ExpressionAttributes;
-        }
-
-        $this->dynamo_params = array_merge(
-            $this->dynamo_params,
-            $dynamo_params
-        );
+        $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes;
     }
 
     /**
@@ -95,7 +82,7 @@ class Builder extends BaseBuilder
      */
     public function index(string $index)
     {
-        $this->dynamo_params['index'] = $index;
+        $this->index = $index;
 
         return $this;
     }
@@ -107,7 +94,7 @@ class Builder extends BaseBuilder
      */
     public function key(array $key)
     {
-        $this->dynamo_params['key'] = $key;
+        $this->key = $key;
 
         return $this;
     }
@@ -119,7 +106,7 @@ class Builder extends BaseBuilder
      */
     public function consistentRead($active = true)
     {
-        $this->dynamo_params['consistent_read'] = $active;
+        $this->consistent_read = $active;
 
         return $this;
     }
@@ -131,7 +118,7 @@ class Builder extends BaseBuilder
      */
     public function dryRun($active = true)
     {
-        $this->dynamo_params['dry_run'] = $active;
+        $this->dry_run = $active;
 
         return $this;
     }
@@ -142,7 +129,7 @@ class Builder extends BaseBuilder
      */
     public function whereAsFilter()
     {
-        $this->dynamo_params['bind_wheres_to'] = 'FilterExpression';
+        $this->bind_wheres_to = 'FilterExpression';
 
         return $this;
     }
@@ -153,7 +140,7 @@ class Builder extends BaseBuilder
      */
     public function whereAsCondition()
     {
-        $this->dynamo_params['bind_wheres_to'] = 'ConditionExpression';
+        $this->bind_wheres_to = 'ConditionExpression';
 
         return $this;
     }
@@ -164,7 +151,7 @@ class Builder extends BaseBuilder
      */
     public function whereAsKeyCondition()
     {
-        $this->dynamo_params['bind_wheres_to'] = 'KeyConditionExpression';
+        $this->bind_wheres_to = 'KeyConditionExpression';
 
         return $this;
     }
@@ -188,7 +175,7 @@ class Builder extends BaseBuilder
      */
     public function putItem($item)
     {
-        $this->dynamo_params['item'] = $item;
+        $this->item = $item;
 
         return $this->process('putItem', null);
     }
@@ -231,9 +218,9 @@ class Builder extends BaseBuilder
     {
         // Convert column and value to ExpressionAttributes.
         if (! $column instanceof Closure) {
-            $column = $this->dynamo_params['expression_attributes']->addName($column);
+            $column = $this->expression_attributes->addName($column);
             if (! empty($value)) {
-                $value = $this->dynamo_params['expression_attributes']->addValue($value);
+                $value = $this->expression_attributes->addValue($value);
             }
         }
 
@@ -276,7 +263,7 @@ class Builder extends BaseBuilder
      */
     public function newQuery()
     {
-        return new static($this->connection, $this->grammar, $this->processor, $this->dynamo_params);
+        return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes);
     }
 
     /**
@@ -292,7 +279,7 @@ class Builder extends BaseBuilder
         // These attributes needs to intaract with ExpressionAttributes during compile,
         // so it need to run before compileExpressionAttributes.
         $params = array_merge(
-            $this->grammar->compileProjectionExpression($this->columns, $this->dynamo_params['expression_attributes']),
+            $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
             $this->grammar->compileConditions($this),
         );
 
@@ -300,15 +287,15 @@ class Builder extends BaseBuilder
         $params = array_merge(
             $params,
             $this->grammar->compileTableName($this->from),
-            $this->grammar->compileIndexName($this->dynamo_params['index']),
-            $this->grammar->compileKey($this->dynamo_params['key']),
-            $this->grammar->compileItem($this->dynamo_params['item']),
-            $this->grammar->compileConsistentRead($this->dynamo_params['consistent_read']),
-            $this->grammar->compileExpressionAttributes($this->dynamo_params['expression_attributes']),
+            $this->grammar->compileIndexName($this->index),
+            $this->grammar->compileKey($this->key),
+            $this->grammar->compileItem($this->item),
+            $this->grammar->compileConsistentRead($this->consistent_read),
+            $this->grammar->compileExpressionAttributes($this->expression_attributes),
         );
 
         // Dry run.
-        if ($this->dynamo_params['dry_run']) {
+        if ($this->dry_run) {
             return [
                 'method' => $query_method,
                 'params' => $params,
