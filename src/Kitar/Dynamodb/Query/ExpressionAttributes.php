@@ -22,20 +22,20 @@ class ExpressionAttributes
 
     public function addName($name)
     {
-        if (! in_array($name, $this->names)) {
+        if (! in_array($name, $this->names, true)) {
             $this->names[$this->makeNameKey()] = $name;
         }
 
-        return array_search($name, $this->names);
+        return array_search($name, $this->names, true);
     }
 
     public function addValue($value)
     {
-        if (! in_array($value, $this->values)) {
+        if (! in_array($value, $this->values, true)) {
             $this->values[$this->makeValueKey()] = $value;
         }
 
-        return array_search($value, $this->values);
+        return array_search($value, $this->values, true);
     }
 
     public function makeNameKey()

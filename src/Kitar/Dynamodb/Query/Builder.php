@@ -3,10 +3,12 @@
 namespace Kitar\Dynamodb\Query;
 
 use Closure;
+use BadMethodCallException;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
 use Kitar\Dynamodb\Query\ExpressionAttributes;
+use Illuminate\Support\Str;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 
@@ -56,19 +58,25 @@ class Builder extends BaseBuilder
     public $expression_attributes;
 
     /**
-     * Query for building FilterExpression.
+     * Available where methods which will pass to dedicated queries.
+     * @var array
+     */
+    public $available_wheres;
+
+    /**
+     * Dedicated query for building FilterExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
     public $filter_query;
 
     /**
-     * Query for building ConditionExpression.
+     * Dedicated query for building ConditionExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
     public $condition_query;
 
     /**
-     * Query for building KeyConditionExpression.
+     * Dedicated query for building KeyConditionExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
     public $key_condition_query;
@@ -87,9 +95,7 @@ class Builder extends BaseBuilder
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes;
 
         if (! $is_nested_query) {
-            $this->filter_query = $this->newQuery()->whereAs('FilterExpression');
-            $this->condition_query = $this->newQuery()->whereAs('ConditionExpression');
-            $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
+            $this->initializeDedicatedQueries();
         }
     }
 
@@ -137,39 +143,6 @@ class Builder extends BaseBuilder
     public function dryRun($active = true)
     {
         $this->dry_run = $active;
-
-        return $this;
-    }
-
-    /**
-     * where for FilterExpression.
-     * @return $this
-     */
-    public function filter($column, $operator = null, $value = null, $boolean = 'and')
-    {
-        $this->filter_query = $this->filter_query->where($column, $operator, $value, $boolean);
-
-        return $this;
-    }
-
-    /**
-     * where for ConditionExpression.
-     * @return $this
-     */
-    public function condition($column, $operator = null, $value = null, $boolean = 'and')
-    {
-        $this->condition_query = $this->condition_query->where($column, $operator, $value, $boolean);
-
-        return $this;
-    }
-
-    /**
-     * where for KeyConditionExpression.
-     * @return $this
-     */
-    public function keyCondition($column, $operator = null, $value = null, $boolean = 'and')
-    {
-        $this->key_condition_query = $this->key_condition_query->where($column, $operator, $value, $boolean);
 
         return $this;
     }
@@ -242,6 +215,51 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Make individual Builder instance for condition types. (Filter, Condition and KeyCondition)
+     * @return void
+     */
+    public function initializeDedicatedQueries()
+    {
+        $this->filter_query = $this->newQuery()->whereAs('FilterExpression');
+        $this->condition_query = $this->newQuery()->whereAs('ConditionExpression');
+        $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
+
+        // Make method map.
+        // Array of: 'incomingMethodName' => [ 'target_builder_instance_name', 'targetMethodName' ]
+        foreach (['filter', 'condition', 'key_condition'] as $query_type) {
+            foreach (['', 'or'] as $boolean) {
+                foreach ([''] as $where_type) {
+                    $target_query = $query_type . '_query';
+                    $source_method = Str::camel(implode('_', [$boolean, $query_type, $where_type]));
+                    $target_method = Str::camel(implode('_', [$boolean, 'where', $where_type]));
+
+                    $this->available_wheres[$source_method] = [$target_query, $target_method];
+                }
+            }
+        }
+    }
+
+    /**
+     * Perform where methods within dedicated queries.
+     * @param string $method
+     * @param array $parameters
+     * @return $this
+     */
+    public function __call($method, $parameters)
+    {
+        if (isset($this->available_wheres[$method])) {
+            $target_query = $this->available_wheres[$method][0];
+            $target_method = $this->available_wheres[$method][1];
+
+            $this->$target_query = call_user_func_array([$this->$target_query, $target_method], $parameters);
+
+            return $this;
+        }
+
+        throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
+    }
+
+    /**
      * @inheritdoc
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
@@ -249,7 +267,7 @@ class Builder extends BaseBuilder
         // Convert column and value to ExpressionAttributes.
         if (! $column instanceof Closure) {
             $column = $this->expression_attributes->addName($column);
-            if (! empty($value)) {
+            if ($value !== null) {
                 $value = $this->expression_attributes->addValue($value);
             }
         }

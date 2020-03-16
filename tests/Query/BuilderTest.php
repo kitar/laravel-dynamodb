@@ -62,7 +62,7 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
-    public function it_can_compile_wheres_to_filter_expression()
+    public function it_can_process_filter()
     {
         $params = [
             'TableName' => 'test',
@@ -84,7 +84,7 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
-    public function it_can_compile_wheres_to_condition_expression()
+    public function it_can_process_condition()
     {
         $params = [
             'TableName' => 'test',
@@ -106,7 +106,7 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
-    public function it_can_compile_wheres_to_key_condition_expression()
+    public function it_can_process_key_condition()
     {
         $params = [
             'TableName' => 'test',
@@ -122,6 +122,94 @@ class BuilderTest extends TestCase
         ];
         $query = $this->builder
                       ->keyCondition('foo', '=', 'bar')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_key_condition_and_filter_at_the_same_time()
+    {
+        $params = [
+            'TableName' => 'test',
+            'KeyConditionExpression' => '#1 = :1 and #2 = :2',
+            'FilterExpression' => '#3 > :3',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ForumName',
+                '#2' => 'Subject',
+                '#3' => 'Views'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Amazon DynamoDB'
+                ],
+                ':2' => [
+                    'S' => 'DynamoDB Thread 1'
+                ],
+                ':3' => [
+                    'N' => '3'
+                ]
+            ]
+        ];
+
+        $query = $this->builder
+                      ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                      ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
+                      ->filter('Views', '>', 3)
+                      ->query();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_or_filter()
+    {
+        $params = [
+            'TableName' => 'test',
+            'FilterExpression' => '#1 > :1 or #1 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Views'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '3'
+                ],
+                ':2' => [
+                    'N' => '0'
+                ]
+            ]
+        ];
+
+        $query = $this->builder
+                      ->filter('Views', '>', 3)
+                      ->orFilter('Views', '=', 0)
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_or_condition()
+    {
+        $params = [
+            'TableName' => 'test',
+            'ConditionExpression' => '#1 > :1 or #1 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Views'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '3'
+                ],
+                ':2' => [
+                    'N' => '0'
+                ]
+            ]
+        ];
+
+        $query = $this->builder
+                      ->condition('Views', '>', 3)
+                      ->orCondition('Views', '=', 0)
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
