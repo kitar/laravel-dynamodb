@@ -259,13 +259,11 @@ class Grammar extends BaseGrammer
      */
     protected function whereBetween($query, $where)
     {
-        $column = $query->expression_attributes->addName($where['column']);
+        $min = reset($where['values']);
 
-        $min = $query->expression_attributes->addValue(reset($where['values']));
+        $max = end($where['values']);
 
-        $max = $query->expression_attributes->addValue(end($where['values']));
-
-        return "({$column} between {$min} and {$max})";
+        return "({$where['column']} between {$min} and {$max})";
     }
 
     /**
@@ -275,7 +273,7 @@ class Grammar extends BaseGrammer
     {
         $values = implode(', ', $where['values']);
 
-        return "in({$values})";
+        return "({$where['column']} in ({$values}))";
     }
 
     /**

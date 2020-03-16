@@ -46,12 +46,6 @@ class Builder extends BaseBuilder
     public $dry_run = false;
 
     /**
-     * The attribute name to place compiled wheres.
-     * @var string
-     */
-    public $where_as;
-
-    /**
      * The ExpressionAttributes object.
      * @var Kitar\Dynamodb\Query\ExpressionAttributes
      */
@@ -62,6 +56,12 @@ class Builder extends BaseBuilder
      * @var array
      */
     public $available_wheres;
+
+    /**
+     * The attribute name to place compiled wheres.
+     * @var string
+     */
+    public $where_as;
 
     /**
      * Dedicated query for building FilterExpression.
@@ -228,7 +228,7 @@ class Builder extends BaseBuilder
         // Array of: 'incomingMethodName' => [ 'target_builder_instance_name', 'targetMethodName' ]
         foreach (['filter', 'condition', 'key_condition'] as $query_type) {
             foreach (['', 'or'] as $boolean) {
-                foreach ([''] as $where_type) {
+                foreach (['', 'in', 'between'] as $where_type) {
                     $target_query = $query_type . '_query';
                     $source_method = Str::camel(implode('_', [$boolean, $query_type, $where_type]));
                     $target_method = Str::camel(implode('_', [$boolean, 'where', $where_type]));
@@ -304,6 +304,34 @@ class Builder extends BaseBuilder
         }
 
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    {
+        $column = $this->expression_attributes->addName($column);
+
+        foreach ($values as &$value) {
+            $value = $this->expression_attributes->addValue($value);
+        }
+
+        return parent::whereIn($column, $values, $boolean, $not);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    {
+        $column = $this->expression_attributes->addName($column);
+
+        foreach ($values as &$value) {
+            $value = $this->expression_attributes->addValue($value);
+        }
+
+        return parent::whereBetween($column, $values, $boolean, $not);
     }
 
     /**

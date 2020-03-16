@@ -216,6 +216,61 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_filter_in()
+    {
+        $params = [
+            'TableName' => 'test',
+            'FilterExpression' => '(#1 in (:1, :2, :3))',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Id'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '101'
+                ],
+                ':2' => [
+                    'N' => '102'
+                ],
+                ':3' => [
+                    'N' => '201'
+                ]
+            ]
+        ];
+
+        $query = $this->builder
+                      ->filterIn('Id', [101, 102, 201])
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_filter_between()
+    {
+        $params = [
+            'TableName' => 'test',
+            'FilterExpression' => '(#1 between :1 and :2)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Id'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '101'
+                ],
+                ':2' => [
+                    'N' => '103'
+                ]
+            ]
+        ];
+
+        $query = $this->builder
+                      ->filterBetween('Id', [101, 103])
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
     public function it_can_process_get_item()
     {
         $method = 'getItem';
