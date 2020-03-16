@@ -7,17 +7,23 @@ use PHPUnit\Framework\TestCase;
 
 class BuilderTest extends TestCase
 {
-    protected $builder;
+    protected $connection;
 
     protected function setUp() :void
     {
-        $this->builder = (new Connection([]))->table('test')->dryRun();
+        $this->connection = new Connection([]);
+    }
+
+    protected function newQuery($table_name)
+    {
+        return $this->connection->table($table_name)->dryRun();
     }
 
     /** @test */
     public function dry_run_is_disabled_by_default()
     {
-        $builder = (new Connection([]))->table('test');
+        $builder = (new Connection([]))->table('ProductCatalog');
+
         $this->assertFalse($builder->dry_run);
     }
 
@@ -25,11 +31,28 @@ class BuilderTest extends TestCase
     public function it_can_set_index()
     {
         $params = [
-            'TableName' => 'test',
-            'IndexName' => 'test_index'
+            'TableName' => 'Reply',
+            'IndexName' => 'PostedBy-Message-index',
+            'KeyConditionExpression' => '#1 = :1 and #2 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'PostedBy',
+                '#2' => 'Message'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'User A'
+                ],
+                ':2' => [
+                    'S' => 'DynamoDB Thread 1 Reply 1 text'
+                ]
+            ]
         ];
 
-        $query = $this->builder->index('test_index')->query();
+        $query = $this->newQuery('Reply')
+                      ->index('PostedBy-Message-index')
+                      ->keyCondition('PostedBy', '=', 'User A')
+                      ->keyCondition('Message', '=', 'DynamoDB Thread 1 Reply 1 text')
+                      ->query();
 
         $this->assertEquals($params, $query['params']);
     }
@@ -38,15 +61,15 @@ class BuilderTest extends TestCase
     public function it_can_set_key()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'ProductCatalog',
             'Key' => [
-                'foo' => [
-                    'S' => 'bar'
+                'Id' => [
+                    'N' => '101'
                 ]
             ]
         ];
 
-        $query = $this->builder->key(['foo' => 'bar'])->query();
+        $query = $this->newQuery('ProductCatalog')->key(['Id' => 101])->getItem();
 
         $this->assertEquals($params, $query['params']);
     }
@@ -54,30 +77,39 @@ class BuilderTest extends TestCase
     /** @test */
     public function it_can_set_consistent_read()
     {
-        $query = $this->builder
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'ConsistentRead' => true,
+            'Key' => [
+                'Id' => [
+                    'N' => '101'
+                ]
+            ]
+        ];
+        $query = $this->newQuery('ProductCatalog')
                       ->consistentRead()
-                      ->getItem(['foo' => 'bar']);
+                      ->getItem(['Id'=> 101]);
 
-        $this->assertTrue($query['params']['ConsistentRead']);
+        $this->assertEquals($params, $query['params']);
     }
 
     /** @test */
     public function it_can_process_filter()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'FilterExpression' => '#1 = :1',
             'ExpressionAttributeNames' => [
-                '#1' => 'foo'
+                '#1' => 'ForumName'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'bar'
+                    'S' => 'Amazon DynamoDB'
                 ]
             ]
         ];
-        $query = $this->builder
-                      ->filter('foo', '=', 'bar')
+        $query = $this->newQuery('Thread')
+                      ->filter('ForumName', '=', 'Amazon DynamoDB')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -87,20 +119,20 @@ class BuilderTest extends TestCase
     public function it_can_process_condition()
     {
         $params = [
-            'TableName' => 'test',
-            'ConditionExpression' => '#1 = :1',
+            'TableName' => 'ProductCatalog',
+            'ConditionExpression' => 'attribute_not_exists(#1)',
             'ExpressionAttributeNames' => [
-                '#1' => 'foo'
+                '#1' => 'Id'
             ],
-            'ExpressionAttributeValues' => [
-                ':1' => [
-                    'S' => 'bar'
+            'Item' => [
+                'Id' => [
+                    'N' => '101'
                 ]
             ]
         ];
-        $query = $this->builder
-                      ->condition('foo', '=', 'bar')
-                      ->scan();
+        $query = $this->newQuery('ProductCatalog')
+                      ->condition('Id', 'attribute_not_exists')
+                      ->putItem(['Id' => 101]);
 
         $this->assertEquals($params, $query['params']);
     }
@@ -109,20 +141,20 @@ class BuilderTest extends TestCase
     public function it_can_process_key_condition()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'ProductCatalog',
             'KeyConditionExpression' => '#1 = :1',
             'ExpressionAttributeNames' => [
-                '#1' => 'foo'
+                '#1' => 'Id'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'bar'
+                    'N' => '101'
                 ]
             ]
         ];
-        $query = $this->builder
-                      ->keyCondition('foo', '=', 'bar')
-                      ->scan();
+        $query = $this->newQuery('ProductCatalog')
+                      ->keyCondition('Id', '=', 101)
+                      ->query();
 
         $this->assertEquals($params, $query['params']);
     }
@@ -131,7 +163,7 @@ class BuilderTest extends TestCase
     public function it_can_process_key_condition_and_filter_at_the_same_time()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'KeyConditionExpression' => '#1 = :1 and #2 = :2',
             'FilterExpression' => '#3 > :3',
             'ExpressionAttributeNames' => [
@@ -152,7 +184,7 @@ class BuilderTest extends TestCase
             ]
         ];
 
-        $query = $this->builder
+        $query = $this->newQuery('Thread')
                       ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
                       ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
                       ->filter('Views', '>', 3)
@@ -165,24 +197,24 @@ class BuilderTest extends TestCase
     public function it_can_process_or_filter()
     {
         $params = [
-            'TableName' => 'test',
-            'FilterExpression' => '#1 > :1 or #1 = :2',
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 or #1 = :2',
             'ExpressionAttributeNames' => [
-                '#1' => 'Views'
+                '#1' => 'BicycleType'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'N' => '3'
+                    'S' => 'Mountain'
                 ],
                 ':2' => [
-                    'N' => '0'
+                    'S' => 'Hybrid'
                 ]
             ]
         ];
 
-        $query = $this->builder
-                      ->filter('Views', '>', 3)
-                      ->orFilter('Views', '=', 0)
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('BicycleType', '=', 'Mountain')
+                      ->orFilter('BicycleType', '=', 'Hybrid')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -192,25 +224,23 @@ class BuilderTest extends TestCase
     public function it_can_process_or_condition()
     {
         $params = [
-            'TableName' => 'test',
-            'ConditionExpression' => '#1 > :1 or #1 = :2',
-            'ExpressionAttributeNames' => [
-                '#1' => 'Views'
-            ],
-            'ExpressionAttributeValues' => [
-                ':1' => [
-                    'N' => '3'
-                ],
-                ':2' => [
-                    'N' => '0'
+            'TableName' => 'ProductCatalog',
+            'ConditionExpression' => 'attribute_not_exists(#1) or attribute_not_exists(#2)',
+            'Item' => [
+                'Id' => [
+                    'N' => '101'
                 ]
+            ],
+            'ExpressionAttributeNames' => [
+                '#1' => 'Id',
+                '#2' => 'Price'
             ]
         ];
 
-        $query = $this->builder
-                      ->condition('Views', '>', 3)
-                      ->orCondition('Views', '=', 0)
-                      ->scan();
+        $query = $this->newQuery('ProductCatalog')
+                      ->condition('Id', 'attribute_not_exists')
+                      ->orCondition('Price', 'attribute_not_exists')
+                      ->putItem(['Id' => 101]);
 
         $this->assertEquals($params, $query['params']);
     }
@@ -219,7 +249,7 @@ class BuilderTest extends TestCase
     public function it_can_process_filter_in()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'ProductCatalog',
             'FilterExpression' => '(#1 in (:1, :2, :3))',
             'ExpressionAttributeNames' => [
                 '#1' => 'Id'
@@ -237,7 +267,7 @@ class BuilderTest extends TestCase
             ]
         ];
 
-        $query = $this->builder
+        $query = $this->newQuery('ProductCatalog')
                       ->filterIn('Id', [101, 102, 201])
                       ->scan();
 
@@ -248,7 +278,7 @@ class BuilderTest extends TestCase
     public function it_can_process_filter_between()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'ProductCatalog',
             'FilterExpression' => '(#1 between :1 and :2)',
             'ExpressionAttributeNames' => [
                 '#1' => 'Id'
@@ -263,7 +293,7 @@ class BuilderTest extends TestCase
             ]
         ];
 
-        $query = $this->builder
+        $query = $this->newQuery('ProductCatalog')
                       ->filterBetween('Id', [101, 103])
                       ->scan();
 
@@ -275,16 +305,16 @@ class BuilderTest extends TestCase
     {
         $method = 'getItem';
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'Key' => [
-                'foo' => ['S' => 'bar'],
-                'baz' => ['N' => 123]
+                'ForumName' => ['S' => 'Amazon DynamoDB'],
+                'Subject' => ['S' => 'DynamoDB Thread 1']
             ]
         ];
         $processor = 'processSingleItem';
 
-        $query = $this->builder
-                      ->key(['foo' => 'bar', 'baz' => 123])
+        $query = $this->newQuery('Thread')
+                      ->key(['ForumName' => 'Amazon DynamoDB', 'Subject' => 'DynamoDB Thread 1'])
                       ->getItem();
 
         $this->assertEquals($method, $query['method']);
@@ -296,14 +326,15 @@ class BuilderTest extends TestCase
     public function it_can_process_get_item_with_key()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'Key' => [
-                'foo' => ['S' => 'bar'],
+                'ForumName' => ['S' => 'Amazon DynamoDB'],
+                'Subject' => ['S' => 'DynamoDB Thread 1']
             ]
         ];
 
-        $query = $this->builder
-                      ->getItem(['foo' => 'bar']);
+        $query = $this->newQuery('Thread')
+                      ->getItem(['ForumName' => 'Amazon DynamoDB', 'Subject' => 'DynamoDB Thread 1']);
 
         $this->assertEquals($params, $query['params']);
     }
@@ -312,20 +343,21 @@ class BuilderTest extends TestCase
     public function it_can_process_get_item_with_expressions()
     {
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'Key' => [
-                'foo' => ['S' => 'bar'],
+                'ForumName' => ['S' => 'Amazon DynamoDB'],
+                'Subject' => ['S' => 'DynamoDB Thread 1']
             ],
             'ProjectionExpression' => '#1, #2',
             'ExpressionAttributeNames' => [
-                '#1' => 'id',
-                '#2' => 'name'
+                '#1' => 'LastPostedBy',
+                '#2' => 'LastPostedDateTime'
             ]
         ];
 
-        $query = $this->builder
-                      ->select(['id', 'name'])
-                      ->getItem(['foo' => 'bar']);
+        $query = $this->newQuery('Thread')
+                      ->select(['LastPostedBy', 'LastPostedDateTime'])
+                      ->getItem(['ForumName' => 'Amazon DynamoDB', 'Subject' => 'DynamoDB Thread 1']);
 
         $this->assertEquals($params, $query['params']);
     }
@@ -335,15 +367,21 @@ class BuilderTest extends TestCase
     {
         $method = 'putItem';
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'Item' => [
-                'foo' => [
-                    'S' => 'bar'
+                'ForumName' => [
+                    'S' => 'Laravel'
+                ],
+                'Subject' => [
+                    'S' => 'Laravel Thread 1'
                 ]
             ]
         ];
-        $query = $this->builder
-                      ->putItem(['foo' => 'bar']);
+        $query = $this->newQuery('Thread')
+                      ->putItem([
+                          'ForumName' => 'Laravel',
+                          'Subject' => 'Laravel Thread 1'
+                      ]);
 
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
@@ -355,15 +393,21 @@ class BuilderTest extends TestCase
     {
         $method = 'deleteItem';
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'Thread',
             'Key' => [
-                'foo' => [
-                    'S' => 'bar'
+                'ForumName' => [
+                    'S' => 'Laravel'
+                ],
+                'Subject' => [
+                    'S' => 'Laravel Thread 1'
                 ]
             ]
         ];
-        $query = $this->builder
-                      ->deleteItem(['foo' => 'bar']);
+        $query = $this->newQuery('Thread')
+                      ->deleteItem([
+                          'ForumName' => 'Laravel',
+                          'Subject' => 'Laravel Thread 1'
+                      ]);
 
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
@@ -375,21 +419,20 @@ class BuilderTest extends TestCase
     {
         $method = 'clientQuery';
         $params = [
-            'TableName' => 'test',
+            'TableName' => 'ProductCatalog',
             'KeyConditionExpression' => '#1 = :1',
             'ExpressionAttributeNames' => [
-                '#1' => 'foo',
+                '#1' => 'Id'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'bar'
+                    'N' => '101'
                 ]
             ]
         ];
         $processor = 'processMultipleItems';
-
-        $query = $this->builder
-                      ->keyCondition('foo', '=', 'bar')
+        $query = $this->newQuery('ProductCatalog')
+                      ->keyCondition('Id', '=', 101)
                       ->query();
 
         $this->assertEquals($method, $query['method']);
@@ -402,11 +445,11 @@ class BuilderTest extends TestCase
     {
         $method = 'scan';
         $params = [
-            'TableName' => 'test'
+            'TableName' => 'Forum'
         ];
         $processor = 'processMultipleItems';
 
-        $query = $this->builder
+        $query = $this->newQuery('Forum')
                       ->scan();
 
         $this->assertEquals($method, $query['method']);

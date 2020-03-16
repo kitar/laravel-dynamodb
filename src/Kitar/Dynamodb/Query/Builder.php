@@ -309,6 +309,14 @@ class Builder extends BaseBuilder
     /**
      * @inheritdoc
      */
+    public function orWhere($column, $operator = null, $value = null)
+    {
+        return $this->where($column, $operator, $value, 'or');
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
         $column = $this->expression_attributes->addName($column);
