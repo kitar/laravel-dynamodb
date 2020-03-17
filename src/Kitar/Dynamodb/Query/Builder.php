@@ -60,6 +60,15 @@ class Builder extends BaseBuilder
     public $dry_run = false;
 
     /**
+     * ** experimental **
+     * If set, all response items will be converted to
+     * this class using (new $model_class)->newFromBuilder($item).
+     *
+     * @var string|null
+     */
+    public $model_class;
+
+    /**
      * The ExpressionAttributes object.
      * @var Kitar\Dynamodb\Query\ExpressionAttributes
      */
@@ -171,6 +180,20 @@ class Builder extends BaseBuilder
     public function dryRun($active = true)
     {
         $this->dry_run = $active;
+
+        return $this;
+    }
+
+    /**
+     * ** experimental **
+     * If set, all response items will be converted to
+     * this class using (new $model_class)->newFromBuilder($item).
+     *
+     * @var string|null
+     */
+    public function usingModel($class_name)
+    {
+        $this->model_class = $class_name;
 
         return $this;
     }
@@ -452,7 +475,7 @@ class Builder extends BaseBuilder
 
         // Process.
         if ($processor_method) {
-            return $this->processor->$processor_method($response);
+            return $this->processor->$processor_method($response, $this->model_class);
         } else {
             return $response;
         }

@@ -4,7 +4,6 @@ namespace Kitar\Dynamodb\Query;
 
 use Aws\Result;
 use Aws\DynamoDb\Marshaler;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Processors\Processor as BaseProcessor;
 
 class Processor extends BaseProcessor
@@ -16,23 +15,33 @@ class Processor extends BaseProcessor
         $this->marshaler = new Marshaler;
     }
 
-    public function processSingleItem(Result $res)
+    public function processSingleItem(Result $res, $model_class)
     {
         $responseArray = $res->toArray();
 
         if (! empty($responseArray['Item'])) {
-            $responseArray['Item'] = $this->marshaler->unmarshalItem($responseArray['Item']);
+            $item = $this->marshaler->unmarshalItem($responseArray['Item']);
+
+            if ($model_class) {
+                $item = (new $model_class)->newFromBuilder($item);
+            }
+
+            $responseArray['Item'] = $item;
         }
 
         return $responseArray;
     }
 
-    public function processMultipleItems(Result $res)
+    public function processMultipleItems(Result $res, $model_class)
     {
         $responseArray = $res->toArray();
 
         foreach ($responseArray['Items'] as &$item) {
             $item = $this->marshaler->unmarshalItem($item);
+
+            if ($model_class) {
+                $item = (new $model_class)-newFromBuilder($item);
+            }
         }
 
         return $responseArray;

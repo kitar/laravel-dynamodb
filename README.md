@@ -25,10 +25,12 @@ This package provides QueryBuilder for DynamoDB.
         - [Filter Expressions for Scan](#filter-expressions-for-scan)
     - [Using Global Secondary Indexes in DynamoDB](#using-global-secondary-indexes-in-dynamodb)
         - [Querying a Global Secondary Index](#querying-a-global-secondary-index)
-- [Authentication (Custom User Provider)](#authentication-custom-user-provider)
-    - [Make User model](#make-user-model)
+- [Models](#models)
+    - [Binding model to the QueryBuilder](#binding-model-to-the-querybuilder)
+- [Authentication](#authentication)
+    - [Make user model](#make-user-model)
     - [Make custom user provider](#make-custom-user-provider)
-    - [Register our custom user provider](#register-our-custom-user-provider)
+    - [Register custom user provider](#register-custom-user-provider)
     - [Add config for user provider](#add-config-for-user-provider)
 
 ## Motivation
@@ -36,11 +38,9 @@ This package provides QueryBuilder for DynamoDB.
 I started trying to make simple QueryBuilder because:
 
 - I want to use DynamoDB with Laravel. (e.g., authenticate with custom user provider)
-- I don't want to extend Eloquent because DynamoDB looks quite different from relational databases.
+- I don't want to extend Eloquent Query Builder because DynamoDB looks quite different from relational databases.
 - I want to use a simple API which doesn't need to worry about cumbersome things like manually handling Expression Attributes.
 - I'm longing for [jessengers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb). What if we have that for DynamoDB?
-
-There's no Model for DynamoDB at this time, but I might add it if there's a good design idea.
 
 ## Installation
 
@@ -288,200 +288,131 @@ $response = DB::table('Reply')
                 ->query();
 ```
 
-## Authentication (Custom User Provider)
+## Models
+
+`Kitar\Dynamodb\Model\Model` is a experimental Model implementation for this package.
+
+It works like Eloquent Model, but there is no model querying features. Model's features to interact DynamoDB is only `save`, `update` and `delete`.
+
+Instead we don't have model query, we'll tell the QueryBuilder to instantiate DynamoDB response with the specified model.
+
+### Binding model to the QueryBuilder
+
+For example, we have some user model below.
+
+```php
+<?php
+
+namespace App;
+
+use Kitar\Dynamodb\Model\Model;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+
+class User extends Model implements AuthenticatableContract
+{
+    use Authenticatable;
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'table_name';
+
+    /**
+     * The Primary (Partition) Key.
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * The Sort Key.
+     * @var string|null
+     */
+    protected $sortKey = 'type';
+
+    /**
+     * The default value of the Sort Key.
+     * @var string|null
+     */
+    protected $sortKeyDefault = 'profile';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'id', 'type'
+    ];
+}
+```
+
+Then, let QueryBuilder know model class by `usingModel`.
+
+```php
+$response = DB::table('table_name')
+                ->usingModel(App\User::class)
+                ->getItem([
+                    'id' => 'foo@bar.com',
+                    'type' => 'profile'
+                ]);
+```
+
+`$response['Item']` will be the User model instance.
+
+> behind the scene when specifying `usingModel`, Query Processor is converting each items to model instance with `(new $modelClass)-newFromBuilder($item)`.
+
+After retrieving the model instance, we can `save`, `update` and `delete` in the same manner as Eloquent Model.
+
+Also, we can create new instance like below.
+
+```php
+$user = new App\User([
+    'id' => 'foo@bar.com',
+    'type' => 'profile'
+]);
+
+$user->save();
+```
+
+However, because we don't have model query, we can't use `create` or `firstOrCreate` or things like that.
+
+## Authentication
 
 We can create Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/6.x/authentication#adding-custom-user-providers).
 
-The Following codes are an example of custom user provider. It's simplified and not tested, so **don't use them in production**.
+In this section, we'll use example `App\User` model above to implement DynamoDB authentication.
 
-### Make User model
+### Make user model
 
-To bind with authentication, we need to prepare User model which implements `Illuminate\Contracts\Auth\Authenticatable`.
-
-```php
-namespace App;
-
-use Illuminate\Support\Facades\DB;
-use Illuminate\Contracts\Auth\Authenticatable as AuthAuthenticatable;
-
-class User implements AuthAuthenticatable
-{
-    protected $params;
-
-    public function __construct($params)
-    {
-        $this->params = collect($params);
-    }
-
-    public function __get($name)
-    {
-        return $this->params[$name] ?? null;
-    }
-
-    /**
-     * Get the name of the unique identifier for the user.
-     *
-     * @return string
-     */
-    public function getAuthIdentifierName()
-    {
-        return 'id';
-    }
-
-    /**
-     * Get the unique identifier for the user.
-     *
-     * @return mixed
-     */
-    public function getAuthIdentifier()
-    {
-        return $this->params['id'];
-    }
-
-    /**
-     * Get the password for the user.
-     *
-     * @return string
-     */
-    public function getAuthPassword()
-    {
-        return $this->params['password'];
-    }
-
-    /**
-     * Get the token value for the "remember me" session.
-     *
-     * @return string
-     */
-    public function getRememberToken()
-    {
-        return $this->params['remember_token'] ?? null;
-    }
-
-    /**
-     * Set the token value for the "remember me" session.
-     *
-     * @param  string  $value
-     * @return void
-     */
-    public function setRememberToken($value)
-    {
-        $this->params['remember_token'] = $value;
-
-        DB::table('User')->putItem($this->params->toArray());
-    }
-
-    /**
-     * Get the column name for the "remember me" token.
-     *
-     * @return string
-     */
-    public function getRememberTokenName()
-    {
-        return 'remember_token';
-    }
-}
-```
+`Kitar\Dynamodb\Model\Model` is compatible to `Illuminate\Auth\Authenticatable`, so our `App\User` class is just using it.
 
 ### Make custom user provider
 
-Next, we'll make custom user provider.
+We'll use `Kitar\Dynamodb\Model\AuthUserProvider` for this time.
 
-```php
-namespace App\Providers;
-
-use App\User;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\UserProvider as BaseUserProvider;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-
-class AuthUserProvider implements BaseUserProvider
-{
-    /**
-     * Retrieve a user by their unique identifier.
-     *
-     * @param  mixed  $identifier
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
-     */
-    public function retrieveById($identifier)
-    {
-        $item = DB::table('User')->getItem(['id' => $identifier])['Item'];
-
-        return new User($item);
-    }
-
-    /**
-     * Retrieve a user by their unique identifier and "remember me" token.
-     *
-     * @param  mixed  $identifier
-     * @param  string  $token
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
-     */
-    public function retrieveByToken($identifier, $token)
-    {
-        $user = $this->retrieveById($identifier);
-
-        if ($user->getRememberToken() == $token) {
-            return $user;
-        }
-    }
-
-    /**
-     * Update the "remember me" token for the given user in storage.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  string  $token
-     * @return void
-     */
-    public function updateRememberToken(Authenticatable $user, $token)
-    {
-        $user->setRememberToken($token);
-    }
-
-    /**
-     * Retrieve a user by the given credentials.
-     *
-     * @param  array  $credentials
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
-     */
-    public function retrieveByCredentials(array $credentials)
-    {
-        return $this->retrieveById($credentials['email']);
-    }
-
-    /**
-     * Validate a user against the given credentials.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
-     * @return bool
-     */
-    public function validateCredentials(Authenticatable $user, array $credentials)
-    {
-        return Hash::check($credentials['password'], $user->password);
-    }
-}
-```
-
-### Register our custom user provider
+### Register custom user provider
 
 Then we register them at `boot()` method in `App/Providers/AuthServiceProvider.php`.
 
 ```php
+use Kitar\Dynamodb\Model\AuthUserProvider;
+...
 public function boot()
 {
     $this->registerPolicies();
 
     Auth::provider('dynamodb', function ($app, array $config) {
-        return new AuthUserProvider;
+        return new AuthUserProvider(new $config['model']);
     });
 }
 ```
 
 ### Add config for user provider
 
-Finally, we can add config for our custom user provider at `config/database.php`.
+Finally, we specify model class name in config at `config/database.php`.
 
 ```php
 'providers' => [
@@ -494,6 +425,7 @@ Finally, we can add config for our custom user provider at `config/database.php`
     // DynamoDB
     'users' => [
         'driver' => 'dynamodb',
+        'model' => App\User::class,
     ],
 ],
 ```
