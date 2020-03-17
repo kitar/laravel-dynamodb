@@ -105,6 +105,32 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Compile the Updates attribute.
+     * @param array $updates
+     * @return array
+     */
+    public function compileUpdates($updates)
+    {
+        $expressions = [];
+
+        if (! empty($updates['set'])) {
+            $expressions[] = 'set ' . implode(', ', $updates['set']);
+        }
+
+        if (! empty($updates['remove'])) {
+            $expressions[] = 'remove ' . implode(', ', $updates['remove']);
+        }
+
+        if (empty($expressions)) {
+            return [];
+        }
+
+        return [
+            'UpdateExpression' => implode(' ', $expressions)
+        ];
+    }
+
+    /**
      * Compile the ConsistentRead attribute.
      * @param bool $bool
      * @return array

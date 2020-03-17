@@ -34,6 +34,14 @@ class Builder extends BaseBuilder
     public $item = [];
 
     /**
+     * The key/values to update.
+     */
+    public $updates = [
+        'set' => [],
+        'remove' => []
+    ];
+
+    /**
      * ConsistentRead option.
      * @var boolean|null
      */
@@ -161,6 +169,7 @@ class Builder extends BaseBuilder
 
     /**
      * Get item.
+     * @param array|null $key
      * @return Illuminate\Support\Collection|null
      */
     public function getItem($key = null)
@@ -174,7 +183,8 @@ class Builder extends BaseBuilder
 
     /**
      * Put item.
-     * @return \Aws\Result;
+     * @param array $item
+     * @return \Aws\Result
      */
     public function putItem($item)
     {
@@ -185,6 +195,7 @@ class Builder extends BaseBuilder
 
     /**
      * Delete item.
+     * @param array $key|null;
      * @return \Aws\Result;
      */
     public function deleteItem($key)
@@ -194,6 +205,31 @@ class Builder extends BaseBuilder
         }
 
         return $this->process('deleteItem', null);
+    }
+
+    /**
+     * Update item.
+     * @param mixed $item
+     * @return void
+     */
+    public function updateItem($item)
+    {
+        foreach ($item as $name => $value) {
+
+            $name = $this->expression_attributes->addName($name);
+
+            // If value is null, it will pass to REMOVE actions.
+            if ($value === null) {
+                $this->updates['remove'][] = $name;
+
+            // If value set, it will pass to SET actions.
+            } else {
+                $value = $this->expression_attributes->addValue($value);
+                $this->updates['set'][] = "{$name} = {$value}";
+            }
+        }
+
+        return $this->process('updateItem', null);
     }
 
     /**
@@ -376,6 +412,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileIndexName($this->index),
             $this->grammar->compileKey($this->key),
             $this->grammar->compileItem($this->item),
+            $this->grammar->compileUpdates($this->updates),
             $this->grammar->compileConsistentRead($this->consistent_read),
             $this->grammar->compileExpressionAttributes($this->expression_attributes),
         );

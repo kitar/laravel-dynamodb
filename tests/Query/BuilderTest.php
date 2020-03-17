@@ -415,6 +415,123 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_update_item()
+    {
+        $method = 'updateItem';
+        $params = [
+            'TableName' => 'Thread',
+            'Key' => [
+                'ForumName' => [
+                    'S' => 'Laravel'
+                ],
+                'Subject' => [
+                    'S' => 'Laravel Thread 1'
+                ]
+            ],
+            'UpdateExpression' => 'set #1 = :1, #2 = :2 remove #3, #4',
+            'ExpressionAttributeNames' => [
+                '#1' => 'LastPostedBy',
+                '#2' => 'Replies',
+                '#3' => 'Tags',
+                '#4' => 'Views'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'User A'
+                ],
+                ':2' => [
+                    'N' => '1'
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Thread')
+             ->key([
+                 'ForumName' => 'Laravel',
+                 'Subject' => 'Laravel Thread 1'
+             ])->updateItem([
+                'LastPostedBy' => 'User A',
+                'Replies' => 1,
+                'Tags' => null,
+                'Views' => null
+             ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertNull($query['processor']);
+    }
+
+    /** @test */
+    public function it_can_set_single_attribute()
+    {
+        $query = $this->newQuery('Thread')
+             ->key([
+                 'ForumName' => 'Laravel',
+                 'Subject' => 'Laravel Thread 1'
+             ])->updateItem([
+                'LastPostedBy' => 'User A',
+             ]);
+
+        $this->assertEquals(
+            $query['params']['UpdateExpression'],
+            'set #1 = :1'
+        );
+    }
+
+    /** @test */
+    public function it_can_set_multiple_attributes()
+    {
+        $query = $this->newQuery('Thread')
+             ->key([
+                 'ForumName' => 'Laravel',
+                 'Subject' => 'Laravel Thread 1'
+             ])->updateItem([
+                'LastPostedBy' => 'User A',
+                'Replies' => 1,
+             ]);
+
+        $this->assertEquals(
+            $query['params']['UpdateExpression'],
+            'set #1 = :1, #2 = :2'
+        );
+    }
+
+    /** @test */
+    public function it_can_remove_single_attribute()
+    {
+        $query = $this->newQuery('Thread')
+             ->key([
+                 'ForumName' => 'Laravel',
+                 'Subject' => 'Laravel Thread 1'
+             ])->updateItem([
+                'Tags' => null,
+             ]);
+
+        $this->assertEquals(
+            $query['params']['UpdateExpression'],
+            'remove #1'
+        );
+    }
+
+    /** @test */
+    public function it_can_remove_multiple_attributes()
+    {
+        $query = $this->newQuery('Thread')
+             ->key([
+                 'ForumName' => 'Laravel',
+                 'Subject' => 'Laravel Thread 1'
+             ])->updateItem([
+                'Tags' => null,
+                'Views' => null
+             ]);
+
+        $this->assertEquals(
+            $query['params']['UpdateExpression'],
+            'remove #1, #2'
+        );
+    }
+
+    /** @test */
     public function it_can_process_query()
     {
         $method = 'clientQuery';

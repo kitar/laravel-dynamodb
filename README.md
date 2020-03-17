@@ -125,7 +125,34 @@ $item = DB::table('Thread')
 
 #### UpdateItem
 
-We didn't implement this yet.
+Currently, we only support simple SET and REMOVE actions.
+
+If value is set, `updateItem` will SET them.
+
+```php
+DB::table('Thread')
+    ->key([
+        'ForumName' => 'Laravel',
+        'Subject' => 'Laravel Thread 1'
+    ])->updateItem([
+        'LastPostedBy' => 'User A', // SET
+        'Replies' => 1 // SET
+    ]);
+```
+
+If value is null, `updateItem` will REMOVE them.
+
+```php
+DB::table('Thread')
+    ->key([
+        'ForumName' => 'Laravel',
+        'Subject' => 'Laravel Thread 1'
+    ])->updateItem([
+        'LastPostedBy' => null, // REMOVE
+        'Replies' => null, // REMOVE
+        'Message' => 'Updated' // SET
+    ]);
+```
 
 #### DeleteItem
 
