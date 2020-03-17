@@ -113,14 +113,14 @@ $response = DB::table('ProductCatalog')
 #### PutItem
 
 ```php
-$item = DB::table('Thread')
-            ->putItem([
-                'ForumName' => 'Amazon DynamoDB',
-                'Subject' => 'New discussion thread',
-                'Message' => 'First post in this thread',
-                'LastPostedBy' => 'fred@example.com',
-                'LastPostedDateTime' => '201603190422'
-            ]);
+$response = DB::table('Thread')
+                ->putItem([
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'New discussion thread',
+                    'Message' => 'First post in this thread',
+                    'LastPostedBy' => 'fred@example.com',
+                    'LastPostedDateTime' => '201603190422'
+              ]);
 ```
 
 #### UpdateItem
@@ -171,9 +171,9 @@ DB::table('Thread')
 Use `select` clause for Projection Expressions.
 
 ```php
-$item = DB::table('ProductCatalog')
-            ->select('Price', 'Title')
-            ->getItem(['Id' => 101]);
+$response = DB::table('ProductCatalog')
+                ->select('Price', 'Title')
+                ->getItem(['Id' => 101]);
 ```
 
 ### Condition Expressions
@@ -227,23 +227,23 @@ DB::table('ProductCatalog')
 Use `keyCondition` clause to build Key Conditions.
 
 ```php
-$items = DB::table('Thread')
-             ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-             ->query();
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->query();
 ```
 
 ```php
-$items = DB::table('Thread')
-             ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-             ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
-             ->query();
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
+                ->query();
 ```
 
 ```php
-$items = DB::table('Reply')
-             ->keyCondition('Id', '=', 'Amazon DynamoDB#DynamoDB Thread 1')
-             ->keyCondition('ReplyDateTime', 'begins_with', '2015-09')
-             ->query();
+$response = DB::table('Reply')
+                ->keyCondition('Id', '=', 'Amazon DynamoDB#DynamoDB Thread 1')
+                ->keyCondition('ReplyDateTime', 'begins_with', '2015-09')
+                ->query();
 ```
 
 #### Filter Expressions for Query
@@ -253,11 +253,11 @@ Use `filter` clause to build Filter Conditions.
 For `query`, KeyConditionExprssion is required, so we specify both KeyConditionExpression and FilterExpression.
 
 ```php
-$itmes = DB::table('Thread')
-           ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-           ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
-           ->filter('Views', '>', 3)
-           ->query();
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
+                ->filter('Views', '>', 3)
+                ->query();
 ```
 
 ### Working with Scans in DynamoDB
@@ -267,9 +267,9 @@ $itmes = DB::table('Thread')
 #### Filter Expressions for Scan
 
 ```php
-$items = DB::table('Thread')
-             ->filter('LastPostedBy', '=', 'User A')
-             ->scan();
+$response = DB::table('Thread')
+                ->filter('LastPostedBy', '=', 'User A')
+                ->scan();
 ```
 
 ### Using Global Secondary Indexes in DynamoDB
@@ -281,11 +281,11 @@ $items = DB::table('Thread')
 Use `index` clause to specify IndexName.
 
 ```php
-$items = DB::table('Reply')
-             ->index('PostedBy-Message-index')
-             ->keyCondition('PostedBy', '=', 'User A')
-             ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
-             ->query();
+$response = DB::table('Reply')
+                ->index('PostedBy-Message-index')
+                ->keyCondition('PostedBy', '=', 'User A')
+                ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
+                ->query();
 ```
 
 ## Authentication (Custom User Provider)
@@ -406,7 +406,7 @@ class AuthUserProvider implements BaseUserProvider
      */
     public function retrieveById($identifier)
     {
-        $item = DB::table('User')->getItem(['id' => $identifier]);
+        $item = DB::table('User')->getItem(['id' => $identifier])['Item'];
 
         return new User($item);
     }

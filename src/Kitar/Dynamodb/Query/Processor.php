@@ -18,29 +18,23 @@ class Processor extends BaseProcessor
 
     public function processSingleItem(Result $res)
     {
-        $item = $res['Item'];
+        $responseArray = $res->toArray();
 
-        if (empty($item)) {
-            return null;
+        if (! empty($responseArray['Item'])) {
+            $responseArray['Item'] = $this->marshaler->unmarshalItem($responseArray['Item']);
         }
 
-        return new Collection(
-            $this->marshaler->unmarshalItem($item)
-        );
+        return $responseArray;
     }
 
     public function processMultipleItems(Result $res)
     {
-        $items = $res['Items'];
+        $responseArray = $res->toArray();
 
-        if (empty($items)) {
-            return [];
-        }
-
-        foreach ($items as &$item) {
+        foreach ($responseArray['Items'] as &$item) {
             $item = $this->marshaler->unmarshalItem($item);
         }
 
-        return $items;
+        return $responseArray;
     }
 }
