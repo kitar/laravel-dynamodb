@@ -131,6 +131,34 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Compile the Limit attribute.
+     *
+     * @param int|null $limit
+     * @return array
+     */
+    public function compileDynamodbLimit($limit)
+    {
+        if ($limit === null) {
+            return [];
+        }
+
+        return [
+            'Limit' => $limit
+        ];
+    }
+
+    public function compileExclusiveStartKey($key)
+    {
+        if (empty($key)) {
+            return [];
+        }
+
+        return [
+            'ExclusiveStartKey' => $key
+        ];
+    }
+
+    /**
      * Compile the ConsistentRead attribute.
      * @param bool $bool
      * @return array

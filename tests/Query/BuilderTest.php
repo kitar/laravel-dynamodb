@@ -75,6 +75,43 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_set_limit()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'Limit' => 5
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->limit(5)
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_set_exclusive_start_key()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'ExclusiveStartKey' => [
+                'Id' => [
+                    'N' => '101'
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->ExclusiveStartKey([
+                        'Id' => [
+                            'N' => '101'
+                        ]
+                      ])->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
     public function it_can_set_consistent_read()
     {
         $params = [

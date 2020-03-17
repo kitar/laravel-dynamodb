@@ -42,6 +42,12 @@ class Builder extends BaseBuilder
     ];
 
     /**
+     * LastEvaluatedKey attribute.
+     * @var array|null
+     */
+    public $exclusive_start_key;
+
+    /**
      * ConsistentRead option.
      * @var boolean|null
      */
@@ -132,6 +138,20 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Set the ExclusiveStartKey option.
+     * Unlike other methods, this $key should be marshaled　beforehand.
+     *
+     * @param array $key
+     * @return $this
+     */
+    public function exclusiveStartKey($key)
+    {
+        $this->exclusive_start_key = $key;
+
+        return $this;
+    }
+
+    /**
      * Set the ConsistentRead option.
      * @param bool $active
      * @return $this
@@ -215,7 +235,6 @@ class Builder extends BaseBuilder
     public function updateItem($item)
     {
         foreach ($item as $name => $value) {
-
             $name = $this->expression_attributes->addName($name);
 
             // If value is null, it will pass to REMOVE actions.
@@ -413,6 +432,8 @@ class Builder extends BaseBuilder
             $this->grammar->compileKey($this->key),
             $this->grammar->compileItem($this->item),
             $this->grammar->compileUpdates($this->updates),
+            $this->grammar->compileDynamodbLimit($this->limit),
+            $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),
             $this->grammar->compileConsistentRead($this->consistent_read),
             $this->grammar->compileExpressionAttributes($this->expression_attributes),
         );
