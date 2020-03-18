@@ -299,16 +299,6 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a size condition.
-     * @param array $where
-     * @return string
-     */
-    protected function compileSizeCondition($where)
-    {
-        return "size({$where['column']}, {$where['value']})";
-    }
-
-    /**
      * @inheritdoc
      */
     protected function whereBetween($query, $where)

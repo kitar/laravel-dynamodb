@@ -2,9 +2,15 @@
 
 namespace Kitar\Dynamodb\Tests\Query;
 
+use Aws\Result;
+use Mockery as m;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Model\Model;
+use Kitar\Dynamodb\Query\Builder;
+use Kitar\Dynamodb\Query\Grammar;
+use Kitar\Dynamodb\Query\Processor;
 use PHPUnit\Framework\TestCase;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
 class Product extends Model
 {
@@ -12,11 +18,18 @@ class Product extends Model
 
 class BuilderTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     protected $connection;
 
     protected function setUp() :void
     {
         $this->connection = new Connection([]);
+    }
+
+    protected function tearDown() :void
+    {
+        m::close();
     }
 
     protected function newQuery($table_name)
@@ -352,6 +365,111 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_attribute_exists_function()
+    {
+        $params = [
+            'TableName' => 'Forum',
+            'FilterExpression' => 'attribute_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Messages'
+            ]
+        ];
+
+        $query = $this->newQuery('Forum')
+                      ->filter('Messages', 'attribute_exists')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_attribute_not_exists_function()
+    {
+        $params = [
+            'TableName' => 'Forum',
+            'FilterExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Messages'
+            ]
+        ];
+
+        $query = $this->newQuery('Forum')
+                      ->filter('Messages', 'attribute_not_exists')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_attribute_type_function()
+    {
+        $params = [
+            'TableName' => 'Forum',
+            'FilterExpression' => 'attribute_type(#1, :1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Messages'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'N'
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Forum')
+                      ->filter('Messages', 'attribute_type', 'N')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_begins_with_function()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => 'begins_with(#1, :1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Title'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Book'
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Title', 'begins_with', 'Book')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_contains_function()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => 'contains(#1, :1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Title'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Bike'
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Title', 'contains', 'Bike')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
     public function it_can_process_get_item()
     {
         $method = 'getItem';
@@ -623,5 +741,43 @@ class BuilderTest extends TestCase
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
         $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_process()
+    {
+        $connection = m::mock(Connection::class);
+        $connection->shouldReceive('scan')
+                   ->with(['TableName' => 'Forum'])
+                   ->andReturn(new Result(['Items' => []]));
+
+        $query = new Builder($connection, new Grammar, new Processor);
+
+        $query->from('Forum')->scan();
+    }
+
+    /** @test */
+    public function it_can_process_process_with_no_processor()
+    {
+        $connection = m::mock(Connection::class);
+        $connection->shouldReceive('putItem')
+                   ->with([
+                       'TableName' => 'Thread',
+                       'Item' => [
+                           'ForumName' => [
+                               'S' => 'Laravel'
+                           ],
+                           'Subject' => [
+                               'S' => 'Laravel Thread 1'
+                           ]
+                       ]
+                    ])->andReturn(new Result(['Items' => []]));
+
+        $query = new Builder($connection, new Grammar, new Processor);
+
+        $query->from('Thread')->putItem([
+            'ForumName' => 'Laravel',
+            'Subject' => 'Laravel Thread 1'
+        ]);
     }
 }
