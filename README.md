@@ -26,7 +26,9 @@ This package provides QueryBuilder for DynamoDB.
     - [Using Global Secondary Indexes in DynamoDB](#using-global-secondary-indexes-in-dynamodb)
         - [Querying a Global Secondary Index](#querying-a-global-secondary-index)
 - [Models](#models)
-    - [Binding model to the QueryBuilder](#binding-model-to-the-querybuilder)
+    - [Basic Usage of Model](#basic-usage-of-model)
+        - [Calling Builder methods through model](#calling-builder-methods-through-model)
+        - [CRUD operations](#crud-operations)
 - [Authentication](#authentication)
     - [Make user model](#make-user-model)
     - [Make custom user provider](#make-custom-user-provider)
@@ -290,15 +292,17 @@ $response = DB::table('Reply')
 
 ## Models
 
-`Kitar\Dynamodb\Model\Model` is a experimental Model implementation for this package.
+`Kitar\Dynamodb\Model\Model` is an experimental Model implementation for this package.
 
-It works like Eloquent Model, but there is no model querying features. Model's features to interact DynamoDB is only `save`, `update` and `delete`.
+It works like Eloquent Model, but instead of forwarding calls to "Model" Query, we forward call directly to "DynamoDB" Query.
 
-Instead we don't have model query, we'll tell the QueryBuilder to instantiate DynamoDB response with the specified model.
+Because there is no "Model" Query, we can't use handy methods like `find` `create` `firstOrCreate` or something like that. We only have `save` `update` and `delete` for the Model methods to interact with DynamoDB. However, when we query through Model, DynamoDB's response items will be automatically converted to the model instance.
 
-### Binding model to the QueryBuilder
+### Basic Usage of Model
 
-For example, we have some user model below.
+Let's say we have some Authenticatable User model. (we'll use this example in the Authentication section as well)
+
+Most attributes are the same as the original Eloquent Model, but there are few DynamoDB specific attributes. `table` `primaryKey` `sortKey` and `sortKeyDefault`.
 
 ```php
 <?php
@@ -349,35 +353,52 @@ class User extends Model implements AuthenticatableContract
 }
 ```
 
-Then, let QueryBuilder know model class by `usingModel`.
+#### Calling Builder methods through model
 
 ```php
-$response = DB::table('table_name')
-                ->usingModel(App\User::class)
-                ->getItem([
-                    'id' => 'foo@bar.com',
-                    'type' => 'profile'
-                ]);
-```
-
-`$response['Item']` will be the User model instance.
-
-> behind the scene when specifying `usingModel`, Query Processor is converting each items to model instance with `(new $modelClass)-newFromBuilder($item)`.
-
-After retrieving the model instance, we can `save`, `update` and `delete` in the same manner as Eloquent Model.
-
-Also, we can create new instance like below.
-
-```php
-$user = new App\User([
+$response = User::getItem([
     'id' => 'foo@bar.com',
     'type' => 'profile'
 ]);
 
-$user->save();
+$user = $response['Item'];
 ```
 
-However, because we don't have model query, we can't use `create` or `firstOrCreate` or things like that.
+```php
+$response = User::filter('type', '=', 'profile')
+                  ->scan();
+
+$users = $response['Items'];
+```
+
+#### CRUD operations
+
+```php
+// create
+$newUser = new User([
+    'id' => 'foo@bar.com',
+    'type' => 'profile'
+]);
+
+$newUser->save();
+
+// read
+$existingUser = User::getItem([
+    'id' => 'foo@bar.com',
+    'type' => 'profile'
+])['Item'];
+
+// update
+$existingUser->foo = 'bar';
+$existingUser->save();
+
+$existingUser->update([
+    'foo' => 'barbar'
+]);
+
+// delete
+$existingUser->delete();
+```
 
 ## Authentication
 

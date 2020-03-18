@@ -4,7 +4,6 @@ namespace Kitar\Dynamodb\Model;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider as BaseUserProvider;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthUserProvider implements BaseUserProvider
@@ -28,9 +27,9 @@ class AuthUserProvider implements BaseUserProvider
 
         $this->model->$identifierName = $identifier;
 
-        $response = DB::table($this->model->getTable())
-                        ->usingModel(get_class($this->model))
-                        ->getItem($this->model->getKey());
+        $response = $this->model->getItem(
+            $this->model->getKey()
+        );
 
         return $response['Item'];
     }

@@ -71,7 +71,7 @@ class Model extends BaseModel
      */
     public function newQuery()
     {
-        return $this->getConnection()->table($this->table);
+        return $this->getConnection()->table($this->table)->usingModel(static::class);
     }
 
     /**
@@ -237,5 +237,39 @@ class Model extends BaseModel
         $this->fireModelEvent('deleted', false);
 
         return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function __call($method, $parameters)
+    {
+        $allowedBuilderMethods = [
+            "index",
+            "key",
+            "exclusiveStartKey",
+            "consistentRead",
+            "dryRun",
+            "getItem",
+            "putItem",
+            "deleteItem",
+            "updateItem",
+            "scan",
+            "filter",
+            "filterIn",
+            "filterBetween",
+            "condition",
+            "conditionIn",
+            "conditionBetween",
+            "keyCondition",
+            "keyConditionIn",
+            "keyConditionBetween",
+        ];
+
+        if (! in_array($method, $allowedBuilderMethods)) {
+            static::throwBadMethodCallException($method);
+        }
+
+        return $this->forwardCallTo($this->newQuery(), $method, $parameters);
     }
 }
