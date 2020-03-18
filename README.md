@@ -23,6 +23,7 @@ This package provides QueryBuilder for DynamoDB.
         - [Filter Expressions for Query](#filter-expressions-for-query)
     - [Working with Scans in DynamoDB](#working-with-scans-in-dynamodb)
         - [Filter Expressions for Scan](#filter-expressions-for-scan)
+        - [Paginating the Results](#paginating-the-results)
     - [Using Global Secondary Indexes in DynamoDB](#using-global-secondary-indexes-in-dynamodb)
         - [Querying a Global Secondary Index](#querying-a-global-secondary-index)
 - [Models](#models)
@@ -40,8 +41,9 @@ This package provides QueryBuilder for DynamoDB.
 I started trying to make simple QueryBuilder because:
 
 - I want to use DynamoDB with Laravel. (e.g., authenticate with custom user provider)
-- I don't want to extend Eloquent Query Builder because DynamoDB looks quite different from relational databases.
 - I want to use a simple API which doesn't need to worry about cumbersome things like manually handling Expression Attributes.
+- I don't want to make it fully compatible with Eloquent because DynamoDB looks quite different from relational databases.
+- However, I want to extend Laravel's code as much as I can to keep additional implementation simple.
 - I'm longing for [jessengers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb). What if we have that for DynamoDB?
 
 ## Installation
@@ -271,6 +273,27 @@ $response = DB::table('Thread')
 ```php
 $response = DB::table('Thread')
                 ->filter('LastPostedBy', '=', 'User A')
+                ->scan();
+```
+
+#### Paginating the Results
+
+If there are more results, the result contains `LastEvaluatedKey`.
+
+```php
+$response = DB::table('ProductCatalog')
+                ->limit(5)
+                ->scan();
+
+$response['LastEvaluatedKey']; // array
+```
+
+Pass `LastEvaluatedKey` to the `exclusiveStartKey` clause to retrieve the next results.
+
+```php
+$response = DB::table('ProductCatalog')
+                ->exclusiveStartKey($response['LastEvaluatedKey'])
+                ->limit(5)
                 ->scan();
 ```
 
