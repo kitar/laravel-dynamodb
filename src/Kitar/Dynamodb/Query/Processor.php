@@ -40,7 +40,7 @@ class Processor extends BaseProcessor
             $item = $this->marshaler->unmarshalItem($item);
 
             if ($model_class) {
-                $item = (new $model_class)-newFromBuilder($item);
+                $item = (new $model_class)->newFromBuilder($item);
             }
         }
 
