@@ -3,7 +3,12 @@
 namespace Kitar\Dynamodb\Tests\Query;
 
 use Kitar\Dynamodb\Connection;
+use Kitar\Dynamodb\Model\Model;
 use PHPUnit\Framework\TestCase;
+
+class Product extends Model
+{
+}
 
 class BuilderTest extends TestCase
 {
@@ -128,6 +133,15 @@ class BuilderTest extends TestCase
                       ->getItem(['Id'=> 101]);
 
         $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_set_model_class()
+    {
+        $query = $this->newQuery('ProductCatalog')
+                      ->usingModel(Product::class);
+
+        $this->assertEquals(Product::class, $query->model_class);
     }
 
     /** @test */
