@@ -2,8 +2,8 @@
 
 namespace Kitar\Dynamodb\Model;
 
-use Exception;
 use Illuminate\Database\Eloquent\Model as BaseModel;
+use Kitar\Dynamodb\Model\KeyMissingException;
 
 class Model extends BaseModel
 {
@@ -53,12 +53,29 @@ class Model extends BaseModel
      */
     public function getKey()
     {
+        if (empty($this->primaryKey)) {
+            throw new KeyMissingException("Primary (Partition) key is not defined.");
+        }
+
         $key = [];
 
         $key[$this->primaryKey] = $this->getAttribute($this->primaryKey);
 
         if ($this->sortKey) {
             $key[$this->sortKey] = $this->getAttribute($this->sortKey);
+        }
+
+        $missingKeys = [];
+
+        foreach ($key as $name => $value) {
+            if (empty($value)) {
+                $missingKeys[] = $name;
+            }
+        }
+
+        if (! empty($missingKeys)) {
+            $keyNames = implode(', ', $missingKeys);
+            throw new KeyMissingException("Some required key(s) has no value: {$keyNames}");
         }
 
         return $key;
@@ -205,16 +222,10 @@ class Model extends BaseModel
      * Delete the model from the database.
      *
      * @return bool|null
-     *
-     * @throws \Exception
      */
     public function delete()
     {
-        foreach ($this->getKey() as $keyName => $keyValue) {
-            if (empty($keyValue)) {
-                throw new Exception("{$keyName} must be defined but missing.");
-            }
-        }
+        $key = $this->getKey();
 
         // If the model doesn't exist, there is nothing to delete so we'll just return
         // immediately and not do anything else. Otherwise, we will continue with a
@@ -227,7 +238,7 @@ class Model extends BaseModel
             return false;
         }
 
-        $this->newQuery()->deleteItem($this->getKey());
+        $this->newQuery()->deleteItem($key);
 
         $this->exists = false;
 
