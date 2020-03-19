@@ -15,6 +15,9 @@
         }
     ],
     "license": "MIT",
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
     "require": {
         "illuminate/support": "^6.0",
         "illuminate/container": "^6.0",
