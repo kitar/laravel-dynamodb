@@ -3,6 +3,7 @@
 namespace Kitar\Dynamodb\Tests\Query;
 
 use Aws\Result;
+use BadMethodCallException;
 use Mockery as m;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Model\Model;
@@ -174,6 +175,28 @@ class BuilderTest extends TestCase
         ];
         $query = $this->newQuery('Thread')
                       ->filter('ForumName', '=', 'Amazon DynamoDB')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
+    public function it_can_process_filter_with_short_syntax()
+    {
+        $params = [
+            'TableName' => 'Thread',
+            'FilterExpression' => '#1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ForumName'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Amazon DynamoDB'
+                ]
+            ]
+        ];
+        $query = $this->newQuery('Thread')
+                      ->filter('ForumName', 'Amazon DynamoDB')
                       ->scan();
 
         $this->assertEquals($params, $query['params']);
@@ -779,5 +802,15 @@ class BuilderTest extends TestCase
             'ForumName' => 'Laravel',
             'Subject' => 'Laravel Thread 1'
         ]);
+    }
+
+    /** @test */
+    public function it_can_forward_call_to_unknown_method()
+    {
+        $query = $this->newQuery('Thread');
+
+        $this->expectException(BadMethodCallException::class);
+
+        $query->filterNotIn(['foo', 'bar']);
     }
 }

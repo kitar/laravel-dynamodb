@@ -361,6 +361,7 @@ class Builder extends BaseBuilder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately.
         if ($this->invalidOperator($operator)) {
+            $operator = $this->expression_attributes->addValue($operator);
             [$value, $operator] = [$operator, '='];
         }
 

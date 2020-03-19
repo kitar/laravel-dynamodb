@@ -3,6 +3,7 @@
 namespace Kitar\Dynamodb;
 
 use Aws\Sdk as AwsSdk;
+use Aws\DynamoDb\DynamoDbClient;
 use Illuminate\Database\Connection as BaseConnection;
 
 class Connection extends BaseConnection
@@ -69,6 +70,16 @@ class Connection extends BaseConnection
         ]);
 
         return $sdk->createDynamoDb();
+    }
+
+    /**
+     * Set the DynamoDB client.
+     * @param DynamoDbClient $client
+     * @return void
+     */
+    public function setClient(DynamoDbClient $client)
+    {
+        $this->client = $client;
     }
 
     /**
