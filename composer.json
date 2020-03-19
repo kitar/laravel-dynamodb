@@ -16,7 +16,8 @@
     ],
     "license": "MIT",
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/phpunit",
+        "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
     },
     "require": {
         "illuminate/support": "^6.0",
