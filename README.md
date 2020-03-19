@@ -1,5 +1,8 @@
 # Laravel DynamoDB (under development)
 
+[![test](https://github.com/kitar/laravel-dynamodb/workflows/test/badge.svg)](https://github.com/kitar/laravel-dynamodb/actions)
+[![codecov](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master/graph/badge.svg)](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master)
+
 This package provides QueryBuilder for DynamoDB.
 
 - [Motivation](#motivation)
