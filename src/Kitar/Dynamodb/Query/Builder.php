@@ -445,7 +445,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
             $this->grammar->compileConditions($this->filter_query),
             $this->grammar->compileConditions($this->condition_query),
-            $this->grammar->compileConditions($this->key_condition_query),
+            $this->grammar->compileConditions($this->key_condition_query)
         );
 
         // Compile rest of attributes.
@@ -459,7 +459,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileDynamodbLimit($this->limit),
             $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),
             $this->grammar->compileConsistentRead($this->consistent_read),
-            $this->grammar->compileExpressionAttributes($this->expression_attributes),
+            $this->grammar->compileExpressionAttributes($this->expression_attributes)
         );
 
         // Dry run.
