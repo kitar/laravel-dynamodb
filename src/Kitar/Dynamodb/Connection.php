@@ -37,15 +37,6 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Get the DynamoDB Client object.
-     * @return \Aws\Dynamodb\DynamoDbClient
-     */
-    public function getDynamodbClient()
-    {
-        return $this->client;
-    }
-
-    /**
      * @inheritdoc
      */
     public function getDriverName()
@@ -54,11 +45,30 @@ class Connection extends BaseConnection
     }
 
     /**
+     * Get the DynamoDB Client object.
+     * @return \Aws\Dynamodb\DynamoDbClient
+     */
+    public function getClient()
+    {
+        return $this->client;
+    }
+
+    /**
+     * Set the DynamoDB client.
+     * @param DynamoDbClient $client
+     * @return void
+     */
+    public function setClient(DynamoDbClient $client)
+    {
+        $this->client = $client;
+    }
+
+    /**
      * Create a new MongoDB client.
      * @param array $config
      * @return \Aws\Dynamodb\DynamoDbClient
      */
-    public function createClient(array $config)
+    protected function createClient(array $config)
     {
         $sdk = new AwsSdk([
             'region' => $config['region'] ?? 'us-east-1',
@@ -70,16 +80,6 @@ class Connection extends BaseConnection
         ]);
 
         return $sdk->createDynamoDb();
-    }
-
-    /**
-     * Set the DynamoDB client.
-     * @param DynamoDbClient $client
-     * @return void
-     */
-    public function setClient(DynamoDbClient $client)
-    {
-        $this->client = $client;
     }
 
     /**

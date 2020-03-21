@@ -35,6 +35,7 @@ class Builder extends BaseBuilder
 
     /**
      * The key/values to update.
+     * @var array
      */
     public $updates = [
         'set' => [],
@@ -42,7 +43,7 @@ class Builder extends BaseBuilder
     ];
 
     /**
-     * LastEvaluatedKey attribute.
+     * LastEvaluatedKey option.
      * @var array|null
      */
     public $exclusive_start_key;
@@ -60,10 +61,7 @@ class Builder extends BaseBuilder
     public $dry_run = false;
 
     /**
-     * ** experimental **
-     * If set, all response items will be converted to
-     * this class using (new $model_class)->newFromBuilder($item).
-     *
+     * The model class name used to transform the DynamoDB responses.
      * @var string|null
      */
     public $model_class;
@@ -72,40 +70,47 @@ class Builder extends BaseBuilder
      * The ExpressionAttributes object.
      * @var Kitar\Dynamodb\Query\ExpressionAttributes
      */
-    public $expression_attributes;
+    protected $expression_attributes;
 
     /**
      * Available where methods which will pass to dedicated queries.
      * @var array
      */
-    public $available_wheres;
+    protected $available_wheres;
 
     /**
      * The attribute name to place compiled wheres.
      * @var string
      */
-    public $where_as;
+    protected $where_as;
 
     /**
      * Dedicated query for building FilterExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
-    public $filter_query;
+    protected $filter_query;
 
     /**
      * Dedicated query for building ConditionExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
-    public $condition_query;
+    protected $condition_query;
 
     /**
      * Dedicated query for building KeyConditionExpression.
      * @var Kitar\Dynamodb\Query\Builder
      */
-    public $key_condition_query;
+    protected $key_condition_query;
 
     /**
-     * @inheritdoc
+     * Create a new query builder instance.
+     *
+     * @param Kitar\Dynamodb\Connection $connection
+     * @param Kitar\Dynamodb\Query\Grammar $grammar
+     * @param Kitar\Dynamodb\Query\Processor $processor
+     * @param Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
+     * @param bool $is_nested_query
+     * @return void
      */
     public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null, $is_nested_query = false)
     {
@@ -124,6 +129,7 @@ class Builder extends BaseBuilder
 
     /**
      * Set the index name.
+     *
      * @param string $index
      * @return $this
      */
@@ -136,6 +142,7 @@ class Builder extends BaseBuilder
 
     /**
      * Set the key.
+     *
      * @param array $key
      * @return $this
      */
@@ -148,7 +155,6 @@ class Builder extends BaseBuilder
 
     /**
      * Set the ExclusiveStartKey option.
-     * Unlike other methods, this $key should be marshaled　beforehand.
      *
      * @param array $key
      * @return $this
@@ -162,6 +168,7 @@ class Builder extends BaseBuilder
 
     /**
      * Set the ConsistentRead option.
+     *
      * @param bool $active
      * @return $this
      */
@@ -173,7 +180,8 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the dry run option. It'll return compiled params instead of calling DynamoDB.
+     * Set the dry run option.
+     *
      * @param bool $active
      * @return $this
      */
@@ -185,11 +193,11 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * ** experimental **
-     * If set, all response items will be converted to
-     * this class using (new $model_class)->newFromBuilder($item).
+     * If set, response items will be converted to the model instance by using:
+     * (new $model_class)->newFromBuilder($item).
      *
-     * @var string|null
+     * @var string
+     * @return $this
      */
     public function usingModel($class_name)
     {
@@ -200,10 +208,11 @@ class Builder extends BaseBuilder
 
     /**
      * Set key name of wheres. eg. FilterExpression
+     *
      * @param string $condition_key_name
      * @return $this
      */
-    public function whereAs($condition_key_name)
+    protected function whereAs($condition_key_name)
     {
         $this->where_as = $condition_key_name;
 
@@ -211,9 +220,20 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Get the where_as attribute.
+     *
+     * @return string
+     */
+    public function getWhereAs()
+    {
+        return $this->where_as;
+    }
+
+    /**
      * Get item.
+     *
      * @param array|null $key
-     * @return Illuminate\Support\Collection|null
+     * @return array|null
      */
     public function getItem($key = null)
     {
@@ -226,6 +246,7 @@ class Builder extends BaseBuilder
 
     /**
      * Put item.
+     *
      * @param array $item
      * @return \Aws\Result
      */
@@ -238,22 +259,22 @@ class Builder extends BaseBuilder
 
     /**
      * Delete item.
-     * @param array $key|null;
-     * @return \Aws\Result;
+     *
+     * @param array $key;
+     * @return \Aws\Result
      */
     public function deleteItem($key)
     {
-        if ($key) {
-            $this->key($key);
-        }
+        $this->key($key);
 
         return $this->process('deleteItem', null);
     }
 
     /**
      * Update item.
-     * @param mixed $item
-     * @return void
+     *
+     * @param array $item
+     * @return \Aws\Result
      */
     public function updateItem($item)
     {
@@ -276,7 +297,8 @@ class Builder extends BaseBuilder
 
     /**
      * Query.
-     * @return Illuminate\Support\Collection
+     *
+     * @return Illuminate\Support\Collection|array
      */
     public function query()
     {
@@ -285,7 +307,8 @@ class Builder extends BaseBuilder
 
     /**
      * Scan.
-     * @return Illuminate\Support\Collection
+     *
+     * @return Illuminate\Support\Collection|array
      */
     public function scan()
     {
@@ -293,11 +316,13 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Make individual Builder instance for condition types. (Filter, Condition and KeyCondition)
+     * Make individual Builder instance for condition types.
+     *
      * @return void
      */
-    public function initializeDedicatedQueries()
+    protected function initializeDedicatedQueries()
     {
+        // Set builder instances.
         $this->filter_query = $this->newQuery()->whereAs('FilterExpression');
         $this->condition_query = $this->newQuery()->whereAs('ConditionExpression');
         $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
@@ -319,6 +344,7 @@ class Builder extends BaseBuilder
 
     /**
      * Perform where methods within dedicated queries.
+     *
      * @param string $method
      * @param array $parameters
      * @return $this
@@ -431,6 +457,7 @@ class Builder extends BaseBuilder
 
     /**
      * Execute DynamoDB call and returns processed result.
+     *
      * @param string $query_method
      * @param array $params
      * @param string $processor_method

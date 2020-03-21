@@ -17,7 +17,6 @@ class Grammar extends BaseGrammer
 
     /**
      * The operators for FilterExpression
-     *
      * @var array
      */
     protected $operators = [
@@ -49,6 +48,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the TableName attribute.
+     *
      * @param string $table_name
      * @return array
      */
@@ -61,6 +61,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the IndexName attribute.
+     *
      * @param string $index
      * @return array
      */
@@ -76,6 +77,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the Key attribute.
+     *
      * @param array $key
      * @return array
      */
@@ -91,6 +93,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the Item attribute.
+     *
      * @param array $key
      * @return array
      */
@@ -106,6 +109,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the Updates attribute.
+     *
      * @param array $updates
      * @return array
      */
@@ -160,6 +164,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the ConsistentRead attribute.
+     *
      * @param bool $bool
      * @return array
      */
@@ -175,6 +180,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the ProjectionExpression attribute.
+     *
      * @return void
      */
     public function compileProjectionExpression($columns, $expression_attributes)
@@ -196,6 +202,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a ExpressionAttriute* attributes.
+     *
      * @param ExpressionAttributes $expression_attributes
      * @return array
      */
@@ -215,6 +222,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile the FilterExpression/ConditionExpression/KeyConditionExpression attribute.
+     *
      * @param Builder $query
      * @return array
      */
@@ -224,7 +232,7 @@ class Grammar extends BaseGrammer
             return [];
         }
 
-        $key = $query->where_as;
+        $key = $query->getWhereAs();
 
         return [
             $key => preg_replace('/^where\s/', '', $this->compileWheres($query))
@@ -250,6 +258,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a attribute_exists condition.
+     *
      * @param array $where
      * @return string
      */
@@ -260,6 +269,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a attribute_not_exists condition.
+     *
      * @param array $where
      * @return string
      */
@@ -270,6 +280,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a attribute_type condition.
+     *
      * @param array $where
      * @return string
      */
@@ -280,6 +291,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a begins_with condition.
+     *
      * @param array $where
      * @return string
      */
@@ -290,6 +302,7 @@ class Grammar extends BaseGrammer
 
     /**
      * Compile a contains condition.
+     *
      * @param array $where
      * @return string
      */

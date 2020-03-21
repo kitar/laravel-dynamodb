@@ -36,7 +36,7 @@ class ConnectionTest extends TestCase
     {
         $this->assertInstanceOf(
             DynamoDbClient::class,
-            $this->connection->getDynamodbClient()
+            $this->connection->getClient()
         );
     }
 
@@ -54,7 +54,7 @@ class ConnectionTest extends TestCase
     {
         $this->connection->disconnect();
 
-        $this->assertNull($this->connection->getDynamodbClient());
+        $this->assertNull($this->connection->getClient());
     }
 
     /** @test */
