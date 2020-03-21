@@ -15,35 +15,59 @@ class Processor extends BaseProcessor
         $this->marshaler = new Marshaler;
     }
 
-    public function processSingleItem(Result $res, $model_class)
+    protected function unmarshal(Result $res)
     {
         $responseArray = $res->toArray();
 
         if (! empty($responseArray['Item'])) {
-            $item = $this->marshaler->unmarshalItem($responseArray['Item']);
+            $responseArray['Item'] = $this->marshaler->unmarshalItem($responseArray['Item']);
+        }
 
-            if ($model_class) {
-                $item = (new $model_class)->newFromBuilder($item);
+        if (! empty($responseArray['Items'])) {
+            foreach ($responseArray['Items'] as &$item) {
+                $item = $this->marshaler->unmarshalItem($item);
             }
-
-            $responseArray['Item'] = $item;
         }
 
         return $responseArray;
     }
 
-    public function processMultipleItems(Result $res, $model_class)
+    public function processSingleItem(Result $awsResponse, $modelClass = null)
     {
-        $responseArray = $res->toArray();
+        $response = $this->unmarshal($awsResponse);
 
-        foreach ($responseArray['Items'] as &$item) {
-            $item = $this->marshaler->unmarshalItem($item);
-
-            if ($model_class) {
-                $item = (new $model_class)->newFromBuilder($item);
-            }
+        if (empty($modelClass)) {
+            return $response;
         }
 
-        return $responseArray;
+        if (! empty($response['Item'])) {
+            $item = (new $modelClass)->newFromBuilder($response['Item']);
+            unset($response['Item']);
+            $item->setMeta($response ?? null);
+            return $item;
+        }
+    }
+
+    public function processMultipleItems(Result $awsResponse, $modelClass = null)
+    {
+        $response = $this->unmarshal($awsResponse);
+
+        if (empty($modelClass)) {
+            return $response;
+        }
+
+        $items = collect();
+
+        foreach ($response['Items'] as $item) {
+            $item = (new $modelClass)->newFromBuilder($item);
+            $items->push($item);
+        }
+
+        unset($response['Items']);
+
+        return $items->map(function ($item) use ($response) {
+            $item->setMeta($response);
+            return $item;
+        });
     }
 }

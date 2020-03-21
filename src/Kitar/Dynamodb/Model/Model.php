@@ -33,6 +33,12 @@ class Model extends BaseModel
     protected $sortKeyDefault;
 
     /**
+     * The @metadata attribute of AWS\Result response.
+     * @var mixed
+     */
+    protected $meta;
+
+    /**
      * @inheritdoc
      */
     public function __construct(array $attributes = [])
@@ -250,12 +256,25 @@ class Model extends BaseModel
         return true;
     }
 
+    public function meta()
+    {
+        return $this->meta;
+    }
+
+    public function setMeta(array $meta)
+    {
+        $this->meta = $meta;
+    }
+
     /**
      * @inheritdoc
      */
     public function __call($method, $parameters)
     {
         $allowedBuilderMethods = [
+            "select",
+            "take",
+            "limit",
             "index",
             "key",
             "exclusiveStartKey",

@@ -38,9 +38,9 @@ class ProcessorTest extends TestCase
 
         $awsResult = new Result(json_decode($this->mocks['single_item_result'], true));
 
-        $result = $this->processor->processSingleItem($awsResult, null);
+        $item = $this->processor->processSingleItem($awsResult, null);
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $item);
     }
 
     /** @test */
@@ -50,9 +50,9 @@ class ProcessorTest extends TestCase
 
         $awsResult = new Result(json_decode($this->mocks['single_item_empty_result'], true));
 
-        $result = $this->processor->processSingleItem($awsResult, null);
+        $item = $this->processor->processSingleItem($awsResult, null);
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $item);
     }
 
     /** @test */
@@ -62,9 +62,9 @@ class ProcessorTest extends TestCase
 
         $awsResult = new Result(json_decode($this->mocks['multiple_items_result'], true));
 
-        $result = $this->processor->processMultipleItems($awsResult, null);
+        $items = $this->processor->processMultipleItems($awsResult, null);
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $items);
     }
 
     /** @test */
@@ -74,9 +74,9 @@ class ProcessorTest extends TestCase
 
         $awsResult = new Result(json_decode($this->mocks['multiple_items_empty_result'], true));
 
-        $result = $this->processor->processMultipleItems($awsResult, null);
+        $items = $this->processor->processMultipleItems($awsResult, null);
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected, $items);
     }
 
     /** @test */
@@ -84,9 +84,7 @@ class ProcessorTest extends TestCase
     {
         $awsResult = new Result(json_decode($this->mocks['single_item_result'], true));
 
-        $result = $this->processor->processSingleItem($awsResult, User::class);
-
-        $item = $result['Item'];
+        $item = $this->processor->processSingleItem($awsResult, User::class);
 
         $this->assertEquals(User::class, get_class($item));
         $this->assertEquals([
@@ -96,6 +94,7 @@ class ProcessorTest extends TestCase
             'Views' => 1000,
             'Name' => 'Amazon DynamoDB'
         ], $item->toArray());
+        $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }
 
     /** @test */
@@ -103,14 +102,15 @@ class ProcessorTest extends TestCase
     {
         $awsResult = new Result(json_decode($this->mocks['multiple_items_result'], true));
 
-        $result = $this->processor->processMultipleItems($awsResult, User::class);
+        $items = $this->processor->processMultipleItems($awsResult, User::class);
 
-        $item = $result['Items'][0];
+        $item = $items->first();
 
         $this->assertEquals(User::class, get_class($item));
         $this->assertEquals([
             'Category' => 'Amazon Web Services',
             'Name' => 'Amazon S3'
         ], $item->toArray());
+        $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }
 }

@@ -56,6 +56,15 @@ class AuthUserProviderTest extends TestCase
         ]);
     }
 
+    protected function sampleAwsResultEmpty()
+    {
+        return new Result([
+            '@metadata' => [
+                'statuscode' => 200
+            ]
+        ]);
+    }
+
     /** @test */
     public function it_can_retrieve_by_id()
     {
@@ -115,6 +124,28 @@ class AuthUserProviderTest extends TestCase
     }
 
     /** @test */
+    public function it_cannot_retrieve_by_id_if_not_exists()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'foo@bar.com'
+                ]
+            ]
+        ])->andReturn($this->sampleAwsResultEmpty());
+        $this->setConnectionResolver($connection);
+
+        $provider = new AuthUserProvider(new UserA);
+
+        $res = $provider->retrieveById('foo@bar.com');
+
+        $this->assertNull($res);
+
+    }
+
+    /** @test */
     public function it_can_retrieve_by_token()
     {
         $connection = $this->newConnectionMock();
@@ -133,6 +164,27 @@ class AuthUserProviderTest extends TestCase
         $res = $provider->retrieveByToken('foo@bar.com', 'valid_token');
 
         $this->assertInstanceOf(UserA::class, $res);
+    }
+
+    /** @test */
+    public function it_cannot_retrieve_by_token_if_not_exists()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'foo@bar.com'
+                ]
+            ]
+        ])->andReturn($this->sampleAwsResultEmpty());
+        $this->setConnectionResolver($connection);
+
+        $provider = new AuthUserProvider(new UserA);
+
+        $res = $provider->retrieveByToken('foo@bar.com', 'valid_token');
+
+        $this->assertNull($res);
     }
 
     /** @test */

@@ -27,11 +27,11 @@ class AuthUserProvider implements BaseUserProvider
 
         $this->model->$identifierName = $identifier;
 
-        $response = $this->model->getItem(
+        $user = $this->model->getItem(
             $this->model->getKey()
         );
 
-        return $response['Item'];
+        return $user;
     }
 
     /**
@@ -45,7 +45,7 @@ class AuthUserProvider implements BaseUserProvider
     {
         $user = $this->retrieveById($identifier);
 
-        if ($user->getRememberToken() == $token) {
+        if ($user && $user->getRememberToken() == $token) {
             return $user;
         }
     }
