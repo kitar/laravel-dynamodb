@@ -308,10 +308,15 @@ class Builder extends BaseBuilder
     /**
      * Scan.
      *
+     * @param  array $columns
      * @return Illuminate\Support\Collection|array
      */
-    public function scan()
+    public function scan($columns = [])
     {
+        if (! empty($columns)) {
+            $this->select($columns);
+        }
+
         return $this->process('scan', 'processMultipleItems');
     }
 

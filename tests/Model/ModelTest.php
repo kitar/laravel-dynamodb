@@ -2,6 +2,7 @@
 
 namespace Kitar\Dynamodb\Tests\Model;
 
+use Aws\Result;
 use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
@@ -211,6 +212,189 @@ class ModelTest extends TestCase
         $this->expectExceptionMessage('Some required key(s) has no value: partition, sort');
 
         $user->getKey();
+    }
+
+    /** @test */
+    public function it_can_process_find()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'p'
+                ]
+            ]
+        ];
+
+        $return = new Result([
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ]
+            ]
+        ]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        $user = UserA::find('p');
+        $this->assertInstanceOf(UserA::class, $user);
+    }
+
+    /** @test */
+    public function it_can_process_find_with_primary_key_and_sort_key()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 's'
+                ]
+            ]
+        ];
+
+        $return = new Result([
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 's'
+                ]
+            ]
+        ]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        $user = UserB::find(['partition' => 'p', 'sort' => 's']);
+        $this->assertInstanceOf(UserB::class, $user);
+    }
+
+    /** @test */
+    public function it_can_process_find_with_primary_key_and_default_sort_key()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 'sort_default'
+                ]
+            ]
+        ];
+
+        $return = new Result([
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 'sort_default'
+                ]
+            ]
+        ]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        $user = UserC::find('p');
+        $this->assertInstanceOf(UserC::class, $user);
+    }
+
+    /** @test */
+    public function it_can_process_find_with_overrided_sort_key()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 's'
+                ]
+            ]
+        ];
+
+        $return = new Result([
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ],
+                'sort' => [
+                    'S' => 's'
+                ]
+            ]
+        ]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        $user = UserC::find([
+            'partition' => 'p',
+            'sort' => 's'
+        ]);
+        $this->assertInstanceOf(UserC::class, $user);
+    }
+
+    /** @test */
+    public function it_can_process_find_with_keys_not_exists()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'foo'
+                ]
+            ]
+        ];
+
+        $return = new Result([]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        $user = UserA::find('foo');
+        $this->assertNull($user);
+    }
+
+    /** @test */
+    public function it_cannot_process_find_with_empty_argument()
+    {
+        $this->expectException(KeyMissingException::class);
+        UserA::find(null);
+
+        $this->expectException(KeyMissingException::class);
+        UserA::find('');
+    }
+
+    /** @test */
+    public function it_can_process_all()
+    {
+        $params = [
+            'TableName' => 'User'
+        ];
+
+        $return = new Result([
+            'Items' => []
+        ]);
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('scan')->with($params)->andReturn($return);
+        $this->setConnectionResolver($connection);
+
+        UserA::all();
     }
 
     /** @test */

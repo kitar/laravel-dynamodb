@@ -767,6 +767,28 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_scan_with_columns_specified()
+    {
+        $method = 'scan';
+        $params = [
+            'TableName' => 'Forum',
+            'ProjectionExpression' => '#1, #2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'foo',
+                '#2' => 'bar'
+            ]
+        ];
+        $processor = 'processMultipleItems';
+
+        $query = $this->newQuery('Forum')
+                      ->scan(['foo', 'bar']);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
     public function it_can_process_process()
     {
         $connection = m::mock(Connection::class);

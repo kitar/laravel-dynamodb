@@ -98,6 +98,38 @@ class Model extends BaseModel
     }
 
     /**
+     * Find a model by its primary (partition) key or key array.
+     *
+     * @param string|array $key
+     * @return static|null
+     */
+    public static function find($key)
+    {
+        if (empty($key)) {
+            throw new KeyMissingException("Primary (Partition) key has no value.");
+        }
+
+        if (is_string($key)) {
+            $model = new static;
+            $model->setAttribute($model->getKeyName(), $key);
+            $key = $model->getKey();
+        }
+
+        return static::getItem($key);
+    }
+
+    /**
+     * Get all of the models from the database.
+     *
+     * @param  array $columns
+     * @return Illuminate\Database\Eloquent\Collection
+     */
+    public static function all($columns = [])
+    {
+        return static::scan($columns);
+    }
+
+    /**
      * Save the model to the database.
      *
      * @param  array  $options

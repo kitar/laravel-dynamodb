@@ -23,15 +23,7 @@ class AuthUserProvider implements BaseUserProvider
      */
     public function retrieveById($identifier)
     {
-        $identifierName = $this->model->getAuthIdentifierName();
-
-        $this->model->$identifierName = $identifier;
-
-        $user = $this->model->getItem(
-            $this->model->getKey()
-        );
-
-        return $user;
+        return $this->model->find($identifier);
     }
 
     /**
