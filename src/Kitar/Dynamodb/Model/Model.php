@@ -109,7 +109,7 @@ class Model extends BaseModel
             throw new KeyMissingException("Primary (Partition) key has no value.");
         }
 
-        if (is_string($key)) {
+        if (is_string($key) || is_numeric($key)) {
             $model = new static;
             $model->setAttribute($model->getKeyName(), $key);
             $key = $model->getKey();

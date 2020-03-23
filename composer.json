@@ -1,6 +1,6 @@
 {
     "name": "kitar/laravel-dynamodb",
-    "description": "DynamoDB QueryBuilder for Laravel.",
+    "description": "A DynamoDB based Eloquent model and Query builder for Laravel.",
     "keywords": [
         "laravel",
         "dynamodb",

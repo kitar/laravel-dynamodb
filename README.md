@@ -1,52 +1,65 @@
-# Laravel DynamoDB (under development)
+# Laravel DynamoDB
 
 [![test](https://github.com/kitar/laravel-dynamodb/workflows/test/badge.svg)](https://github.com/kitar/laravel-dynamodb/actions)
 [![codecov](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master/graph/badge.svg)](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master)
 
-This package provides QueryBuilder for DynamoDB.
+A DynamoDB based Eloquent model and Query builder for Laravel.
 
 - [Motivation](#motivation)
 - [Installation](#installation)
-    - [Laravel](#laravel)
-    - [Non-Laravel Projects](#non-laravel-projects)
-- [Example Usage](#example-usage)
-    - [Sample Data](#sample-data)
-    - [Working with Items and Attributes](#working-with-items-and-attributes)
-        - [GetItem](#getitem)
-        - [PutItem](#putitem)
-        - [UpdateItem](#updateitem)
-        - [DeleteItem](#deleteitem)
-    - [Projection Expressions](#projection-expressions)
-    - [Condition Expressions](#condition-expressions)
-        - [Sample Item](#sample-item)
-        - [Preventing Overwrites of an Existing Item](#preventing-overwrites-of-an-existing-item)
-        - [Checking for Attributes in an Item](#checking-for-attributes-in-an-item)
-    - [Working with Queries in DynamoDB](#working-with-queries-in-dynamodb)
-        - [Key Condition Expression](#key-condition-expression)
-        - [Filter Expressions for Query](#filter-expressions-for-query)
-    - [Working with Scans in DynamoDB](#working-with-scans-in-dynamodb)
-        - [Filter Expressions for Scan](#filter-expressions-for-scan)
-        - [Paginating the Results](#paginating-the-results)
-    - [Using Global Secondary Indexes in DynamoDB](#using-global-secondary-indexes-in-dynamodb)
-        - [Querying a Global Secondary Index](#querying-a-global-secondary-index)
-- [Models](#models)
-    - [Basic Usage of Model](#basic-usage-of-model)
-        - [Calling Builder methods through model](#calling-builder-methods-through-model)
-        - [CRUD operations](#crud-operations)
-- [Authentication](#authentication)
-    - [Make user model](#make-user-model)
-    - [Make custom user provider](#make-custom-user-provider)
-    - [Register custom user provider](#register-custom-user-provider)
-    - [Add config for user provider](#add-config-for-user-provider)
+  * [Laravel](#laravel)
+  * [Non-Laravel projects](#non-laravel-projects)
+- [Sample data](#sample-data)
+- [Model](#model)
+  * [Extending the base model](#extending-the-base-model)
+  * [Basic Usage](#basic-usage)
+    + [Retrieving all models](#retrieving-all-models)
+    + [Retrieving a model](#retrieving-a-model)
+    + [save()](#save)
+    + [update()](#update)
+    + [delete()](#delete)
+  * [Advanced Queries](#advanced-queries)
+- [Authentication with model](#authentication-with-model)
+  * [Register custom user provider](#register-custom-user-provider)
+  * [Change auth config](#change-auth-config)
+- [Query Builder](#query-builder)
+  * [Basic Usage](#basic-usage-1)
+    + [getItem()](#getitem)
+    + [putItem()](#putitem)
+    + [updateItem()](#updateitem)
+    + [deleteItem()](#deleteitem)
+  * [Projection Expressions](#projection-expressions)
+    + [select()](#select)
+  * [Condition Expressions](#condition-expressions)
+    + [condition()](#condition)
+    + [conditionIn()](#conditionin)
+    + [conditionBetween()](#conditionbetween)
+  * [Working with Queries](#working-with-queries)
+    + [query() and keyCondition()](#query-and-keycondition)
+    + [keyConditionBetween()](#keyconditionbetween)
+  * [Working with Scans](#working-with-scans)
+    + [scan()](#scan)
+  * [Filtering the Results](#filtering-the-results)
+    + [filter()](#filter)
+    + [filterIn()](#filterin)
+    + [filterBetween()](#filterbetween)
+  * [Paginating the Results](#paginating-the-results)
+    + [exclusiveStartKey()](#exclusivestartkey)
+  * [Using Global Secondary Indexes](#using-global-secondary-indexes)
+    + [index()](#index)
+  * [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter)
+    + [Comparators](#comparators)
+    + [functions](#functions)
+- [Testing](#testing)
 
 ## Motivation
 
-I started trying to make simple QueryBuilder because:
-
 - I want to use DynamoDB with Laravel. (e.g., authenticate with custom user provider)
 - I want to use a simple API which doesn't need to worry about cumbersome things like manually handling Expression Attributes.
-- I don't want to make it fully compatible with Eloquent because DynamoDB looks quite different from relational databases.
-- However, I want to extend Laravel's code as much as I can to keep additional implementation simple.
+- I want to extend Laravel's code as much as I can to:
+    - Rely on Laravel's robust codes.
+    - keep the additional implementation simple and maintainable.
+- I don't want to make it fully compatible with Eloquent because DynamoDB is different from relational databases.
 - I'm longing for [jessengers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb). What if we have that for DynamoDB?
 
 ## Installation
@@ -59,6 +72,8 @@ $ composer require kitar/laravel-dynamodb
 
 ### Laravel
 
+> We only support Laravel 6+ (6.x, 7.x).
+
 Add dynamodb configs to config/database.php:
 
 ```php
@@ -66,9 +81,9 @@ Add dynamodb configs to config/database.php:
 
     'dynamodb' => [
         'driver' => 'dynamodb',
-        'region' => 'your-region',
-        'access_key' => 'your-access-key',
-        'secret_key' => 'your-secret-key'
+        'region' => env('AWS_DEFAULT_REGION'),
+        'access_key' => env('AWS_ACCESS_KEY_ID'),
+        'secret_key' => env('AWS_SECRET_ACCESS_KEY')
     ],
 
     ...
@@ -76,265 +91,78 @@ Add dynamodb configs to config/database.php:
 ],
 ```
 
-In case your Laravel version does NOT autoload the packages, add the service provider to config/app.php:
-
-```php
-Kitar\Dynamodb\DynamodbServiceProvider::class
-```
-
 ### Non-Laravel projects
 
-For usage outside Laravel, you can create the connection manually and start querying.
+For usage outside Laravel, you can create the connection manually and start querying with [Query Builder](#query-builder).
 
 ```php
 $connection = new Kitar\Dynamodb\Connection([
-    'region' => 'your-region',
-    'access_key' => 'your-access-key',
-    'secret_key' => 'your-secret-key'
+    'region' => env('AWS_DEFAULT_REGION'),
+    'access_key' => env('AWS_ACCESS_KEY_ID'),
+    'secret_key' => env('AWS_SECRET_ACCESS_KEY')
 ]);
 
 $connection->table('your-table')->...
 ```
 
-## Example Usage
+## Sample data
 
-In this section, we'll make queries similar to examples in [DynamoDB official document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithDynamo.html).
+Many of the example codes in this document are querying to [DynamoDB's official sample data](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SampleData.LoadData.html). If you want to try these codes with actual DynamoDB tables, it's handy to load them to your tables before.
 
-### Sample Data
+## Model
 
-If you want to try these commands with actual DynamoDB tables, it's handy to use [DynamoDB's sample data](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SampleData.LoadData.html).
+DynamoDB model extends Eloquent model so that we can use familiar features such as mutators, serialization, etc.
 
-### Working with Items and Attributes
+The main difference between Eloquent model and DynamoDB model is:
 
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html)
+- Eloquent model
+    - Can handle relations.
+    - Forward calls to model (Eloquent) query builder. (e.g., `create`, `createOrFirst` `where` `with`)
+- DynamoDB model
+    - Cannot handle relations.
+    - Forward calls to database (DynamoDB) query builder. (e.g., `getItem`, `putItem`, `scan`, `filter`)
 
-#### GetItem
+### Extending the base model
+
+Most of the attributes are the same as the original Eloquent model, but there are few DynamoDB-specific attributes.
+
+| Name           | Required | Description                     |
+|----------------|----------|---------------------------------|
+| table          | yes      | Name of the Table.              |
+| primaryKey     | yes      | Name of the Partition Key.      |
+| sortKey        |          | Name of the Sort Key.           |
+| sortKeyDefault |          | Default value for the Sort Key. |
+
+For example, if our table has only partition key, the model will look like this:
 
 ```php
-$response = DB::table('ProductCatalog')
-                ->getItem(['Id' => 101]);
+use Kitar\Dynamodb\Model\Model;
+
+class ProductCatalog extends Model
+{
+    protected $table = 'ProductCatalog';
+    protected $primaryKey = 'Id';
+    protected $fillable = ['Id', 'Price', 'Title'];
+}
 ```
 
-> Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
-
-#### PutItem
+If our table also has sort key:
 
 ```php
-$response = DB::table('Thread')
-                ->putItem([
-                    'ForumName' => 'Amazon DynamoDB',
-                    'Subject' => 'New discussion thread',
-                    'Message' => 'First post in this thread',
-                    'LastPostedBy' => 'fred@example.com',
-                    'LastPostedDateTime' => '201603190422'
-              ]);
+use Kitar\Dynamodb\Model\Model;
+
+class Thread extends Model
+{
+    protected $table = 'Thread';
+    protected $primaryKey = 'ForumName';
+    protected $sortKey = 'Subject';
+    protected $fillable = ['ForumName', 'Subject'];
+}
 ```
 
-#### UpdateItem
-
-Currently, we only support simple SET and REMOVE actions.
-
-If value is set, `updateItem` will SET them.
+If we set `sortKeyDefault`, it will be used when we instantiate or call `find` without sort key.
 
 ```php
-DB::table('Thread')
-    ->key([
-        'ForumName' => 'Laravel',
-        'Subject' => 'Laravel Thread 1'
-    ])->updateItem([
-        'LastPostedBy' => 'User A', // SET
-        'Replies' => 1 // SET
-    ]);
-```
-
-If value is null, `updateItem` will REMOVE them.
-
-```php
-DB::table('Thread')
-    ->key([
-        'ForumName' => 'Laravel',
-        'Subject' => 'Laravel Thread 1'
-    ])->updateItem([
-        'LastPostedBy' => null, // REMOVE
-        'Replies' => null, // REMOVE
-        'Message' => 'Updated' // SET
-    ]);
-```
-
-#### DeleteItem
-
-```php
-DB::table('Thread')
-    ->deleteItem([
-        'ForumName' => 'Amazon DynamoDB',
-        'Subject' => 'New discussion thread'
-    ]);
-```
-
-### Projection Expressions
-
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ProjectionExpressions.html)
-
-Use `select` clause for Projection Expressions.
-
-```php
-$response = DB::table('ProductCatalog')
-                ->select('Price', 'Title')
-                ->getItem(['Id' => 101]);
-```
-
-### Condition Expressions
-
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ConditionExpressions.html)
-
-#### Sample item
-
-This section uses an additional sample item. Use this command to add it.
-
-```php
-DB::table('ProductCatalog')
-    ->putItem([
-        'Id' => 456,
-        'ProductCategory' => 'Sporting Goods',
-        'Price' => 650
-    ]);
-```
-
-#### Preventing Overwrites of an Existing Item
-
-Use `condition` clause to build Condition Expressions. This works basically same as original `where` clause, but it's for the ConditionExpression.
-
-```php
-DB::table('ProductCatalog')
-    ->condition('Id', 'attribute_not_exists')
-    ->putItem([
-        'Id' => 456,
-        'ProductCategory' => 'Can I overwrite?'
-    ]);
-```
-
-#### Checking for Attributes in an Item
-
-```php
-DB::table('ProductCatalog')
-    ->condition('Price', 'attribute_not_exists')
-    ->deleteItem([
-        'Id' => 456
-    ]);
-```
-
-> We can also specify functions instead of operators in `where` clause. In the case above, `attriute_not_exists`.
-
-### Working with Queries in DynamoDB
-
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html)
-
-#### Key Condition Expression
-
-Use `keyCondition` clause to build Key Conditions.
-
-```php
-$response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->query();
-```
-
-```php
-$response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
-                ->query();
-```
-
-```php
-$response = DB::table('Reply')
-                ->keyCondition('Id', '=', 'Amazon DynamoDB#DynamoDB Thread 1')
-                ->keyCondition('ReplyDateTime', 'begins_with', '2015-09')
-                ->query();
-```
-
-#### Filter Expressions for Query
-
-Use `filter` clause to build Filter Conditions.
-
-For `query`, KeyConditionExprssion is required, so we specify both KeyConditionExpression and FilterExpression.
-
-```php
-$response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->keyCondition('Subject', '=', 'DynamoDB Thread 1')
-                ->filter('Views', '>', 3)
-                ->query();
-```
-
-### Working with Scans in DynamoDB
-
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Scan.html)
-
-#### Filter Expressions for Scan
-
-```php
-$response = DB::table('Thread')
-                ->filter('LastPostedBy', '=', 'User A')
-                ->scan();
-```
-
-#### Paginating the Results
-
-If there are more results, the result contains `LastEvaluatedKey`.
-
-```php
-$response = DB::table('ProductCatalog')
-                ->limit(5)
-                ->scan();
-
-$response['LastEvaluatedKey']; // array
-```
-
-Pass `LastEvaluatedKey` to the `exclusiveStartKey` clause to retrieve the next results.
-
-```php
-$response = DB::table('ProductCatalog')
-                ->exclusiveStartKey($response['LastEvaluatedKey'])
-                ->limit(5)
-                ->scan();
-```
-
-### Using Global Secondary Indexes in DynamoDB
-
-[corresponding document](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html)
-
-#### Querying a Global Secondary Index
-
-Use `index` clause to specify IndexName.
-
-```php
-$response = DB::table('Reply')
-                ->index('PostedBy-Message-index')
-                ->keyCondition('PostedBy', '=', 'User A')
-                ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
-                ->query();
-```
-
-## Models
-
-`Kitar\Dynamodb\Model\Model` is an experimental Model implementation for this package.
-
-It works like Eloquent Model, but instead of forwarding calls to "Model" Query, we forward call directly to "DynamoDB" Query.
-
-Because there is no "Model" Query, we can't use handy methods like `find` `create` `firstOrCreate` or something like that. We only have `save` `update` and `delete` for the Model methods to interact with DynamoDB. However, when we query through Model, DynamoDB's response items will be automatically converted to the model instance.
-
-### Basic Usage of Model
-
-Let's say we have some Authenticatable User model. (we'll use this example in the Authentication section as well)
-
-Most attributes are the same as the original Eloquent Model, but there are few DynamoDB specific attributes. `table` `primaryKey` `sortKey` and `sortKeyDefault`.
-
-```php
-<?php
-
-namespace App;
-
 use Kitar\Dynamodb\Model\Model;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -343,106 +171,112 @@ class User extends Model implements AuthenticatableContract
 {
     use Authenticatable;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'table_name';
-
-    /**
-     * The Primary (Partition) Key.
-     * @var string
-     */
+    protected $table = 'User';
     protected $primaryKey = 'id';
-
-    /**
-     * The Sort Key.
-     * @var string|null
-     */
     protected $sortKey = 'type';
-
-    /**
-     * The default value of the Sort Key.
-     * @var string|null
-     */
     protected $sortKeyDefault = 'profile';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'id', 'type'
+        'id', 'type', 'name'
     ];
 }
 ```
 
-#### Calling Builder methods through model
+> Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is optional, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model)) for more details.
+
+### Basic Usage
+
+#### Retrieving all models
 
 ```php
-$response = User::getItem([
+$products = ProductCatalog::scan();
+```
+
+or alternatively,
+
+```php
+$products = ProductCatalog::all();
+```
+
+> DynamoDB can only handle result set up to 1MB per call, so we have to paginate if there are more results. see [Paginating the Results](#paginating-the-results) for more details.
+
+#### Retrieving a model
+
+If the model has only partition key:
+
+```php
+ProductCatalog::find(101);
+```
+
+If the model also has sort key:
+
+```php
+Thread::find([
+    'ForumName' => 'Amazon DynamoDB', // Partition key
+    'Subject' => 'DynamoDB Thread 1' // Sort key
+]);
+```
+
+If the model has sort key and `sortKeyDefault` is defined:
+
+```php
+User::find('foo@bar.com'); // Partition key. sortKeyDefault will be used for Sort key.
+```
+
+#### save()
+
+```php
+$user = new User([
     'id' => 'foo@bar.com',
-    'type' => 'profile'
+    'type' => 'profile' // Sort key. If we don't specify this, sortKeyDefault will be used.
 ]);
 
-$user = $response['Item'];
+$user->save();
 ```
 
 ```php
-$response = User::filter('type', '=', 'profile')
-                  ->scan();
-
-$users = $response['Items'];
+$user->name = 'foo';
+$user->save();
 ```
 
-#### CRUD operations
+#### update()
 
 ```php
-// create
-$newUser = new User([
-    'id' => 'foo@bar.com',
-    'type' => 'profile'
+$user->update([
+    'name' => 'foobar'
 ]);
-
-$newUser->save();
-
-// read
-$existingUser = User::getItem([
-    'id' => 'foo@bar.com',
-    'type' => 'profile'
-])['Item'];
-
-// update
-$existingUser->foo = 'bar';
-$existingUser->save();
-
-$existingUser->update([
-    'foo' => 'barbar'
-]);
-
-// delete
-$existingUser->delete();
 ```
 
-## Authentication
+#### delete()
 
-We can create Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/6.x/authentication#adding-custom-user-providers).
+```php
+$user->delete();
+```
 
-In this section, we'll use example `App\User` model above to implement DynamoDB authentication.
+### Advanced Queries
+We can use Query Builder functions through model such as `query` `scan` `filter` `condition` `keyCondition` etc.
 
-### Make user model
+For example:
 
-`Kitar\Dynamodb\Model\Model` is compatible to `Illuminate\Auth\Authenticatable`, so our `App\User` class is just using it.
+```php
+Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')
+        ->keyCondition('Subject', 'begins_with', 'DynamoDB')
+        ->filter('Views', '=', 0)
+        ->query();
+```
 
-### Make custom user provider
+Please refer to [Query Builder](#query-builder) for the details.
 
-We'll use `Kitar\Dynamodb\Model\AuthUserProvider` for this time.
+## Authentication with model
+
+We can create a Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/6.x/authentication#adding-custom-user-providers).
+
+To use authentication with the model, the model should implement `Illuminate\Contracts\Auth\Authenticatable` contract. In this section, we'll use the example `User` model above.
 
 ### Register custom user provider
 
-Then we register them at `boot()` method in `App/Providers/AuthServiceProvider.php`.
+After we prepare authenticatable model, we need to make the custom user provider. We can make it own (it's simple), but we'll use `Kitar\Dynamodb\Model\AuthUserProvider` in this section.
+
+To register custom user provider, add codes below in `App/Providers/AuthServiceProvider.php`.
 
 ```php
 use Kitar\Dynamodb\Model\AuthUserProvider;
@@ -457,9 +291,9 @@ public function boot()
 }
 ```
 
-### Add config for user provider
+### Change auth config
 
-Finally, we specify model class name in config at `config/database.php`.
+Then specify driver and model name for authentication in `config/auth.php`.
 
 ```php
 'providers' => [
@@ -476,6 +310,303 @@ Finally, we specify model class name in config at `config/database.php`.
     ],
 ],
 ```
+
+## Query Builder
+
+We can use Query Builder without model.
+
+```php
+$result = DB::table('Thread')->scan();
+```
+
+Or even outside Laravel.
+
+```php
+$connection = new Kitar\Dynamodb\Connection([
+    'region' => env('AWS_DEFAULT_REGION'),
+    'access_key' => env('AWS_ACCESS_KEY_ID'),
+    'secret_key' => env('AWS_SECRET_ACCESS_KEY')
+]);
+
+$result = $connection->table('Thread')->scan();
+
+```
+
+If we query through the model, we don't need to specify the table name, and the response will be the model instance(s).
+
+```php
+$threads = Thread::scan();
+```
+
+### Basic Usage
+
+#### getItem()
+
+```php
+$response = DB::table('ProductCatalog')
+                ->getItem(['Id' => 101]);
+```
+
+> Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
+
+#### putItem()
+
+```php
+DB::table('Thread')
+    ->putItem([
+        'ForumName' => 'Amazon DynamoDB',
+        'Subject' => 'New discussion thread',
+        'Message' => 'First post in this thread',
+        'LastPostedBy' => 'fred@example.com',
+        'LastPostedDateTime' => '201603190422'
+    ]);
+```
+
+#### updateItem()
+
+```php
+DB::table('Thread')
+    ->key([
+        'ForumName' => 'Laravel',
+        'Subject' => 'Laravel Thread 1'
+    ])->updateItem([
+        'LastPostedBy' => null, // REMOVE
+        'Replies' => null, // REMOVE
+        'Message' => 'Updated' // SET
+    ]);
+```
+
+Currently, we only support simple `SET` and `REMOVE` actions. If the attribute has value, it will be passed to `SET` action. If the value is null, it will be passed to `REMOVE` action.
+
+#### deleteItem()
+
+```php
+DB::table('Thread')
+    ->deleteItem([
+        'ForumName' => 'Amazon DynamoDB',
+        'Subject' => 'New discussion thread'
+    ]);
+```
+
+### Projection Expressions
+
+A Projection Expression is a string that identifies the attributes that web want. (It's like `select` statement for SQL)
+
+#### select()
+
+We can specify Projection Expressions in the same manner as the original `select` clause.
+
+```php
+$response = DB::table('ProductCatalog')
+                ->select('Price', 'Title')
+                ->getItem(['Id' => 101]);
+```
+
+### Condition Expressions
+
+When we manipulate data in Amazon DynamoDB table, we use `putItem`, `updateItem` and `DeleteItem`. We can use Condition Expressions to determine which items should be modified.
+
+#### condition()
+
+To specify Condition Expression, we use `condition` clause. This works basically same as the original `where` clause, but it's for Condition Expressions.
+
+```php
+DB::table('ProductCatalog')
+    ->condition('Id', 'attribute_not_exists')
+    ->putItem([
+        'Id' => 101,
+        'ProductCategory' => 'Can I overwrite?'
+    ]);
+```
+
+> Note that we specify `attribute_not_exists` for the operator of condition. This is DynamoDB-specific operator which called `function`. See [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter) for more details.
+
+OR statements
+
+```php
+DB::table('ProductCatalog')
+    ->condition('Id', 'attribute_not_exists')
+    ->orCondition('Price', 'attribute_not_exists)
+    ->putItem([...]);
+```
+
+AND statements
+
+```php
+DB::table('ProductCatalog')
+    ->condition('Id', 'attribute_not_exists')
+    ->condition('Price', 'attribute_not_exists)
+    ->putItem([...]);
+```
+
+#### conditionIn()
+
+```php
+ProductCatalog::key(['Id' => 101])
+                ->conditionIn('ProductCategory', ['Book', 'Bicycle'])
+                ->updateItem([
+                    'Description' => 'updated!'
+                ]);
+```
+
+#### conditionBetween()
+
+```php
+ProductCatalog::key(['Id' => 101])
+                ->conditionBetween('Price', [0, 10])
+                ->updateItem([
+                    'Description' => 'updated!'
+                ]);
+```
+
+### Working with Queries
+
+The Query operation in Amazon DynamoDB finds items based on primary key values.
+
+#### query() and keyCondition()
+
+When we `query`, we must specify `keyCondition` as well.
+
+We can use some comparison operators for sort key, but we must use the equality condition for the partition key.
+
+```php
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->keyCondition('Subject', 'begins_with', 'DynamoDB')
+                ->query();
+```
+
+#### keyConditionBetween()
+
+```php
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->keyConditionBetween('Subject', ['DynamoDB Thread 1', 'DynamoDB Thread 2'])
+                ->query();
+```
+
+### Working with Scans
+
+#### scan()
+
+```php
+$response = DB::table('Thread')->scan();
+```
+
+### Filtering the Results
+
+When we `query` or `scan`, we can filter results with Filter Expressions before it returned.
+
+It can't reduce the amount of read capacity, but it can reduce the size of traffic data.
+
+#### filter()
+
+```php
+$response = DB::table('Thread')
+                ->filter('LastPostedBy', '=', 'User A')
+                ->scan();
+```
+
+OR statement
+
+```php
+$response = DB::table('Thread')
+                ->filter('LastPostedBy', '=', 'User A')
+                ->orFilter('LastPostedBy', '=', 'User B')
+                ->scan();
+```
+
+AND statement
+
+```php
+$response = DB::table('Thread')
+                ->filter('LastPostedBy', '=', 'User A')
+                ->filter('Subject', 'begins_with', 'DynamoDB')
+                ->scan();
+```
+
+#### filterIn()
+
+```php
+$response = DB::table('Thread')
+                ->filterIn('LastPostedBy', ['User A', 'User B'])
+                ->scan();
+```
+
+#### filterBetween()
+
+```php
+$response = DB::table('ProductCatalog')
+                ->filterBetween('Price', [0, 100])
+                ->scan();
+```
+
+### Paginating the Results
+
+A single `query` or `scan` only returns a result set that fits within the 1 MB size limit. If there are more results, we need to paginate.
+
+#### exclusiveStartKey()
+
+If there are more results, the response contains `LastEvaluatedKey`.
+
+```php
+$response = DB::table('ProductCatalog')
+                ->limit(5)
+                ->scan();
+
+$response['LastEvaluatedKey']; // array
+```
+
+We can pass this key to `exclusiveStartKey` to get next results.
+
+```php
+$response = DB::table('ProductCatalog')
+                ->exclusiveStartKey($response['LastEvaluatedKey'])
+                ->limit(5)
+                ->scan();
+```
+
+### Using Global Secondary Indexes
+
+Some applications might need to perform many kinds of queries, using a variety of different attributes as query criteria. To support these requirements, you can create one or more global secondary indexes and issue `query` requests against these indexes in Amazon DynamoDB.
+
+#### index()
+
+Use `index` clause to specify Global Secondary Index name.
+
+```php
+$response = DB::table('Reply')
+                ->index('PostedBy-Message-index')
+                ->keyCondition('PostedBy', '=', 'User A')
+                ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
+                ->query();
+```
+
+### DynamoDB-specific operators for condition() and filter()
+
+For `condition` and `filter` clauses, we can use DynamoDB's comparators and functions.
+
+#### Comparators
+
+`=` `<>` `<` `<=` `>` `>=` can be used in the form of:
+
+```php
+filter($key, $comparator, $value);
+```
+
+#### functions
+
+Available functions are:
+
+```php
+filter($key, 'attribute_exists');
+filter($key, 'attribute_not_exists');
+filter($key, 'attribute_type', $type);
+filter($key, 'begins_with', $value);
+filter($key, 'contains', $value);
+```
+
+> `size` function is not supported at this time.
 
 ## Testing
 
