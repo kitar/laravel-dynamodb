@@ -24,6 +24,7 @@
         "illuminate/support": "^6.0|^7.0",
         "illuminate/container": "^6.0|^7.0",
         "illuminate/database": "^6.0|^7.0",
+        "illuminate/hashing": "^6.0|^7.0",
         "aws/aws-sdk-php": "^3.0"
     },
     "require-dev": {

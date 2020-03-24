@@ -286,8 +286,36 @@ public function boot()
     $this->registerPolicies();
 
     Auth::provider('dynamodb', function ($app, array $config) {
-        return new AuthUserProvider(new $config['model']);
+        return new AuthUserProvider(
+            $app['hash'],
+            $config['model'],
+            $config['api_token_name'] ?? null,
+            $config['api_token_index'] ?? null
+        );
     });
+}
+```
+
+### Modify LoginController
+
+The default authentication uses the `email` and `password` column to validate, which is not the primary key of the table. However, DynamoDB needs to use the primary key to identify, so we need to tweak the LoginController a bit.
+
+```php
+namespace App\Http\Controllers\Auth;
+
+class LoginController extends Controller
+{
+    ...
+
+    /**
+     * Get the login username to be used by the controller.
+     *
+     * @return string
+     */
+    public function username()
+    {
+        return 'your-primary-key';
+    }
 }
 ```
 
@@ -307,9 +335,13 @@ Then specify driver and model name for authentication in `config/auth.php`.
     'users' => [
         'driver' => 'dynamodb',
         'model' => App\User::class,
+        'api_token_name' => 'api_token',
+        'api_token_index' => 'api_token-index'
     ],
 ],
 ```
+
+`api_token_name` and `api_token_index` are optional, but we need them if we use api token authentication.
 
 ## Query Builder
 
@@ -564,6 +596,14 @@ $response = DB::table('ProductCatalog')
                 ->exclusiveStartKey($response['LastEvaluatedKey'])
                 ->limit(5)
                 ->scan();
+```
+
+If you are using Query Builder through model, you can access to `exclusiveStartKey` by:
+
+```php
+$products = ProductCatalog::limit(5)->scan();
+
+$products->first()->meta()['LastEvaluatedKey']; // array
 ```
 
 ### Using Global Secondary Indexes

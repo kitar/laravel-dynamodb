@@ -7,12 +7,20 @@ use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
+use Illuminate\Hashing\BcryptHasher;
 use Kitar\Dynamodb\Model\KeyMissingException;
 use Kitar\Dynamodb\Model\AuthUserProvider;
 
 class AuthUserProviderTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
+
+    protected $hasher;
+
+    protected function setUp() :void
+    {
+        $this->hasher = new BcryptHasher;
+    }
 
     protected function tearDown() :void
     {
@@ -48,6 +56,34 @@ class AuthUserProviderTest extends TestCase
                 ],
                 'remember_token' => [
                     'S' => 'valid_token'
+                ],
+                'api_token' => [
+                    'S' => 'valid_api_token'
+                ]
+            ],
+            '@metadata' => [
+                'statuscode' => 200
+            ]
+        ]);
+    }
+
+    protected function sampleAwsResultMultiple()
+    {
+        return new Result([
+            'Items' => [
+                [
+                    'partition' => [
+                        'S' => 'foo@bar.com'
+                    ],
+                    'password' => [
+                        'S' => 'foo'
+                    ],
+                    'remember_token' => [
+                        'S' => 'valid_token'
+                    ],
+                    'api_token' => [
+                        'S' => 'valid_api_token'
+                    ]
                 ]
             ],
             '@metadata' => [
@@ -79,7 +115,7 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $res = $provider->retrieveById('foo@bar.com');
 
@@ -103,7 +139,7 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserC);
+        $provider = new AuthUserProvider($this->hasher, UserC::class);
 
         $res = $provider->retrieveById('foo@bar.com');
 
@@ -116,7 +152,7 @@ class AuthUserProviderTest extends TestCase
         $connection = $this->newConnectionMock();
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserB);
+        $provider = new AuthUserProvider($this->hasher, UserB::class);
 
         $this->expectException(KeyMissingException::class);
 
@@ -137,12 +173,11 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $res = $provider->retrieveById('foo@bar.com');
 
         $this->assertNull($res);
-
     }
 
     /** @test */
@@ -159,7 +194,7 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $res = $provider->retrieveByToken('foo@bar.com', 'valid_token');
 
@@ -180,7 +215,7 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $res = $provider->retrieveByToken('foo@bar.com', 'valid_token');
 
@@ -201,7 +236,7 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $res = $provider->retrieveByToken('foo@bar.com', 'invalid_token');
 
@@ -212,11 +247,28 @@ class AuthUserProviderTest extends TestCase
     public function it_can_update_remember_token()
     {
         $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'foo@bar.com'
+                ]
+            ],
+            'UpdateExpression' => 'set #1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'remember_token'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'new_token'
+                ]
+            ]
+        ]);
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
-        $user = new UserA(['partition' => 'foo@bar.com']);
+        $user = (new UserA)->newFromBuilder(['partition' => 'foo@bar.com']);
 
         $provider->updateRememberToken($user, 'new_token');
 
@@ -224,7 +276,7 @@ class AuthUserProviderTest extends TestCase
     }
 
     /** @test */
-    public function it_can_retrieve_by_credentials()
+    public function it_can_retrieve_by_credentials_with_basic_credentials()
     {
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with([
@@ -237,13 +289,78 @@ class AuthUserProviderTest extends TestCase
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
-        $provider = new AuthUserProvider(new UserA);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $user = $provider->retrieveByCredentials([
-            'email' => 'foo@bar.com',
+            'partition' => 'foo@bar.com',
             'password' => 'foo'
         ]);
 
         $this->assertInstanceOf(UserA::class, $user);
+    }
+
+    /** @test */
+    public function it_can_retrieve_by_credentials_with_api_token()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('clientQuery')->with([
+            'TableName' => 'User',
+            'IndexName' => 'api_token-index',
+            'KeyConditionExpression' => '#1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'api_token'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'valid_api_token'
+                ]
+            ]
+        ])->andReturn($this->sampleAwsResultMultiple());
+        $this->setConnectionResolver($connection);
+
+        $provider = new AuthUserProvider($this->hasher, UserA::class, 'api_token', 'api_token-index');
+
+        $user = $provider->retrieveByCredentials([
+            'api_token' => 'valid_api_token',
+        ]);
+
+        $this->assertInstanceOf(UserA::class, $user);
+    }
+
+    /** @test */
+    public function it_cannot_retrieve_by_credentials_with_multiple_conditions()
+    {
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+
+        $result = $provider->retrieveByCredentials([
+            'partition' => 'foo@bar.com',
+            'foo' => 'bar'
+        ]);
+
+        $this->assertNull($result);
+    }
+
+    /** @test */
+    public function it_can_validate_credentials()
+    {
+        $user = new UserA([
+            'partition' => 'foo@bar.com',
+            'password' => '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G'
+        ]);
+
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+
+        $success = $provider->validateCredentials($user, [
+            'partition' => 'foo@bar.com',
+            'password'=> 'foo'
+        ]);
+
+        $fail = $provider->validateCredentials($user, [
+            'partition' => 'foo@bar.com',
+            'password' => 'bar'
+        ]);
+
+        $this->assertTrue($success);
+        $this->assertFalse($fail);
     }
 }
