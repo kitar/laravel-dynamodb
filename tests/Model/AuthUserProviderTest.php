@@ -341,6 +341,18 @@ class AuthUserProviderTest extends TestCase
     }
 
     /** @test */
+    public function it_cannot_retrieve_by_credentials_if_key_is_not_supported()
+    {
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+
+        $result = $provider->retrieveByCredentials([
+            'foo' => 'bar'
+        ]);
+
+        $this->assertNull($result);
+    }
+
+    /** @test */
     public function it_can_validate_credentials()
     {
         $user = new UserA([

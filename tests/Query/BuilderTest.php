@@ -388,6 +388,53 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_nested_filters()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '(((#1 = :1 and #2 = :2) or (#1 = :3 and #3 < :4)) or #3 >= :5)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ProductCategory',
+                '#2' => 'Brand',
+                '#3' => 'Price'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Bicycle'
+                ],
+                ':2' => [
+                    'S' => 'Mountain A'
+                ],
+                ':3' => [
+                    'S' => 'Book'
+                ],
+                ':4' => [
+                    'N' => 10
+                ],
+                ':5' => [
+                    'N' => 500
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')->filter(function ($query) {
+            $query->where(function ($query) {
+                $query->where(function ($query) {
+                    $query->where('ProductCategory', 'Bicycle');
+                    $query->where('Brand', 'Mountain A');
+                });
+                $query->orWhere(function ($query) {
+                    $query->where('ProductCategory', 'Book');
+                    $query->where('Price', '<', 10);
+                });
+            });
+            $query->orWhere('Price', '>=', 500);
+        })->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
     public function it_can_process_attribute_exists_function()
     {
         $params = [
