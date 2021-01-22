@@ -72,7 +72,7 @@ $ composer require kitar/laravel-dynamodb
 
 ### Laravel
 
-> We only support Laravel 6+ (6.x, 7.x).
+> We only support Laravel 6+.
 
 Add dynamodb configs to config/database.php:
 
@@ -172,11 +172,11 @@ class User extends Model implements AuthenticatableContract
     use Authenticatable;
 
     protected $table = 'User';
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'email';
     protected $sortKey = 'type';
     protected $sortKeyDefault = 'profile';
     protected $fillable = [
-        'id', 'type', 'name'
+        'name', 'email', 'password', 'type',
     ];
 }
 ```
@@ -226,7 +226,7 @@ User::find('foo@bar.com'); // Partition key. sortKeyDefault will be used for Sor
 
 ```php
 $user = new User([
-    'id' => 'foo@bar.com',
+    'email' => 'foo@bar.com',
     'type' => 'profile' // Sort key. If we don't specify this, sortKeyDefault will be used.
 ]);
 
@@ -268,7 +268,7 @@ Please refer to [Query Builder](#query-builder) for the details.
 
 ## Authentication with model
 
-We can create a Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/6.x/authentication#adding-custom-user-providers).
+We can create a Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/8.x/authentication#adding-custom-user-providers).
 
 To use authentication with the model, the model should implement `Illuminate\Contracts\Auth\Authenticatable` contract. In this section, we'll use the example `User` model above.
 
@@ -296,29 +296,6 @@ public function boot()
 }
 ```
 
-### Modify LoginController
-
-The default authentication uses the `email` and `password` column to validate, which is not the primary key of the table. However, DynamoDB needs to use the primary key to identify, so we need to tweak the LoginController a bit.
-
-```php
-namespace App\Http\Controllers\Auth;
-
-class LoginController extends Controller
-{
-    ...
-
-    /**
-     * Get the login username to be used by the controller.
-     *
-     * @return string
-     */
-    public function username()
-    {
-        return 'your-primary-key';
-    }
-}
-```
-
 ### Change auth config
 
 Then specify driver and model name for authentication in `config/auth.php`.
@@ -342,6 +319,45 @@ Then specify driver and model name for authentication in `config/auth.php`.
 ```
 
 `api_token_name` and `api_token_index` are optional, but we need them if we use api token authentication.
+
+### Registration Controller
+
+You might need to modify the registration controller. For example, if we use Laravel Breeze, the modification looks like below.
+
+```php
+class RegisteredUserController extends Controller
+{
+    ...
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', function ($attribute, $value, $fail) {
+                if (User::find($value)) {
+                    $fail('The '.$attribute.' has already been taken.');
+                }
+            }],
+            'password' => 'required|string|confirmed|min:8',
+        ]);
+
+        $user = new User([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+        $user->save();
+
+        Auth::login($user);
+
+        event(new Registered($user));
+
+        return redirect(RouteServiceProvider::HOME);
+    }
+}
+```
+
+There are two modifications. The first one is adding the closure validator for `email` instead of `unique` validator. The second one is using the `save()` method to create user instead of the `create()` method.
 
 ## Query Builder
 
