@@ -326,6 +326,8 @@ class Model extends BaseModel
             "keyCondition",
             "keyConditionIn",
             "keyConditionBetween",
+            'increment',
+            'decrement'
         ];
 
         if (! in_array($method, $allowedBuilderMethods)) {
