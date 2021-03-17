@@ -36,6 +36,15 @@ class ModelTest extends TestCase
         return $connection;
     }
 
+    protected function sampleAwsResultEmpty()
+    {
+        return new Result([
+            '@metadata' => [
+                'statuscode' => 200
+            ]
+        ]);
+    }
+
     /** @test */
     public function it_can_create_new_instance()
     {
@@ -446,6 +455,7 @@ class ModelTest extends TestCase
                 ]
             ],
             'UpdateExpression' => 'set #1 = :1',
+            'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
                 '#1' => 'name'
             ],
@@ -457,7 +467,7 @@ class ModelTest extends TestCase
         ];
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('updateItem')->with($params);
+        $connection->shouldReceive('updateItem')->with($params)->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
         $user = (new UserA)->newFromBuilder(['partition' => 'p']);

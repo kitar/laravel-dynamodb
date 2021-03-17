@@ -255,6 +255,7 @@ class AuthUserProviderTest extends TestCase
                 ]
             ],
             'UpdateExpression' => 'set #1 = :1',
+            'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
                 '#1' => 'remember_token'
             ],
@@ -263,7 +264,7 @@ class AuthUserProviderTest extends TestCase
                     'S' => 'new_token'
                 ]
             ]
-        ]);
+        ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);

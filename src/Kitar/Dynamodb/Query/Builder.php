@@ -274,7 +274,7 @@ class Builder extends BaseBuilder
      * Update item.
      *
      * @param array $item
-     * @return \Aws\Result
+     * @return array|null
      */
     public function updateItem($item)
     {
@@ -292,7 +292,7 @@ class Builder extends BaseBuilder
             }
         }
 
-        return $this->process('updateItem', null);
+        return $this->process('updateItem', 'processSingleItem');
     }
 
     /**
