@@ -274,7 +274,7 @@ class Builder extends BaseBuilder
      * Update item.
      *
      * @param array $item
-     * @return \Aws\Result
+     * @return array|null
      */
     public function updateItem($item)
     {
@@ -292,7 +292,41 @@ class Builder extends BaseBuilder
             }
         }
 
-        return $this->process('updateItem', null);
+        return $this->process('updateItem', 'processSingleItem');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function increment($column, $amount = 1, array $extra = [])
+    {
+        return $this->incrementOrDecrement($column, '+', $amount, $extra);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function decrement($column, $amount = 1, array $extra = [])
+    {
+        return $this->incrementOrDecrement($column, '-', $amount, $extra);
+    }
+
+    /**
+     * Increment or decrement column's value by a given amount.
+     *
+     * @param $column
+     * @param $symbol
+     * @param int $amount
+     * @param array $extra
+     * @return array|\Aws\Result|Aws\Result|Illuminate\Support\Collection
+     */
+    protected function incrementOrDecrement($column, $symbol, $amount = 1, array $extra = [])
+    {
+        $name = $this->expression_attributes->addName($column);
+        $value = $this->expression_attributes->addValue($amount);
+        $this->updates['set'][] = "{$name} = {$name} {$symbol} {$value}";
+
+        return $this->updateItem($extra);
     }
 
     /**

@@ -668,6 +668,7 @@ class BuilderTest extends TestCase
                 ]
             ],
             'UpdateExpression' => 'set #1 = :1, #2 = :2 remove #3, #4',
+            'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
                 '#1' => 'LastPostedBy',
                 '#2' => 'Replies',
@@ -683,6 +684,7 @@ class BuilderTest extends TestCase
                 ]
             ]
         ];
+        $processor = 'processSingleItem';
 
         $query = $this->newQuery('Thread')
              ->key([
@@ -697,7 +699,97 @@ class BuilderTest extends TestCase
 
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
-        $this->assertNull($query['processor']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_increment_value_of_attribute()
+    {
+        $method = 'updateItem';
+        $params = [
+            'TableName' => 'Thread',
+            'Key' => [
+                'ForumName' => [
+                    'S' => 'Laravel'
+                ],
+                'Subject' => [
+                    'S' => 'Laravel Thread 1'
+                ]
+            ],
+            'UpdateExpression' => 'set #1 = #1 + :1, #2 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Replies',
+                '#2' => 'LastPostedBy'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '2'
+                ],
+                ':2' => [
+                    'S' => 'User A'
+                ]
+            ],
+            'ReturnValues' => 'UPDATED_NEW'
+        ];
+
+        $query = $this->newQuery('Thread')
+            ->key([
+                'ForumName' => 'Laravel',
+                'Subject' => 'Laravel Thread 1'
+            ])->increment('Replies', 2, [
+                'LastPostedBy' => 'User A'
+            ]);
+
+        $processor = 'processSingleItem';
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_decrement_value_of_attribute()
+    {
+        $method = 'updateItem';
+        $params = [
+            'TableName' => 'Thread',
+            'Key' => [
+                'ForumName' => [
+                    'S' => 'Laravel'
+                ],
+                'Subject' => [
+                    'S' => 'Laravel Thread 1'
+                ]
+            ],
+            'UpdateExpression' => 'set #1 = #1 - :1, #2 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Replies',
+                '#2' => 'LastPostedBy'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '2'
+                ],
+                ':2' => [
+                    'S' => 'User A'
+                ]
+            ],
+            'ReturnValues' => 'UPDATED_NEW'
+        ];
+
+        $processor = 'processSingleItem';
+
+        $query = $this->newQuery('Thread')
+            ->key([
+                'ForumName' => 'Laravel',
+                'Subject' => 'Laravel Thread 1'
+            ])->decrement('Replies', 2, [
+                'LastPostedBy' => 'User A'
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
     }
 
     /** @test */
