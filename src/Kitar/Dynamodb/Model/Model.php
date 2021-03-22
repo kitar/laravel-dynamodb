@@ -188,19 +188,10 @@ class Model extends BaseModel
 
         return tap($this->newQuery()
             ->key($this->getKey())
-            ->{$method}($column, $amount, $extra), function () use($column, $amount, $method) {
+            ->{$method}($column, $amount, $extra), function ($response) use($column, $amount, $method) {
+            $this->forceFill($response['Attributes']);
+            $this->syncChanges();
 
-            $old = $this->{$column} ?? 0;
-            switch ($method) {
-                case 'increment':
-                    $old += $amount;
-                    break;
-                case 'decrement':
-                    $old -= $amount;
-                    break;
-            }
-
-            $this->setAttribute($column, $old);
             $this->fireModelEvent('updated', false);
         });
     }
