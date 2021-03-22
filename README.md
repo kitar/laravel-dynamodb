@@ -18,7 +18,7 @@ A DynamoDB based Eloquent model and Query builder for Laravel.
     + [save()](#save)
     + [update()](#update)
     + [delete()](#delete)
-    + [increment() / decrement()](#increment-/-decrement)
+    + [increment() / decrement()](#increment--decrement)
   * [Advanced Queries](#advanced-queries)
 - [Authentication with model](#authentication-with-model)
   * [Register custom user provider](#register-custom-user-provider)
@@ -659,7 +659,7 @@ $response = DB::table('Reply')
 
 ### Atomic Counter
 
-DynamoDB [supports Atomic Counter](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters). When we call `increment()` and `decrement()` through Model or Query Builder, Atomic Counter will be used under the hood.
+DynamoDB [supports Atomic Counter](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters). When we call `increment()` and `decrement()` [through Model](#increment--decrement) or Query Builder, Atomic Counter will be used under the hood.
 
 ```php
 DB::('Thread')->key([
