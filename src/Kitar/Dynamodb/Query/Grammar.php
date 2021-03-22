@@ -130,7 +130,8 @@ class Grammar extends BaseGrammer
         }
 
         return [
-            'UpdateExpression' => implode(' ', $expressions)
+            'UpdateExpression' => implode(' ', $expressions),
+            'ReturnValues' => 'UPDATED_NEW',
         ];
     }
 

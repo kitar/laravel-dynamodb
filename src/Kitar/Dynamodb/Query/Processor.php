@@ -29,6 +29,10 @@ class Processor extends BaseProcessor
             }
         }
 
+        if (! empty($responseArray['Attributes'])) {
+            $responseArray['Attributes'] = $this->marshaler->unmarshalItem($responseArray['Attributes']);
+        }
+
         return $responseArray;
     }
 
@@ -45,6 +49,10 @@ class Processor extends BaseProcessor
             unset($response['Item']);
             $item->setMeta($response ?? null);
             return $item;
+        }
+
+        if (! empty($response['Attributes'])) {
+            return $response;
         }
     }
 
