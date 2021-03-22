@@ -18,6 +18,7 @@ A DynamoDB based Eloquent model and Query builder for Laravel.
     + [save()](#save)
     + [update()](#update)
     + [delete()](#delete)
+    + [increment() / decrement()](#increment-/-decrement)
   * [Advanced Queries](#advanced-queries)
 - [Authentication with model](#authentication-with-model)
   * [Register custom user provider](#register-custom-user-provider)
@@ -47,6 +48,7 @@ A DynamoDB based Eloquent model and Query builder for Laravel.
     + [exclusiveStartKey()](#exclusivestartkey)
   * [Using Global Secondary Indexes](#using-global-secondary-indexes)
     + [index()](#index)
+  * [Atomic Counter](#atomic-counter)
   * [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter)
     + [Comparators](#comparators)
     + [functions](#functions)
@@ -250,6 +252,23 @@ $user->update([
 
 ```php
 $user->delete();
+```
+
+#### increment() / decrement()
+
+When we call `increment()` and `decrement()`, the [Atomic Counter](#atomic-counter) will be used under the hood.
+
+```php
+$user->increment('views', 1);
+$user->decrement('views', 1);
+```
+
+We can also pass additional attributes to update.
+
+```php
+$user->increment('views', 1, [
+    'last_viewed_at' => '...',
+]);
 ```
 
 ### Advanced Queries
@@ -636,6 +655,28 @@ $response = DB::table('Reply')
                 ->keyCondition('PostedBy', '=', 'User A')
                 ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
                 ->query();
+```
+
+### Atomic Counter
+
+DynamoDB [supports Atomic Counter](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters). When we call `increment()` and `decrement()` through Model or Query Builder, Atomic Counter will be used under the hood.
+
+```php
+DB::('Thread')->key([
+    'ForumName' => 'Laravel',
+    'Subject' => 'Laravel Thread 1'
+])->increment('Replies', 2);
+```
+
+We can also pass additional attributes to update.
+
+```php
+DB::('Thread')->key([
+    'ForumName' => 'Laravel',
+    'Subject' => 'Laravel Thread 1'
+])->increment('Replies', 2, [
+    'LastPostedBy' => 'User A',
+]);
 ```
 
 ### DynamoDB-specific operators for condition() and filter()
