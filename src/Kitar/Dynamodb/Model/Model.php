@@ -94,7 +94,7 @@ class Model extends BaseModel
      */
     public function newQuery()
     {
-        return $this->getConnection()->table($this->table)->usingModel(static::class);
+        return $this->getConnection()->table($this->getTable())->usingModel(static::class);
     }
 
     /**
