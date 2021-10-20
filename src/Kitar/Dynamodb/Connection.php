@@ -74,14 +74,24 @@ class Connection extends BaseConnection
         $dynamoConfig = [
             'region' => $config['region'],
             'version' => 'latest',
+            'endpoint' => $config['endpoint'] ?? null,
         ];
+
+        if ($key = $config['access_key'] ?? null) {
+            $config['key'] = $key;
+            unset($config['access_key']);
+        }
+
+        if ($key = $config['secret_key'] ?? null) {
+            $config['secret'] = $key;
+            unset($config['secret_key']);
+        }
 
         if (isset($config['key']) && isset($config['secret'])) {
             $dynamoConfig['credentials'] = Arr::only(
                 $config, ['key', 'secret', 'token']
             );
         }
-
 
         return (new AwsSdk($dynamoConfig))->createDynamoDb();
     }
