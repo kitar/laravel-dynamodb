@@ -72,8 +72,8 @@ class Connection extends BaseConnection
     protected function createClient(array $config)
     {
         $dynamoConfig = [
-            'region' => $config['region'],
-            'version' => 'latest',
+            'region' => $config['region'] ?? 'us-east-1',
+            'version' => $config['version'] ?? 'latest',
             'endpoint' => $config['endpoint'] ?? null,
         ];
 
