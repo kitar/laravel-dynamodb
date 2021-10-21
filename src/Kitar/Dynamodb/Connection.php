@@ -5,6 +5,7 @@ namespace Kitar\Dynamodb;
 use Aws\Sdk as AwsSdk;
 use Aws\DynamoDb\DynamoDbClient;
 use Illuminate\Database\Connection as BaseConnection;
+use Illuminate\Support\Arr;
 
 class Connection extends BaseConnection
 {
@@ -70,16 +71,29 @@ class Connection extends BaseConnection
      */
     protected function createClient(array $config)
     {
-        $sdk = new AwsSdk([
+        $dynamoConfig = [
             'region' => $config['region'] ?? 'us-east-1',
             'version' => $config['version'] ?? 'latest',
-            'credentials' => [
-                'key' => $config['access_key'] ?? '',
-                'secret' => $config['secret_key'] ?? ''
-            ]
-        ]);
+            'endpoint' => $config['endpoint'] ?? null,
+        ];
 
-        return $sdk->createDynamoDb();
+        if ($key = $config['access_key'] ?? null) {
+            $config['key'] = $key;
+            unset($config['access_key']);
+        }
+
+        if ($key = $config['secret_key'] ?? null) {
+            $config['secret'] = $key;
+            unset($config['secret_key']);
+        }
+
+        if (isset($config['key']) && isset($config['secret'])) {
+            $dynamoConfig['credentials'] = Arr::only(
+                $config, ['key', 'secret', 'token']
+            );
+        }
+
+        return (new AwsSdk($dynamoConfig))->createDynamoDb();
     }
 
     /**
