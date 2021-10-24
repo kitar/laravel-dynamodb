@@ -55,7 +55,7 @@ class Grammar extends BaseGrammer
     public function compileTableName($table_name)
     {
         return [
-            'TableName' => $table_name
+            'TableName' => $this->tablePrefix . $table_name
         ];
     }
 

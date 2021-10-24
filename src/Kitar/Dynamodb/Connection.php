@@ -19,6 +19,8 @@ class Connection extends BaseConnection
     {
         $this->client = $this->createClient($config);
 
+        $this->tablePrefix = $config['prefix'] ?? '';
+
         $this->useDefaultPostProcessor();
 
         $this->useDefaultQueryGrammar();
@@ -119,7 +121,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return new Query\Grammar();
+        return $this->withTablePrefix(new Query\Grammar());
     }
 
     /**

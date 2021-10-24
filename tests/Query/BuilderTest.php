@@ -974,4 +974,20 @@ class BuilderTest extends TestCase
 
         $query->filterNotIn(['foo', 'bar']);
     }
+
+    /** @test */
+    public function it_returns_prefixed_builder()
+    {
+        $connection = new Connection(['prefix' => 'my_table_prefix_']);
+
+        $result = $connection
+            ->table('some_table')
+            ->dryRun()
+            ->getItem(['id' => 'hello']);
+
+        $this->assertEquals(
+            'my_table_prefix_some_table',
+            $result['params']['TableName']
+        );
+    }
 }
