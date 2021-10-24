@@ -72,9 +72,7 @@ Install the package via Composer:
 $ composer require kitar/laravel-dynamodb
 ```
 
-### Laravel
-
-> We only support Laravel 6+.
+### Laravel (6.x, 7.x, 8.x)
 
 Add dynamodb configs to config/database.php:
 
@@ -85,10 +83,10 @@ Add dynamodb configs to config/database.php:
         'driver' => 'dynamodb',
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        'token' => env('AWS_SESSION_TOKEN'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-        'endpoint' => env('DYNAMODB_ENDPOINT'),
-        'prefix' => 'table_prefix_',
+        'token' => env('AWS_SESSION_TOKEN', null),
+        'endpoint' => env('DYNAMODB_ENDPOINT', null),
+        'prefix' => '', // table prefix
     ],
 
     ...
@@ -102,9 +100,12 @@ For usage outside Laravel, you can create the connection manually and start quer
 
 ```php
 $connection = new Kitar\Dynamodb\Connection([
-    'region' => env('AWS_DEFAULT_REGION'),
-    'access_key' => env('AWS_ACCESS_KEY_ID'),
-    'secret_key' => env('AWS_SECRET_ACCESS_KEY')
+    'key' => env('AWS_ACCESS_KEY_ID'),
+    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    'token' => env('AWS_SESSION_TOKEN', null),
+    'endpoint' => env('DYNAMODB_ENDPOINT', null),
+    'prefix' => '', // table prefix
 ]);
 
 $connection->table('your-table')->...
@@ -393,9 +394,12 @@ Or even outside Laravel.
 
 ```php
 $connection = new Kitar\Dynamodb\Connection([
-    'region' => env('AWS_DEFAULT_REGION'),
-    'access_key' => env('AWS_ACCESS_KEY_ID'),
-    'secret_key' => env('AWS_SECRET_ACCESS_KEY')
+    'key' => env('AWS_ACCESS_KEY_ID'),
+    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    'token' => env('AWS_SESSION_TOKEN', null),
+    'endpoint' => env('DYNAMODB_ENDPOINT', null),
+    'prefix' => '', // table prefix
 ]);
 
 $result = $connection->table('Thread')->scan();
