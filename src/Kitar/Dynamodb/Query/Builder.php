@@ -43,6 +43,11 @@ class Builder extends BaseBuilder
     ];
 
     /**
+     * ScanIndexForward option.
+     */
+    public $scan_index_forward;
+
+    /**
      * LastEvaluatedKey option.
      * @var array|null
      */
@@ -149,6 +154,19 @@ class Builder extends BaseBuilder
     public function key(array $key)
     {
         $this->key = $key;
+
+        return $this;
+    }
+
+    /**
+     * Set the ScanIndexForward option.
+     *
+     * @param bool $bool
+     * @return $this
+     */
+    public function scanIndexForward($bool)
+    {
+        $this->scan_index_forward = $bool;
 
         return $this;
     }
@@ -523,6 +541,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileItem($this->item),
             $this->grammar->compileUpdates($this->updates),
             $this->grammar->compileDynamodbLimit($this->limit),
+            $this->grammar->compileScanIndexForward($this->scan_index_forward),
             $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),
             $this->grammar->compileConsistentRead($this->consistent_read),
             $this->grammar->compileExpressionAttributes($this->expression_attributes)

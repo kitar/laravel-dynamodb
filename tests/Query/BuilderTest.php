@@ -109,6 +109,25 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_set_scan_index_forward()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'ScanIndexForward' => false,
+            'Key' => [
+                'Id' => [
+                    'N' => '101'
+                ]
+            ]
+        ];
+        $query = $this->newQuery('ProductCatalog')
+                      ->scanIndexForward(false)
+                      ->getItem(['Id'=> 101]);
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    /** @test */
     public function it_can_set_exclusive_start_key()
     {
         $params = [

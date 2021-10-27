@@ -152,6 +152,17 @@ class Grammar extends BaseGrammer
         ];
     }
 
+    public function compileScanIndexForward($bool)
+    {
+        if (is_null($bool)) {
+            return [];
+        }
+
+        return [
+            'ScanIndexForward' => $bool
+        ];
+    }
+
     public function compileExclusiveStartKey($key)
     {
         if (empty($key)) {

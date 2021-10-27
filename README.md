@@ -38,6 +38,7 @@ A DynamoDB based Eloquent model and Query builder for Laravel.
   * [Working with Queries](#working-with-queries)
     + [query() and keyCondition()](#query-and-keycondition)
     + [keyConditionBetween()](#keyconditionbetween)
+    + [Sort order](#sort-order)
   * [Working with Scans](#working-with-scans)
     + [scan()](#scan)
   * [Filtering the Results](#filtering-the-results)
@@ -556,6 +557,17 @@ $response = DB::table('Thread')
 $response = DB::table('Thread')
                 ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
                 ->keyConditionBetween('Subject', ['DynamoDB Thread 1', 'DynamoDB Thread 2'])
+                ->query();
+```
+
+#### Sort order
+
+`query` results are always sorted by the sort key value. To reverse the order, set the `ScanIndexForward` parameter to `false`.
+
+```php
+$response = DB::table('Thread')
+                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                ->scanIndexForward(false)
                 ->query();
 ```
 
