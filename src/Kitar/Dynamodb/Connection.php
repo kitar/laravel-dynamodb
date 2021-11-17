@@ -91,7 +91,8 @@ class Connection extends BaseConnection
 
         if (isset($config['key']) && isset($config['secret'])) {
             $dynamoConfig['credentials'] = Arr::only(
-                $config, ['key', 'secret', 'token']
+                $config,
+                ['key', 'secret', 'token']
             );
         }
 
@@ -103,9 +104,7 @@ class Connection extends BaseConnection
      */
     public function disconnect()
     {
-        unset($this->client);
-
-        $this->client = null;
+        //
     }
 
     /**

@@ -50,11 +50,11 @@ class ConnectionTest extends TestCase
     }
 
     /** @test */
-    public function it_destroys_connection()
+    public function it_keeps_dynamodb_client_on_disconnect()
     {
         $this->connection->disconnect();
 
-        $this->assertNull($this->connection->getClient());
+        $this->assertNotNull($this->connection->getClient());
     }
 
     /** @test */
