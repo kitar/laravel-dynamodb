@@ -129,6 +129,12 @@ class Model extends BaseModel
         return static::scan($columns);
     }
 
+    public static function create(array $fillables = [], array $options = []){
+        $instance = new static($fillables);
+        $instance->save($options);
+        return $instance;
+    }
+
     /**
      * Save the model to the database.
      *
