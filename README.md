@@ -16,6 +16,7 @@ A DynamoDB based Eloquent model and Query builder for Laravel.
     + [Retrieving all models](#retrieving-all-models)
     + [Retrieving a model](#retrieving-a-model)
     + [save()](#save)
+    + [create()](#create)
     + [update()](#update)
     + [delete()](#delete)
     + [increment() / decrement()](#increment--decrement)
@@ -229,12 +230,21 @@ If the model has sort key and `sortKeyDefault` is defined:
 User::find('foo@bar.com'); // Partition key. sortKeyDefault will be used for Sort key.
 ```
 
+#### create()
+
+```php
+$user = User::create([
+    'email' => 'foo@bar.com',
+    'type' => 'profile' // Sort key. If we don't specify this, sortKeyDefault will be used.
+]);
+```
+
 #### save()
 
 ```php
 $user = new User([
     'email' => 'foo@bar.com',
-    'type' => 'profile' // Sort key. If we don't specify this, sortKeyDefault will be used.
+    'type' => 'profile'
 ]);
 
 $user->save();

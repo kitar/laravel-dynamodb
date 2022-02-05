@@ -432,6 +432,29 @@ class ModelTest extends TestCase
     }
 
     /** @test */
+    public function it_can_static_create_new_instance()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ]
+            ],
+            'ConditionExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition'
+            ]
+        ];
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with($params);
+        $this->setConnectionResolver($connection);
+
+        UserD::create(['partition' => 'p']);
+    }
+
+    /** @test */
     public function it_cannot_save_new_instance_without_required_key()
     {
         $connection = $this->newConnectionMock();
