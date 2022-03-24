@@ -74,7 +74,7 @@ Install the package via Composer:
 $ composer require kitar/laravel-dynamodb
 ```
 
-### Laravel (6.x, 7.x, 8.x)
+### Laravel (6.x, 7.x, 8.x, 9.x)
 
 Add dynamodb configs to config/database.php:
 

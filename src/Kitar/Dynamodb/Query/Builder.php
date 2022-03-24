@@ -493,7 +493,7 @@ class Builder extends BaseBuilder
     /**
      * @inheritdoc
      */
-    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
     {
         $column = $this->expression_attributes->addName($column);
 
