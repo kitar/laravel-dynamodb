@@ -14,27 +14,29 @@ class NumberIterator implements \Iterator
         $this->prefix = $prefix;
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         $this->current = $this->start;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         return "{$this->prefix}{$this->current}";
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->current;
     }
 
-    public function next()
+    public function next(): void
     {
         $this->current++;
     }
 
-    public function valid()
+    public function valid(): bool
     {
         return true;
     }
