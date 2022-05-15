@@ -205,6 +205,26 @@ or alternatively,
 $products = ProductCatalog::all();
 ```
 
+You also can override the `scan()` method to fit your needs, such as filtering models for single table design. For example:
+
+```php
+public static function scan($exclusiveStartKey = null, $sort = 'asc', $limit = 50)
+{
+    $products = static::index('GSI1')
+                      ->keyCondition('GSI1PK', '=', 'PRODUCT#')
+                      ->keyCondition('GSI1SK', 'begins_with', 'PRODUCT#')
+                      ->exclusiveStartKey($exclusiveStartKey)
+                      ->scanIndexForward($sort == 'desc' ? false : true)
+                      ->limit($limit)
+                      ->query();
+
+    return [
+        'items' => $products,
+        'LastEvaluatedKey' => $products->first()->meta()['LastEvaluatedKey'] ?? null,
+    ];
+}
+```
+
 > DynamoDB can only handle result set up to 1MB per call, so we have to paginate if there are more results. see [Paginating the Results](#paginating-the-results) for more details.
 
 #### Retrieving a model
@@ -228,6 +248,18 @@ If the model has sort key and `sortKeyDefault` is defined:
 
 ```php
 User::find('foo@bar.com'); // Partition key. sortKeyDefault will be used for Sort key.
+```
+
+You also can modify the behavior of the `find()` method to fit your needs. For example:
+
+```php
+public static function find($userId)
+{
+    return parent::find([
+        'PK' => str_starts_with($userId, 'USER#') ? $userId : 'USER#'.$userId,
+        'SK' => 'USER#',
+    ]);
+}
 ```
 
 #### create()
