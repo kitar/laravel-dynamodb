@@ -5,6 +5,8 @@
 
 A DynamoDB based Eloquent model and Query builder for Laravel.
 
+You can find an example implementation in [kitar/simplechat](https://github.com/kitar/simplechat).
+
 - [Motivation](#motivation)
 - [Installation](#installation)
   * [Laravel](#laravel)
