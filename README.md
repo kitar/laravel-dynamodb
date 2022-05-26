@@ -78,7 +78,7 @@ $ composer require kitar/laravel-dynamodb
 
 ### Laravel (6.x, 7.x, 8.x, 9.x)
 
-Add dynamodb configs to config/database.php:
+Add dynamodb configs to `config/database.php`:
 
 ```php
 'connections' => [
@@ -96,6 +96,12 @@ Add dynamodb configs to config/database.php:
     ...
 
 ],
+```
+
+Update the `DB_CONNECTION` variable in your `.env` file:
+
+```
+DB_CONNECTION=dynamodb
 ```
 
 ### Non-Laravel projects
