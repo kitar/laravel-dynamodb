@@ -621,6 +621,8 @@ $response = DB::table('Thread')
                 ->query();
 ```
 
+> Note that DynamoDB's `ScanIndexForward` is a feature for `query`. It will not work with `scan`.
+
 ### Working with Scans
 
 #### scan()
