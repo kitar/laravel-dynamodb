@@ -96,4 +96,30 @@ class ConnectionTest extends TestCase
             'TableName' => 'User'
         ]);
     }
+
+    /** @test */
+    public function it_prepends_default_protocol_if_not_given()
+    {
+        $connection = new Connection(['endpoint' => 'examples.com']);
+        $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), 'https');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'examples.com');
+        $this->assertEquals($this->connection->getClient()->getEndpoint()->getScheme(), 'https');
+        $this->assertEquals($this->connection->getClient()->getEndpoint()->getHost(), 'dynamodb.us-east-1.amazonaws.com');
+    }
+
+    /** @test */
+    public function it_dont_prepends_default_protocol_if_http_given()
+    {
+        $connection = new Connection(['endpoint' => 'http://examples.com']);
+        $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), 'http');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'examples.com');
+    }
+
+    /** @test */
+    public function it_dont_prepends_default_protocol_if_https_given()
+    {
+        $connection = new Connection(['endpoint' => 'https://examples.com']);
+        $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), 'https');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'examples.com');
+    }
 }
