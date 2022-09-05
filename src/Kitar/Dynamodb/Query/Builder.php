@@ -14,7 +14,6 @@ use Illuminate\Database\Query\Builder as BaseBuilder;
 
 class Builder extends BaseBuilder
 {
-
     /**
      * Name of the index.
      * @var string|null
@@ -125,7 +124,7 @@ class Builder extends BaseBuilder
 
         $this->processor = $processor;
 
-        $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes;
+        $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
         if (! $is_nested_query) {
             $this->initializeDedicatedQueries();

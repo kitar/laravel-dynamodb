@@ -110,7 +110,7 @@ class Model extends BaseModel
         }
 
         if (is_string($key) || is_numeric($key)) {
-            $model = new static;
+            $model = new static();
             $model->setAttribute($model->getKeyName(), $key);
             $key = $model->getKey();
         }
