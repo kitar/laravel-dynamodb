@@ -122,7 +122,7 @@ class Model extends BaseModel
      * Get all of the models from the database.
      *
      * @param  array $columns
-     * @return Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public static function all($columns = [])
     {

@@ -91,29 +91,29 @@ class Builder extends BaseBuilder
 
     /**
      * Dedicated query for building FilterExpression.
-     * @var Kitar\Dynamodb\Query\Builder
+     * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $filter_query;
 
     /**
      * Dedicated query for building ConditionExpression.
-     * @var Kitar\Dynamodb\Query\Builder
+     * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $condition_query;
 
     /**
      * Dedicated query for building KeyConditionExpression.
-     * @var Kitar\Dynamodb\Query\Builder
+     * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $key_condition_query;
 
     /**
      * Create a new query builder instance.
      *
-     * @param Kitar\Dynamodb\Connection $connection
-     * @param Kitar\Dynamodb\Query\Grammar $grammar
-     * @param Kitar\Dynamodb\Query\Processor $processor
-     * @param Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
+     * @param \Kitar\Dynamodb\Connection $connection
+     * @param \Kitar\Dynamodb\Query\Grammar $grammar
+     * @param \Kitar\Dynamodb\Query\Processor $processor
+     * @param \Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
      * @param bool $is_nested_query
      * @return void
      */
@@ -336,7 +336,7 @@ class Builder extends BaseBuilder
      * @param $symbol
      * @param int $amount
      * @param array $extra
-     * @return array|\Aws\Result|Aws\Result|Illuminate\Support\Collection
+     * @return array|\Aws\Result|Aws\Result|\Illuminate\Support\Collection
      */
     protected function incrementOrDecrement($column, $symbol, $amount = 1, array $extra = [])
     {
@@ -350,7 +350,7 @@ class Builder extends BaseBuilder
     /**
      * Query.
      *
-     * @return Illuminate\Support\Collection|array
+     * @return \Illuminate\Support\Collection|array
      */
     public function query()
     {
@@ -361,7 +361,7 @@ class Builder extends BaseBuilder
      * Scan.
      *
      * @param  array $columns
-     * @return Illuminate\Support\Collection|array
+     * @return \Illuminate\Support\Collection|array
      */
     public function scan($columns = [])
     {
@@ -518,7 +518,7 @@ class Builder extends BaseBuilder
      * @param string $query_method
      * @param array $params
      * @param string $processor_method
-     * @return array|Illuminate\Support\Collection|Aws\Result
+     * @return array|\Illuminate\Support\Collection|\Aws\Result
      */
     protected function process($query_method, $processor_method)
     {
