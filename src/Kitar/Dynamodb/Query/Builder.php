@@ -522,7 +522,7 @@ class Builder extends BaseBuilder
     protected function process($query_method, $processor_method)
     {
         // Compile columns and wheres attributes.
-        // These attributes needs to intaract with ExpressionAttributes during compile,
+        // These attributes needs to interact with ExpressionAttributes during compile,
         // so it need to run before compileExpressionAttributes.
         $params = array_merge(
             $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
