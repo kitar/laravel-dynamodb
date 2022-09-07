@@ -110,7 +110,7 @@ class Model extends BaseModel
         }
 
         if (is_string($key) || is_numeric($key)) {
-            $model = new static;
+            $model = new static();
             $model->setAttribute($model->getKeyName(), $key);
             $key = $model->getKey();
         }
@@ -122,7 +122,7 @@ class Model extends BaseModel
      * Get all of the models from the database.
      *
      * @param  array $columns
-     * @return Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public static function all($columns = [])
     {
