@@ -283,7 +283,7 @@ class Builder extends BaseBuilder
     {
         $this->batchItems = $items;
 
-        return $this->process('batchWriteItems', null);
+        return $this->process('batchWriteItems', 'processMultipleBatchItems');
     }
 
     /**
