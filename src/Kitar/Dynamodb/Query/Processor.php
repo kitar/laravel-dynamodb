@@ -5,6 +5,7 @@ namespace Kitar\Dynamodb\Query;
 use Aws\Result;
 use Aws\DynamoDb\Marshaler;
 use Illuminate\Database\Query\Processors\Processor as BaseProcessor;
+use Illuminate\Support\Str;
 
 class Processor extends BaseProcessor
 {
@@ -90,8 +91,8 @@ class Processor extends BaseProcessor
         $items = collect();
         $model = new $modelClass;
 
-        foreach ($response['UnprocessedItems'][$model->getTable()] as $item) {
-            $item = $model->newFromBuilder($item['Item']);
+        foreach ($response['UnprocessedItems'][Str::singular(Str::ucfirst($model->getTable()))] as $item) {
+            $item = $model->newFromBuilder($item['PutRequest']['Item']);
             $items->push($item);
         }
 
