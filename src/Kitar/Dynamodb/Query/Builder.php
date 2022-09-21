@@ -33,6 +33,11 @@ class Builder extends BaseBuilder
     public $item = [];
 
     /**
+     * Items array for batch insert.
+     */
+    public $batchItems = [];
+
+    /**
      * The key/values to update.
      * @var array
      */
@@ -272,6 +277,13 @@ class Builder extends BaseBuilder
         $this->item = $item;
 
         return $this->process('putItem', null);
+    }
+
+    public function batchWriteItems(array $items)
+    {
+        $this->batchItems = $items;
+
+        return $this->process('batchWriteItems', null);
     }
 
     /**

@@ -91,6 +91,29 @@ class Grammar extends BaseGrammer
         ];
     }
 
+    public function compileBatchWrite(array $items, string $tableName)
+    {
+        if (empty($items)) {
+            return [];
+        }
+
+        $insert = [];
+
+        foreach ($items as $item) {
+            $insert[] = [
+                'PutRequest' => $this->compileItem($item)
+            ];
+        }
+
+        return [
+            'RequestItems' => [
+                $tableName => [
+                    $insert
+                ]
+            ]
+        ];
+    }
+
     /**
      * Compile the Item attribute.
      *
