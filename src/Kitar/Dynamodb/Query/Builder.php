@@ -550,7 +550,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileIndexName($this->index),
             $this->grammar->compileKey($this->key),
             $this->grammar->compileItem($this->item),
-            $this->grammar->compileBatchWrite($this->batchItems, $this->tablePrefix . $this->from),
+            $this->grammar->compileBatchWrite($this->batchItems, $this->from),
             $this->grammar->compileUpdates($this->updates),
             $this->grammar->compileDynamodbLimit($this->limit),
             $this->grammar->compileScanIndexForward($this->scan_index_forward),
