@@ -107,10 +107,8 @@ class Grammar extends BaseGrammer
 
         return [
             'RequestItems' => [
-                $tableName => [
-                    $insert
-                ]
-            ]
+                $tableName => $insert,
+            ],
         ];
     }
 
