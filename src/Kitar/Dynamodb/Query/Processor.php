@@ -91,7 +91,7 @@ class Processor extends BaseProcessor
         $items = collect();
         $model = new $modelClass;
 
-        foreach ($response['UnprocessedItems'][Str::singular(Str::ucfirst($model->getTable()))] as $item) {
+        foreach ($response['UnprocessedItems'][$model->getTable()] as $item) {
             $item = $model->newFromBuilder($item['PutRequest']['Item']);
             $items->push($item);
         }

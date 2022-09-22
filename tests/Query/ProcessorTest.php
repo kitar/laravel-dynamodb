@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class User extends Model
 {
+    protected $table = 'User';
 }
 
 class ProcessorTest extends TestCase
@@ -26,7 +27,7 @@ class ProcessorTest extends TestCase
         'multiple_items_empty_processed' => '{"Items":[],"Count":0,"ScannedCount":2,"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com","transferStats":{"http":[[]]}}}',
         'multiple_batch_items_empty_result' => '{"UnprocessedItems":{"Category":[]},"ConsumedCapacity":[{"TableName":"Forum","CapacityUnits":3}]}',
         'multiple_batch_items_empty_processed' => '{"UnprocessedItems":{"Category":[]},"ConsumedCapacity":[{"TableName":"Forum","CapacityUnits":3}]}',
-        'multiple_batch_items_single_unprocessed' => '{"UnprocessedItems":{"User":[{"PutRequest":{"Item":{"Name":{"S":"Amazon ElastiCache"},"Category":{"S":"Amazon Web Services"}}}}]},"ConsumedCapacity":[{"TableName":"Forum","CapacityUnits":3}]}',
+        'multiple_batch_items_single_processed' => '{"UnprocessedItems":{"User":[{"PutRequest":{"Item":{"Name":{"S":"Amazon ElastiCache"},"Category":{"S":"Amazon Web Services"}}}}]},"ConsumedCapacity":[{"TableName":"Forum","CapacityUnits":3}]}',
     ];
 
     protected function setUp() :void
@@ -132,7 +133,7 @@ class ProcessorTest extends TestCase
     /** @test */
     public function it_can_convert_unprocessed_results_to_model_instance()
     {
-        $awsResult = new Result(json_decode($this->mocks['multiple_batch_items_single_unprocessed'], true));
+        $awsResult = new Result(json_decode($this->mocks['multiple_batch_items_single_processed'], true));
 
         $items = $this->processor->processMultipleBatchItems($awsResult, User::class);
 
