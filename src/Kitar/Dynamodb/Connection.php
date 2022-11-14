@@ -67,7 +67,7 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Create a new MongoDB client.
+     * Create a new DynamoDB client.
      * @param array $config
      * @return \Aws\Dynamodb\DynamoDbClient
      */
