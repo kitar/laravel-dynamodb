@@ -197,7 +197,8 @@ class User extends Model implements AuthenticatableContract
 }
 ```
 
-> Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is optional, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model)) for more details.
+> **Note**  
+> Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is **optional**, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model)) for more details.
 
 ### Basic Usage
 
@@ -233,6 +234,7 @@ public static function scan($exclusiveStartKey = null, $sort = 'asc', $limit = 5
 }
 ```
 
+> **Note**  
 > DynamoDB can only handle result set up to 1MB per call, so we have to paginate if there are more results. see [Paginating the Results](#paginating-the-results) for more details.
 
 #### Retrieving a model
@@ -472,6 +474,7 @@ $response = DB::table('ProductCatalog')
                 ->getItem(['Id' => 101]);
 ```
 
+> **Note**  
 > Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
 
 #### putItem()
@@ -544,6 +547,7 @@ DB::table('ProductCatalog')
     ]);
 ```
 
+> **Note**  
 > Note that we specify `attribute_not_exists` for the operator of condition. This is DynamoDB-specific operator which called `function`. See [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter) for more details.
 
 OR statements
@@ -621,6 +625,7 @@ $response = DB::table('Thread')
                 ->query();
 ```
 
+> **Note**  
 > Note that DynamoDB's `ScanIndexForward` is a feature for `query`. It will not work with `scan`.
 
 ### Working with Scans
@@ -774,6 +779,7 @@ filter($key, 'begins_with', $value);
 filter($key, 'contains', $value);
 ```
 
+> **Note**  
 > `size` function is not supported at this time.
 
 ## Testing
