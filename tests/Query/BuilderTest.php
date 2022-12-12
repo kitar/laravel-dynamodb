@@ -952,7 +952,8 @@ class BuilderTest extends TestCase
         $connection = m::mock(Connection::class);
         $connection->shouldReceive('scan')
                    ->with(['TableName' => 'Forum'])
-                   ->andReturn(new Result(['Items' => []]));
+                   ->andReturn(new Result(['Items' => []]))
+                   ->once();
 
         $query = new Builder($connection, new Grammar, new Processor);
 
@@ -974,7 +975,7 @@ class BuilderTest extends TestCase
                                'S' => 'Laravel Thread 1'
                            ]
                        ]
-                    ])->andReturn(new Result(['Items' => []]));
+                    ])->andReturn(new Result(['Items' => []]))->once();
 
         $query = new Builder($connection, new Grammar, new Processor);
 

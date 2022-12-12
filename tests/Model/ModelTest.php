@@ -400,7 +400,7 @@ class ModelTest extends TestCase
         ]);
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('scan')->with($params)->andReturn($return);
+        $connection->shouldReceive('scan')->with($params)->andReturn($return)->once();
         $this->setConnectionResolver($connection);
 
         UserA::all();
@@ -423,7 +423,7 @@ class ModelTest extends TestCase
         ];
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('putItem')->with($params);
+        $connection->shouldReceive('putItem')->with($params)->once();
         $this->setConnectionResolver($connection);
 
         $user = new UserA(['partition' => 'p']);
@@ -448,7 +448,7 @@ class ModelTest extends TestCase
         ];
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('putItem')->with($params);
+        $connection->shouldReceive('putItem')->with($params)->once();
         $this->setConnectionResolver($connection);
 
         UserD::create(['partition' => 'p']);
@@ -490,7 +490,7 @@ class ModelTest extends TestCase
         ];
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('updateItem')->with($params)->andReturn($this->sampleAwsResultEmpty());
+        $connection->shouldReceive('updateItem')->with($params)->andReturn($this->sampleAwsResultEmpty())->once();
         $this->setConnectionResolver($connection);
 
         $user = (new UserA)->newFromBuilder(['partition' => 'p']);
@@ -526,7 +526,7 @@ class ModelTest extends TestCase
         ];
 
         $connection = $this->newConnectionMock();
-        $connection->shouldReceive('deleteItem')->with($params);
+        $connection->shouldReceive('deleteItem')->with($params)->once();
         $this->setConnectionResolver($connection);
 
         $user = (new UserA)->newFromBuilder(['partition' => 'p']);
@@ -575,7 +575,7 @@ class ModelTest extends TestCase
                     'S' => 'p'
                 ]
             ]
-        ]);
+        ])->once();
         $this->setConnectionResolver($connection);
 
         UserA::putItem([
