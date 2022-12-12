@@ -73,7 +73,7 @@ class ConnectionTest extends TestCase
         $client = m::mock(DynamoDbClient::class);
         $client->shouldReceive('query')->with([
             'TableName' => 'User'
-        ]);
+        ])->once();
 
         $connection = new Connection([]);
         $connection->setClient($client);
@@ -88,7 +88,7 @@ class ConnectionTest extends TestCase
         $client = m::mock(DynamoDbClient::class);
         $client->shouldReceive('getItem')->with([
             'TableName' => 'User'
-        ]);
+        ])->once();
 
         $connection = new Connection([]);
         $connection->setClient($client);
