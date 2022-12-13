@@ -78,4 +78,29 @@ class Processor extends BaseProcessor
             return $item;
         });
     }
+
+    public function processBatchGetItems(Result $awsResponse, $modelClass = null)
+    {
+        $response = $this->unmarshal($awsResponse);
+
+        if (empty($modelClass)) {
+            return $response;
+        }
+
+        $items = collect();
+
+        foreach ($response['Responses'] as $_ => $table_items) {
+            foreach ($table_items as $item) {
+                $item = (new $modelClass)->newFromBuilder($item);
+                $items->push($item);
+            }
+        }
+
+        unset($response['Responses']);
+
+        return $items->map(function ($item) use ($response) {
+            $item->setMeta($response);
+            return $item;
+        });
+    }
 }
