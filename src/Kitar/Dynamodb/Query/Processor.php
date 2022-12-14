@@ -33,6 +33,14 @@ class Processor extends BaseProcessor
             $responseArray['Attributes'] = $this->marshaler->unmarshalItem($responseArray['Attributes']);
         }
 
+        if (! empty($responseArray['Responses'])) {
+            foreach ($responseArray['Responses'] as &$items) {
+                foreach ($items as &$item) {
+                    $item = $this->marshaler->unmarshalItem($item);
+                }
+            }
+        }
+
         return $responseArray;
     }
 
