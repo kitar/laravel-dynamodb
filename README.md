@@ -53,6 +53,11 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
   * [Using Global Secondary Indexes](#using-global-secondary-indexes)
     + [index()](#index)
   * [Atomic Counter](#atomic-counter)
+  * [Batch Operations](#batch-operations)
+    + [batchGetItem()](#batchgetitem)
+    + [batchPutItem()](#batchputitem)
+    + [batchDeleteItem()](#batchdeleteitem)
+    + [batchWriteItem()](#batchwriteitem)
   * [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter)
     + [Comparators](#comparators)
     + [functions](#functions)
@@ -197,7 +202,6 @@ class User extends Model implements AuthenticatableContract
 }
 ```
 
-> **Note**  
 > Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is **optional**, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model)) for more details.
 
 ### Basic Usage
@@ -234,7 +238,6 @@ public static function scan($exclusiveStartKey = null, $sort = 'asc', $limit = 5
 }
 ```
 
-> **Note**  
 > DynamoDB can only handle result set up to 1MB per call, so we have to paginate if there are more results. see [Paginating the Results](#paginating-the-results) for more details.
 
 #### Retrieving a model
@@ -474,7 +477,6 @@ $response = DB::table('ProductCatalog')
                 ->getItem(['Id' => 101]);
 ```
 
-> **Note**  
 > Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
 
 #### putItem()
@@ -547,7 +549,6 @@ DB::table('ProductCatalog')
     ]);
 ```
 
-> **Note**  
 > Note that we specify `attribute_not_exists` for the operator of condition. This is DynamoDB-specific operator which called `function`. See [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter) for more details.
 
 OR statements
@@ -625,7 +626,6 @@ $response = DB::table('Thread')
                 ->query();
 ```
 
-> **Note**  
 > Note that DynamoDB's `ScanIndexForward` is a feature for `query`. It will not work with `scan`.
 
 ### Working with Scans
@@ -755,6 +755,86 @@ DB::('Thread')->key([
 ]);
 ```
 
+### Batch Operations
+
+Batch operations can get, put or delete multiple items with a single call. There are some DynamoDB limitations (such as items count, payload size, etc), so please check the documentation in advance. ([BatchGetItem](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html), [BatchWriteItem](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html))
+
+#### batchGetItem()
+
+```php
+DB::table('Thread')
+    ->batchGetItem([
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 1'
+        ],
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 2'
+        ]
+    ]);
+```
+
+#### batchPutItem()
+
+```php
+DB::table('Thread')
+    ->batchPutItem([
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 3'
+        ],
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 4'
+        ]
+    ]);
+```
+
+> This is a handy method to batch-put items using `batchWriteItem`
+
+#### batchDeleteItem()
+
+```php
+DB::table('Thread')
+    ->batchDeleteItem([
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 1'
+        ],
+        [
+            'ForumName' => 'Amazon DynamoDB',
+            'Subject' => 'DynamoDB Thread 2'
+        ]
+    ]);
+```
+
+> This is a handy method to batch-delete items using `batchWriteItem`
+
+#### batchWriteItem()
+
+```php
+DB::table('Thread')
+    ->batchWriteItem([
+        [
+            'PutRequest' => [
+                'Item' => [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 3'
+                ]
+            ]
+        ],
+        [
+            'DeleteRequest' => [
+                'Key' => [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 1'
+                ]
+            ]
+        ]
+    ]);
+```
+
 ### DynamoDB-specific operators for condition() and filter()
 
 For `condition` and `filter` clauses, we can use DynamoDB's comparators and functions.
@@ -779,7 +859,6 @@ filter($key, 'begins_with', $value);
 filter($key, 'contains', $value);
 ```
 
-> **Note**  
 > `size` function is not supported at this time.
 
 ## Testing
