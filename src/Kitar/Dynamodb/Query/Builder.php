@@ -42,6 +42,20 @@ class Builder extends BaseBuilder
     ];
 
     /**
+     * Keys array for BatchGetItem
+     * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+     * @var array
+     */
+    public $batch_get_keys = [];
+
+    /**
+     * RequestItems array for BatchWriteItem
+     * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html
+     * @var array
+     */
+    public $batch_write_request_items = [];
+
+    /**
      * ScanIndexForward option.
      */
     public $scan_index_forward;
@@ -312,6 +326,48 @@ class Builder extends BaseBuilder
         return $this->process('updateItem', 'processSingleItem');
     }
 
+    public function batchGetItem($keys)
+    {
+        $this->batch_get_keys = $keys;
+
+        return $this->process('batchGetItem', 'processBatchGetItems');
+    }
+
+    public function batchPutItem($items)
+    {
+        $this->batch_write_request_items = collect($items)->map(function ($item) {
+            return [
+                'PutRequest' => [
+                    'Item' => $item,
+                ],
+            ];
+        })->toArray();
+
+        return $this->batchWriteItem();
+    }
+
+    public function batchDeleteItem($keys)
+    {
+        $this->batch_write_request_items = collect($keys)->map(function ($key) {
+            return [
+                'DeleteRequest' => [
+                    'Key' => $key,
+                ],
+            ];
+        })->toArray();
+
+        return $this->batchWriteItem();
+    }
+
+    public function batchWriteItem($request_items = [])
+    {
+        if (! empty($request_items)) {
+            $this->batch_write_request_items = $request_items;
+        }
+
+        return $this->process('batchWriteItem', null);
+    }
+
     /**
      * @inheritdoc
      */
@@ -539,6 +595,8 @@ class Builder extends BaseBuilder
             $this->grammar->compileKey($this->key),
             $this->grammar->compileItem($this->item),
             $this->grammar->compileUpdates($this->updates),
+            $this->grammar->compileBatchGetRequestItems($this->from, $this->batch_get_keys),
+            $this->grammar->compileBatchWriteRequestItems($this->from, $this->batch_write_request_items),
             $this->grammar->compileDynamodbLimit($this->limit),
             $this->grammar->compileScanIndexForward($this->scan_index_forward),
             $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),

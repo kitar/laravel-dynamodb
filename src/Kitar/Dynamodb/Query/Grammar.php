@@ -135,6 +135,54 @@ class Grammar extends BaseGrammer
         ];
     }
 
+    public function compileBatchGetRequestItems($table_name, $keys)
+    {
+        if (empty($keys)) {
+            return [];
+        }
+
+        $marshaler = $this->marshaler;
+        $marshaled_items = collect($keys)->map(function ($key) use ($marshaler) {
+            return $marshaler->marshalItem($key);
+        })->toArray();
+
+        $table_name = $this->tablePrefix . $table_name;
+
+        return [
+            'RequestItems' => [
+                $table_name => [
+                    'Keys' => $marshaled_items,
+                ],
+            ]
+        ];
+    }
+
+    public function compileBatchWriteRequestItems($table_name, $request_items)
+    {
+        if (empty($request_items)) {
+            return [];
+        }
+
+        $marshaler = $this->marshaler;
+        $marshaled_items = collect($request_items)->map(function ($request_item) use ($marshaler) {
+            return collect($request_item)->map(function ($request_body) use ($marshaler) {
+                $marshaled = [];
+                foreach ($request_body as $key => $body) {
+                    $marshaled[$key] = $marshaler->marshalItem($body);
+                }
+                return $marshaled;
+            });
+        })->toArray();
+
+        $table_name = $this->tablePrefix . $table_name;
+
+        return [
+            'RequestItems' => [
+                $table_name => $marshaled_items,
+            ],
+        ];
+    }
+
     /**
      * Compile the Limit attribute.
      *

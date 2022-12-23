@@ -722,6 +722,221 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_can_process_batch_get_item()
+    {
+        $method = 'batchGetItem';
+        $params = [
+            'TableName' => 'Thread',
+            'RequestItems' => [
+                'Thread' => [
+                    'Keys' => [
+                        [
+                            'ForumName' => [
+                                'S' => 'Amazon DynamoDB'
+                            ],
+                            'Subject' => [
+                                'S' => 'DynamoDB Thread 1'
+                            ]
+                        ],
+                        [
+                            'ForumName' => [
+                                'S' => 'Amazon DynamoDB'
+                            ],
+                            'Subject' => [
+                                'S' => 'DynamoDB Thread 2'
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+        $processor = 'processBatchGetItems';
+
+        $query = $this->newQuery('Thread')
+            ->batchGetItem([
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 1'
+                ],
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 2'
+                ]
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_batch_put_item()
+    {
+        $method = 'batchWriteItem';
+        $params = [
+            'TableName' => 'Thread',
+            'RequestItems' => [
+                'Thread' => [
+                    [
+                        'PutRequest' => [
+                            'Item' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 3'
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        'PutRequest' => [
+                            'Item' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 4'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Thread')
+            ->batchPutItem([
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 3'
+                ],
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 4'
+                ]
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertNull($query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_batch_delete_item()
+    {
+        $method = 'batchWriteItem';
+        $params = [
+            'TableName' => 'Thread',
+            'RequestItems' => [
+                'Thread' => [
+                    [
+                        'DeleteRequest' => [
+                            'Key' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 1'
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        'DeleteRequest' => [
+                            'Key' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 2'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Thread')
+            ->batchDeleteItem([
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 1'
+                ],
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => 'DynamoDB Thread 2'
+                ]
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertNull($query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_batch_write_item()
+    {
+        $method = 'batchWriteItem';
+        $params = [
+            'TableName' => 'Thread',
+            'RequestItems' => [
+                'Thread' => [
+                    [
+                        'PutRequest' => [
+                            'Item' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 3'
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        'DeleteRequest' => [
+                            'Key' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ],
+                                'Subject' => [
+                                    'S' => 'DynamoDB Thread 1'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Thread')
+            ->batchWriteItem([
+                [
+                    'PutRequest' => [
+                        'Item' => [
+                            'ForumName' => 'Amazon DynamoDB',
+                            'Subject' => 'DynamoDB Thread 3'
+                        ]
+                    ]
+                ],
+                [
+                    'DeleteRequest' => [
+                        'Key' => [
+                            'ForumName' => 'Amazon DynamoDB',
+                            'Subject' => 'DynamoDB Thread 1'
+                        ]
+                    ]
+                ]
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertNull($query['processor']);
+    }
+
+    /** @test */
     public function it_can_increment_value_of_attribute()
     {
         $method = 'updateItem';
