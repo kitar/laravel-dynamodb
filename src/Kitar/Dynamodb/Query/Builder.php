@@ -2,6 +2,7 @@
 
 namespace Kitar\Dynamodb\Query;
 
+use Aws\DynamoDb\Marshaler;
 use Closure;
 use BadMethodCallException;
 use Kitar\Dynamodb\Connection;
@@ -121,6 +122,11 @@ class Builder extends BaseBuilder
     protected $key_condition_query;
 
     /**
+     * @var Marshaler
+     */
+    protected $marshaller;
+
+    /**
      * Create a new query builder instance.
      *
      * @param \Kitar\Dynamodb\Connection $connection
@@ -139,6 +145,8 @@ class Builder extends BaseBuilder
         $this->processor = $processor;
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
+
+        $this->marshaller = new Marshaller();
 
         if (! $is_nested_query) {
             $this->initializeDedicatedQueries();
@@ -336,6 +344,11 @@ class Builder extends BaseBuilder
     public function batchPutItem($items)
     {
         $this->batch_write_request_items = collect($items)->map(function ($item) {
+
+            foreach ($item as $key => $value) {
+                $item[$key] = $this->marshaller->marshalValue($value);
+            }
+
             return [
                 'PutRequest' => [
                     'Item' => $item,
