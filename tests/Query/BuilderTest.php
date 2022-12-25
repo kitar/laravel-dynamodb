@@ -781,10 +781,18 @@ class BuilderTest extends TestCase
                         'PutRequest' => [
                             'Item' => [
                                 'ForumName' => [
-                                    'S' => 'Amazon DynamoDB'
+                                    'M' => [
+                                        'S' => [
+                                            'S' => 'Amazon DynamoDB'
+                                        ]
+                                    ],
                                 ],
                                 'Subject' => [
-                                    'S' => 'DynamoDB Thread 3'
+                                    'M' => [
+                                        'S' => [
+                                            'S' =>  'DynamoDB Thread 3'
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]
@@ -793,10 +801,18 @@ class BuilderTest extends TestCase
                         'PutRequest' => [
                             'Item' => [
                                 'ForumName' => [
-                                    'S' => 'Amazon DynamoDB'
+                                    'M' => [
+                                        'S' => [
+                                            'S' => 'Amazon DynamoDB',
+                                        ]
+                                    ],
                                 ],
                                 'Subject' => [
-                                    'S' => 'DynamoDB Thread 4'
+                                    'M' => [
+                                        'S' => [
+                                            'S' => 'DynamoDB Thread 4'
+                                        ]
+                                    ]
                                 ]
                             ]
                         ]

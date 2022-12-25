@@ -146,7 +146,7 @@ class Builder extends BaseBuilder
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
-        $this->marshaller = new Marshaller();
+        $this->marshaller = new Marshaler();
 
         if (! $is_nested_query) {
             $this->initializeDedicatedQueries();
