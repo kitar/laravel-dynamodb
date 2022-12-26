@@ -61,6 +61,7 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
   * [DynamoDB-specific operators for condition() and filter()](#dynamodb-specific-operators-for-condition-and-filter)
     + [Comparators](#comparators)
     + [functions](#functions)
+- [Debugging](#debugging)
 - [Testing](#testing)
 
 ## Motivation
