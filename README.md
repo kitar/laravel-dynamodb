@@ -861,6 +861,24 @@ filter($key, 'contains', $value);
 
 > `size` function is not supported at this time.
 
+## Debugging
+
+#### dryRun()
+
+We can inspect what parameters (and which method) will actually send to DynamoDB by adding `dryRun()` to our query. For example:
+
+```php
+// via Model
+$request = ProductCatalog::dryRun()->getItem(['Id' => 101]);
+
+// via Query Builder
+$request = DB::table('ProductCatalog')->dryRun()->getItem(['Id' => 101]);
+
+dump($request);
+```
+
+> Our PHPUnit tests also use this feature, without actually calling DynamoDB
+
 ## Testing
 
 ```
