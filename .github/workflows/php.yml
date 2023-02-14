@@ -9,24 +9,34 @@ jobs:
 
     strategy:
       matrix:
-        php-version: ['7.3', '7.4', '8.0', '8.1', '8.2']
+        include:
+          - php: 8.2
+            illuminate: ^10.0
+          - php: 8.1
+            illuminate: ^9.0
+          - php: 8.0
+            illuminate: ^8.0
+          - php: 7.4
+            illuminate: ^7.0
+          - php: 7.3
+            illuminate: ^6.0
+
+    name: PHP ${{ matrix.php }} - Illuminate ${{ matrix.illuminate }}
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Setup PHP ${{ matrix.php-version }}
+    - name: Setup PHP ${{ matrix.php }}
       uses: shivammathur/setup-php@v2
       with:
-        php-version: ${{ matrix.php-version }}
-
-    - name: Validate composer.json and composer.lock
-      run: composer validate
+        php-version: ${{ matrix.php }}
 
     - name: Install dependencies
-      run: composer update --prefer-dist --no-progress
+      run: composer require "illuminate/support:${{ matrix.illuminate }}" "illuminate/container:${{ matrix.illuminate }}" "illuminate/database:${{ matrix.illuminate }}" "illuminate/hashing:${{ matrix.illuminate }}" --no-interaction --no-progress --no-suggest
 
     - name: Run test suite
       run: composer run-script ci-test
 
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v3
+      if: matrix.php == '8.2'

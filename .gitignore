@@ -11,4 +11,5 @@ composer.lock
 *.project
 .idea/
 .phpunit.result.cache
+.phpunit.cache
 .env
