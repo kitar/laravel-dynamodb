@@ -162,21 +162,25 @@ class ModelTest extends TestCase
     /** @test */
     public function it_can_process_get_key_with_primary_key()
     {
-        $user = new UserA(['partition' => 'p']);
+        $user1 = new UserA(['partition' => 'p']);
+        $user2 = new UserA(['partition' => "0"]);
+        $user3 = new UserA(['partition' => 0]);
 
-        $this->assertEquals(['partition' => 'p'], $user->getKey());
+        $this->assertEquals(['partition' => 'p'], $user1->getKey());
+        $this->assertEquals(['partition' => "0"], $user2->getKey());
+        $this->assertEquals(['partition' => 0], $user3->getKey());
     }
-
 
     /** @test */
     public function it_can_process_get_key_with_primary_key_and_sort_key()
     {
-        $user = new UserB(['partition' => 'p', 'sort' => 's']);
+        $user1 = new UserB(['partition' => 'p', 'sort' => 's']);
+        $user2 = new UserB(['partition' => 'p', 'sort' => "0"]);
+        $user3 = new UserB(['partition' => 'p', 'sort' => 0]);
 
-        $this->assertEquals([
-            'partition' => 'p',
-            'sort' => 's'
-        ], $user->getKey());
+        $this->assertEquals(['partition' => 'p', 'sort' => 's'], $user1->getKey());
+        $this->assertEquals(['partition' => 'p', 'sort' => "0"], $user2->getKey());
+        $this->assertEquals(['partition' => 'p', 'sort' => 0], $user3->getKey());
     }
 
     /** @test */

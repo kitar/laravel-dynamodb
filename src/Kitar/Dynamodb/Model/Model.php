@@ -74,7 +74,7 @@ class Model extends BaseModel
         $missingKeys = [];
 
         foreach ($key as $name => $value) {
-            if (empty($value)) {
+            if (! isset($value) || $value === '') {
                 $missingKeys[] = $name;
             }
         }
