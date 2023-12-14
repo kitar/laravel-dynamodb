@@ -2,9 +2,10 @@
 
 namespace Kitar\Dynamodb\Query;
 
-use Aws\Result;
 use Aws\DynamoDb\Marshaler;
+use Aws\Result;
 use Illuminate\Database\Query\Processors\Processor as BaseProcessor;
+use Kitar\Dynamodb\Helpers\Collection;
 
 class Processor extends BaseProcessor
 {
@@ -56,6 +57,7 @@ class Processor extends BaseProcessor
             $item = (new $modelClass)->newFromBuilder($response['Item']);
             unset($response['Item']);
             $item->setMeta($response ?? null);
+
             return $item;
         }
 
@@ -72,7 +74,7 @@ class Processor extends BaseProcessor
             return $response;
         }
 
-        $items = collect();
+        $items = new Collection([]);
 
         foreach ($response['Items'] as $item) {
             $item = (new $modelClass)->newFromBuilder($item);
@@ -81,10 +83,16 @@ class Processor extends BaseProcessor
 
         unset($response['Items']);
 
-        return $items->map(function ($item) use ($response) {
+        $items = $items->map(function ($item) use ($response) {
             $item->setMeta($response);
+
             return $item;
         });
+
+        // set meta at the collection level
+        $items->setMeta($response);
+
+        return $items;
     }
 
     public function processBatchGetItems(Result $awsResponse, $modelClass = null)
@@ -108,6 +116,7 @@ class Processor extends BaseProcessor
 
         return $items->map(function ($item) use ($response) {
             $item->setMeta($response);
+
             return $item;
         });
     }
