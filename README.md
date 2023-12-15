@@ -129,7 +129,7 @@ $connection->table('your-table')->...
 
 ## Sample data
 
-Many of the example codes in this document are querying to [DynamoDB's official sample data](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SampleData.LoadData.html). If you want to try these codes with actual DynamoDB tables, it's handy to load them to your tables before.
+Many of the example codes in this document are querying to [DynamoDB's official sample data](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/AppendixSampleTables.html). If you want to try these codes with actual DynamoDB tables, it's handy to load them to your tables before.
 
 ## Model
 
@@ -224,18 +224,13 @@ You also can override the `scan()` method to fit your needs, such as filtering m
 ```php
 public static function scan($exclusiveStartKey = null, $sort = 'asc', $limit = 50)
 {
-    $products = static::index('GSI1')
-                      ->keyCondition('GSI1PK', '=', 'PRODUCT#')
-                      ->keyCondition('GSI1SK', 'begins_with', 'PRODUCT#')
-                      ->exclusiveStartKey($exclusiveStartKey)
-                      ->scanIndexForward($sort == 'desc' ? false : true)
-                      ->limit($limit)
-                      ->query();
-
-    return [
-        'items' => $products,
-        'LastEvaluatedKey' => $products->first()->meta()['LastEvaluatedKey'] ?? null,
-    ];
+    return static::index('GSI1')
+        ->keyCondition('GSI1PK', '=', 'PRODUCT#')
+        ->keyCondition('GSI1SK', 'begins_with', 'PRODUCT#')
+        ->exclusiveStartKey($exclusiveStartKey)
+        ->scanIndexForward($sort == 'desc' ? false : true)
+        ->limit($limit)
+        ->query();
 }
 ```
 
@@ -339,16 +334,16 @@ For example:
 
 ```php
 Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')
-        ->keyCondition('Subject', 'begins_with', 'DynamoDB')
-        ->filter('Views', '=', 0)
-        ->query();
+    ->keyCondition('Subject', 'begins_with', 'DynamoDB')
+    ->filter('Views', '=', 0)
+    ->query();
 ```
 
 Please refer to [Query Builder](#query-builder) for the details.
 
 ## Authentication with model
 
-We can create a Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/8.x/authentication#adding-custom-user-providers).
+We can create a Custom User Provider to authenticate with DynamoDB. For the detail, please refer to [Laravel's official document](https://laravel.com/docs/authentication#adding-custom-user-providers).
 
 To use authentication with the model, the model should implement `Illuminate\Contracts\Auth\Authenticatable` contract. In this section, we'll use the example `User` model above.
 
@@ -460,7 +455,6 @@ $connection = new Kitar\Dynamodb\Connection([
 ]);
 
 $result = $connection->table('Thread')->scan();
-
 ```
 
 If we query through the model, we don't need to specify the table name, and the response will be the model instance(s).
@@ -475,7 +469,7 @@ $threads = Thread::scan();
 
 ```php
 $response = DB::table('ProductCatalog')
-                ->getItem(['Id' => 101]);
+    ->getItem(['Id' => 101]);
 ```
 
 > Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
@@ -529,8 +523,8 @@ We can specify Projection Expressions in the same manner as the original `select
 
 ```php
 $response = DB::table('ProductCatalog')
-                ->select('Price', 'Title')
-                ->getItem(['Id' => 101]);
+    ->select('Price', 'Title')
+    ->getItem(['Id' => 101]);
 ```
 
 ### Condition Expressions
@@ -574,20 +568,20 @@ DB::table('ProductCatalog')
 
 ```php
 ProductCatalog::key(['Id' => 101])
-                ->conditionIn('ProductCategory', ['Book', 'Bicycle'])
-                ->updateItem([
-                    'Description' => 'updated!'
-                ]);
+    ->conditionIn('ProductCategory', ['Book', 'Bicycle'])
+    ->updateItem([
+        'Description' => 'updated!'
+    ]);
 ```
 
 #### conditionBetween()
 
 ```php
 ProductCatalog::key(['Id' => 101])
-                ->conditionBetween('Price', [0, 10])
-                ->updateItem([
-                    'Description' => 'updated!'
-                ]);
+    ->conditionBetween('Price', [0, 10])
+    ->updateItem([
+        'Description' => 'updated!'
+    ]);
 ```
 
 ### Working with Queries
@@ -602,18 +596,18 @@ We can use some comparison operators for sort key, but we must use the equality 
 
 ```php
 $response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->keyCondition('Subject', 'begins_with', 'DynamoDB')
-                ->query();
+    ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+    ->keyCondition('Subject', 'begins_with', 'DynamoDB')
+    ->query();
 ```
 
 #### keyConditionBetween()
 
 ```php
 $response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->keyConditionBetween('Subject', ['DynamoDB Thread 1', 'DynamoDB Thread 2'])
-                ->query();
+    ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+    ->keyConditionBetween('Subject', ['DynamoDB Thread 1', 'DynamoDB Thread 2'])
+    ->query();
 ```
 
 #### Sort order
@@ -622,9 +616,9 @@ $response = DB::table('Thread')
 
 ```php
 $response = DB::table('Thread')
-                ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
-                ->scanIndexForward(false)
-                ->query();
+    ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+    ->scanIndexForward(false)
+    ->query();
 ```
 
 > Note that DynamoDB's `ScanIndexForward` is a feature for `query`. It will not work with `scan`.
@@ -647,42 +641,42 @@ It can't reduce the amount of read capacity, but it can reduce the size of traff
 
 ```php
 $response = DB::table('Thread')
-                ->filter('LastPostedBy', '=', 'User A')
-                ->scan();
+    ->filter('LastPostedBy', '=', 'User A')
+    ->scan();
 ```
 
 OR statement
 
 ```php
 $response = DB::table('Thread')
-                ->filter('LastPostedBy', '=', 'User A')
-                ->orFilter('LastPostedBy', '=', 'User B')
-                ->scan();
+    ->filter('LastPostedBy', '=', 'User A')
+    ->orFilter('LastPostedBy', '=', 'User B')
+    ->scan();
 ```
 
 AND statement
 
 ```php
 $response = DB::table('Thread')
-                ->filter('LastPostedBy', '=', 'User A')
-                ->filter('Subject', 'begins_with', 'DynamoDB')
-                ->scan();
+    ->filter('LastPostedBy', '=', 'User A')
+    ->filter('Subject', 'begins_with', 'DynamoDB')
+    ->scan();
 ```
 
 #### filterIn()
 
 ```php
 $response = DB::table('Thread')
-                ->filterIn('LastPostedBy', ['User A', 'User B'])
-                ->scan();
+    ->filterIn('LastPostedBy', ['User A', 'User B'])
+    ->scan();
 ```
 
 #### filterBetween()
 
 ```php
 $response = DB::table('ProductCatalog')
-                ->filterBetween('Price', [0, 100])
-                ->scan();
+    ->filterBetween('Price', [0, 100])
+    ->scan();
 ```
 
 ### Paginating the Results
@@ -695,8 +689,8 @@ If there are more results, the response contains `LastEvaluatedKey`.
 
 ```php
 $response = DB::table('ProductCatalog')
-                ->limit(5)
-                ->scan();
+    ->limit(5)
+    ->scan();
 
 $response['LastEvaluatedKey']; // array
 ```
@@ -705,9 +699,9 @@ We can pass this key to `exclusiveStartKey` to get next results.
 
 ```php
 $response = DB::table('ProductCatalog')
-                ->exclusiveStartKey($response['LastEvaluatedKey'])
-                ->limit(5)
-                ->scan();
+    ->exclusiveStartKey($response['LastEvaluatedKey'])
+    ->limit(5)
+    ->scan();
 ```
 
 If you are using Query Builder through model, you can access to `exclusiveStartKey` by:
@@ -715,6 +709,12 @@ If you are using Query Builder through model, you can access to `exclusiveStartK
 ```php
 $products = ProductCatalog::limit(5)->scan();
 
+$products->getLastEvaluatedKey(); // array
+```
+
+Alternatively, you can achieve the same result using individual models; however, please be aware that this approach is planned to be deprecated in versions subsequent to v2.x.
+
+```php
 $products->first()->meta()['LastEvaluatedKey']; // array
 ```
 
@@ -728,10 +728,10 @@ Use `index` clause to specify Global Secondary Index name.
 
 ```php
 $response = DB::table('Reply')
-                ->index('PostedBy-Message-index')
-                ->keyCondition('PostedBy', '=', 'User A')
-                ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
-                ->query();
+    ->index('PostedBy-Message-index')
+    ->keyCondition('PostedBy', '=', 'User A')
+    ->keyCondition('Message', '=', 'DynamoDB Thread 2 Reply 1 text')
+    ->query();
 ```
 
 ### Atomic Counter
