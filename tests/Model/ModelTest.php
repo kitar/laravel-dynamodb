@@ -9,6 +9,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
 use Kitar\Dynamodb\Model\KeyMissingException;
 use BadMethodCallException;
+use Kitar\Dynamodb\Helpers\Collection;
 
 class ModelTest extends TestCase
 {
@@ -34,6 +35,15 @@ class ModelTest extends TestCase
         $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [[]]);
 
         return $connection;
+    }
+
+    protected function sampleAwsResult()
+    {
+        return new Result([
+            'Items' => [],
+            'LastEvaluatedKey' => ['id' => ['S' => '1']],
+            '@metadata' => ['statusCode' => 200],
+        ]);
     }
 
     protected function sampleAwsResultEmpty()
@@ -400,14 +410,39 @@ class ModelTest extends TestCase
         ];
 
         $return = new Result([
-            'Items' => []
+            'Items' => [
+                ['name' => ['S' => 'User 1']],
+                ['name' => ['S' => 'User 2']]
+            ]
         ]);
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('scan')->with($params)->andReturn($return)->once();
         $this->setConnectionResolver($connection);
 
-        UserA::all();
+        $res = UserA::all();
+
+        $this->assertSame(2, $res->count());
+        $this->assertInstanceOf(Collection::class, $res);
+        $this->assertInstanceOf(UserA::class, $res->first());
+        $this->assertSame('User 1', $res->first()->name);
+        $this->assertNull($res->getLastEvaluatedKey());
+    }
+
+    /** @test */
+    public function it_can_get_last_evaluated_key()
+    {
+        $params = [
+            'TableName' => 'User'
+        ];
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('scan')->with($params)->andReturn($this->sampleAwsResult())->once();
+        $this->setConnectionResolver($connection);
+
+        $res = UserA::all();
+
+        $this->assertSame(['id' => ['S' => '1']], $res->getLastEvaluatedKey());
     }
 
     /** @test */
