@@ -376,4 +376,30 @@ class AuthUserProviderTest extends TestCase
         $this->assertTrue($success);
         $this->assertFalse($fail);
     }
+
+    /** @test */
+    public function it_can_rehash_password_if_required()
+    {
+        if (! method_exists(\Illuminate\Contracts\Auth\UserProvider::class, 'rehashPasswordIfRequired')) {
+            $this->markTestSkipped('Password rehash is not supported in this version.');
+        }
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->andReturn($this->sampleAwsResult());
+        $this->setConnectionResolver($connection);
+
+        $originalHash = '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G';
+        $user = new UserA([
+            'partition' => 'foo@bar.com',
+            'password' => $originalHash,
+        ]);
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+        $provider->rehashPasswordIfRequired($user, ['password' => 'foo'], true);
+        $this->assertNotSame($originalHash, $user->password);
+        $this->assertTrue($this->hasher->check('foo', $user->password));
+
+        $rehashedHash = $user->password;
+        $provider->rehashPasswordIfRequired($user, ['password' => 'foo']);
+        $this->assertSame($rehashedHash, $user->password);
+    }
 }

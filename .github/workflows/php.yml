@@ -10,6 +10,8 @@ jobs:
     strategy:
       matrix:
         include:
+          - php: 8.3
+            illuminate: ^11.0
           - php: 8.2
             illuminate: ^10.0
           - php: 8.1
@@ -25,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup PHP ${{ matrix.php }}
       uses: shivammathur/setup-php@v2
@@ -39,4 +41,4 @@ jobs:
       run: composer run-script ci-test
 
     - uses: codecov/codecov-action@v3
-      if: matrix.php == '8.2'
+      if: matrix.php == '8.3'
