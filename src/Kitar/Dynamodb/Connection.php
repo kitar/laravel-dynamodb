@@ -17,6 +17,8 @@ class Connection extends BaseConnection
 
     public function __construct($config)
     {
+        $this->config = $config;
+
         $this->client = $this->createClient($config);
 
         $this->tablePrefix = $config['prefix'] ?? '';
