@@ -374,7 +374,7 @@ class Model extends BaseModel
             return $this->$method(...$parameters);
         }
 
-        if (! in_array($method, $allowedBuilderMethods)) {
+        if (! in_array($method, $allowedBuilderMethods) && ! $this->hasNamedScope($method)) {
             static::throwBadMethodCallException($method);
         }
 

@@ -472,7 +472,36 @@ class Builder extends BaseBuilder
             return $this;
         }
 
+        if ($this->hasNamedScope($method)) {
+            return $this->callNamedScope($method, $parameters);
+        }
+
         throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
+    }
+
+    /**
+     * Determine if the given model has a scope.
+     *
+     * @param  string  $scope
+     *
+     * @return bool
+     */
+    public function hasNamedScope(string $scope): bool
+    {
+        return $this->model_class && (new $this->model_class)->hasNamedScope($scope);
+    }
+
+    /**
+     * Apply the given named scope on the current builder instance.
+     *
+     * @param  string  $scope
+     * @param  array  $parameters
+     *
+     * @return mixed
+     */
+    protected function callNamedScope(string $scope, array $parameters = [])
+    {
+        return (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters));
     }
 
     /**
