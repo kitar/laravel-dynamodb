@@ -47,6 +47,22 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Compile the Select attribute.
+     *
+     * @param $select_attributes
+     * @return array
+     */
+    public function compileSelectAttributes($select_attributes) {
+        if ($select_attributes === 'ALL_ATTRIBUTES') {
+            return [];
+        }
+
+        return [
+            'Select' => $select_attributes,
+        ];
+    }
+
+    /**
      * Compile the TableName attribute.
      *
      * @param string $table_name

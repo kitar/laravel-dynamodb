@@ -343,6 +343,7 @@ class Model extends BaseModel
     {
         $allowedBuilderMethods = [
             "select",
+            "count",
             "take",
             "limit",
             "index",
