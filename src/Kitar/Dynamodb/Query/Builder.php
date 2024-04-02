@@ -121,6 +121,12 @@ class Builder extends BaseBuilder
     protected $key_condition_query;
 
     /**
+     * The attributes to be returned in the result
+     * @var string
+     */
+    protected $selectAttributes = 'ALL_ATTRIBUTES';
+
+    /**
      * Create a new query builder instance.
      *
      * @param \Kitar\Dynamodb\Connection $connection
@@ -261,6 +267,27 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Set select attributes
+     *
+     * @param  string  $selectAttributes
+     * @return $this
+     */
+    protected function selectAttributes(string $selectAttributes) {
+        $this->selectAttributes = $selectAttributes;
+
+        return $this;
+    }
+
+    /**
+     * Get the selectAttributes attribute.
+     *
+     * @return string
+     */
+    public function getSelectAttributes() {
+        return $this->selectAttributes;
+    }
+
+    /**
      * Get item.
      *
      * @param array|null $key
@@ -366,6 +393,13 @@ class Builder extends BaseBuilder
         }
 
         return $this->process('batchWriteItem', null);
+    }
+
+    public function count($columns = '*') {
+        // reset columns selection
+        $this->select([])->selectAttributes('COUNT');
+
+        return (int) $this->process('scan', 'processCount');
     }
 
     /**
@@ -575,12 +609,13 @@ class Builder extends BaseBuilder
      * @param string $processor_method
      * @return array|\Illuminate\Support\Collection|\Aws\Result
      */
-    protected function process($query_method, $processor_method)
+    protected function process($query_method, $processor_method = null)
     {
         // Compile columns and wheres attributes.
         // These attributes needs to interact with ExpressionAttributes during compile,
         // so it need to run before compileExpressionAttributes.
         $params = array_merge(
+            $this->grammar->compileSelectAttributes($this->selectAttributes),
             $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
             $this->grammar->compileConditions($this->filter_query),
             $this->grammar->compileConditions($this->condition_query),
