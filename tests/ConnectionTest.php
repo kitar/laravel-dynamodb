@@ -122,4 +122,23 @@ class ConnectionTest extends TestCase
         $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), 'https');
         $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'examples.com');
     }
+
+    /** @test */
+    public function it_dont_prepends_default_protocol_if_has_local_endpoint()
+    {
+        $connection = new Connection(['endpoint' => 'example-container']);
+        $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), '');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), '');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getPath(), 'example-container');
+    }
+
+    /** @test */
+    public function it_dont_prepends_default_protocol_if_has_local_endpoint_with_port()
+    {
+        $connection = new Connection(['endpoint' => 'example-container:8000']);
+        $this->assertEquals($connection->getClient()->getEndpoint()->getScheme(), '');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'example-container');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getPath(), '');
+        $this->assertEquals($connection->getClient()->getEndpoint()->getPort(), 8000);
+    }
 }
