@@ -79,7 +79,11 @@ class Connection extends BaseConnection
             'endpoint' => $config['endpoint'] ?? null,
         ];
 
-        if (! empty($dynamoConfig['endpoint']) && preg_match('#^https?://#i', $dynamoConfig['endpoint']) === 0) {
+        if (
+            ! empty($dynamoConfig['endpoint'])
+            && preg_match('#^https?://#i', $dynamoConfig['endpoint']) === 0
+            && preg_match('#\.[a-z]{2,}$#i', $dynamoConfig['endpoint'])
+        ) {
             $dynamoConfig['endpoint'] = "https://" . $dynamoConfig['endpoint'];
         }
 
