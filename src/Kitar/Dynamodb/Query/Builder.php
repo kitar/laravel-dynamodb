@@ -8,6 +8,7 @@ use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
 use Kitar\Dynamodb\Query\ExpressionAttributes;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Builder as BaseBuilder;
@@ -622,5 +623,46 @@ class Builder extends BaseBuilder
         } else {
             return $response;
         }
+    }
+
+    /** LARAVEL methods */
+
+    /**
+     * Insert new records into the database.
+     *
+     * @param  array  $values
+     * @return bool
+     */
+    public function insert(array $values)
+    {
+        $result = $this->putItem(is_array($values) ? $values : func_get_args());
+
+        return count(Arr::get($result, '@metadata.transferStats')) > 0;
+    }
+
+    /**
+     * Update records in the database.
+     *
+     * @param  array  $values
+     * @return int
+     */
+    public function update($values = null)
+    {
+        $result = $this->updateItem(is_array($values) ? $values : func_get_args());
+
+        return count(Arr::get($result, '@metadata.transferStats'));
+    }
+
+    /**
+     * Delete records from the database.
+     *
+     * @param  mixed  $ids
+     * @return int
+     */
+    public function delete($ids = null)
+    {
+        $result = $this->deleteItem(is_array($ids) ? $ids : func_get_args());
+
+        return count(Arr::get($result, '@metadata.transferStats'));
     }
 }
