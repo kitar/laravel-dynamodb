@@ -4,6 +4,7 @@ namespace Kitar\Dynamodb\Model;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Kitar\Dynamodb\Model\KeyMissingException;
+use Kitar\Dynamodb\Concerns\HasMeta;
 
 class Model extends BaseModel
 {
@@ -13,6 +14,7 @@ class Model extends BaseModel
      * @var string
      */
     protected $table;
+    use HasMeta;
 
     /**
      * The Partition Key.
@@ -33,10 +35,7 @@ class Model extends BaseModel
     protected $sortKeyDefault;
 
     /**
-     * The @metadata attribute of AWS\Result response.
-     * @var mixed
      */
-    protected $meta;
 
     /**
      * @inheritdoc
@@ -324,16 +323,6 @@ class Model extends BaseModel
         $this->fireModelEvent('deleted', false);
 
         return true;
-    }
-
-    public function meta()
-    {
-        return $this->meta;
-    }
-
-    public function setMeta(array $meta)
-    {
-        $this->meta = $meta;
     }
 
     /**
