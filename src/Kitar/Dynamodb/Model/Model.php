@@ -3,8 +3,8 @@
 namespace Kitar\Dynamodb\Model;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
-use Kitar\Dynamodb\Model\KeyMissingException;
 use Kitar\Dynamodb\Concerns\HasMeta;
+use Kitar\Dynamodb\Exceptions\KeyMissingException;
 
 class Model extends BaseModel
 {

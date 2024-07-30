@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
-use Kitar\Dynamodb\Model\KeyMissingException;
+use Kitar\Dynamodb\Exceptions\KeyMissingException;
 use BadMethodCallException;
 use Kitar\Dynamodb\Helpers\Collection;
 

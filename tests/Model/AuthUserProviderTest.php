@@ -8,7 +8,7 @@ use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Hashing\BcryptHasher;
-use Kitar\Dynamodb\Model\KeyMissingException;
+use Kitar\Dynamodb\Exceptions\KeyMissingException;
 use Kitar\Dynamodb\Model\AuthUserProvider;
 
 class AuthUserProviderTest extends TestCase
