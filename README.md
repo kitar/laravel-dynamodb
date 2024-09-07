@@ -133,10 +133,10 @@ $connection->table('your-table')->...
 The `assume_role` option should be used when you need to explicitly define an IAM role. There are two main scenarios where this is supported:
 
 1. Using Default Credentials (e.g., EC2 IAM Role):
-   - Leave the key and secret fields empty, and define the assume_role. The application will automatically use the default credentials available (such as the IAM role assigned to an AWS EC2 instance).
+   - Leave the `key` and `secret` parameters empty, and define the `assume_role`. The application will automatically use the default credentials available (such as the IAM role assigned to an AWS EC2 instance).
 
 2. Using Explicit IAM User Credentials:
-   - Provide both the key and secret for an IAM user that has permission to assume the specified IAM role. The application will use these credentials to assume the given IAM role.
+   - Provide both the `key` and `secret` for an IAM user that has permission to assume the specified IAM role. The application will use these credentials to assume the given IAM role.
 
 ## Sample data
 
