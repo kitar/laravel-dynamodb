@@ -1,10 +1,10 @@
 <?php
 
-namespace Kitar\Dynamodb\Query;
+namespace Attla\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
 use Illuminate\Support\Str;
-use Kitar\Dynamodb\Query\Builder;
+use Attla\Dynamodb\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar as BaseGrammer;
 
 class Grammar extends BaseGrammer
@@ -70,9 +70,8 @@ class Grammar extends BaseGrammer
         if (empty($index)) {
             return [];
         }
-        return [
-            'IndexName' => $index
-        ];
+
+        return ['IndexName' => $index];
     }
 
     /**
@@ -86,6 +85,7 @@ class Grammar extends BaseGrammer
         if (empty($key)) {
             return [];
         }
+
         return [
             'Key' => $this->marshaler->marshalItem($key)
         ];
@@ -102,6 +102,7 @@ class Grammar extends BaseGrammer
         if (empty($item)) {
             return [];
         }
+
         return [
             'Item' => $this->marshaler->marshalItem($item)
         ];
@@ -117,11 +118,11 @@ class Grammar extends BaseGrammer
     {
         $expressions = [];
 
-        if (! empty($updates['set'])) {
+        if (!empty($updates['set'])) {
             $expressions[] = 'set ' . implode(', ', $updates['set']);
         }
 
-        if (! empty($updates['remove'])) {
+        if (!empty($updates['remove'])) {
             $expressions[] = 'remove ' . implode(', ', $updates['remove']);
         }
 
@@ -233,6 +234,7 @@ class Grammar extends BaseGrammer
         if ($bool == null) {
             return [];
         }
+
         return [
             'ConsistentRead' => $bool
         ];
@@ -250,7 +252,6 @@ class Grammar extends BaseGrammer
         }
 
         $projections = [];
-
         foreach ($columns as $column) {
             $projections[] = $expression_attributes->addName($column);
         }
@@ -269,7 +270,6 @@ class Grammar extends BaseGrammer
     public function compileExpressionAttributes(ExpressionAttributes $expression_attributes)
     {
         $params = [];
-
         if ($expression_attributes->hasName()) {
             $params['ExpressionAttributeNames'] = $expression_attributes->names();
         }
@@ -299,9 +299,7 @@ class Grammar extends BaseGrammer
         ];
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     protected function whereBasic($query, $where)
     {
         // if operator specified, compile to simple condition string.
@@ -371,9 +369,7 @@ class Grammar extends BaseGrammer
         return "contains({$where['column']}, {$where['value']})";
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     protected function whereBetween($query, $where)
     {
         $min = reset($where['values']);
@@ -383,9 +379,7 @@ class Grammar extends BaseGrammer
         return "({$where['column']} between {$min} and {$max})";
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     protected function whereIn($query, $where)
     {
         $values = implode(', ', $where['values']);
@@ -393,9 +387,7 @@ class Grammar extends BaseGrammer
         return "({$where['column']} in ({$values}))";
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function getOperators()
     {
         return array_merge($this->operators, $this->functions);

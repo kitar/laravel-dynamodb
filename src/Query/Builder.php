@@ -1,17 +1,19 @@
 <?php
 
-namespace Kitar\Dynamodb\Query;
+namespace Attla\Dynamodb\Query;
 
-use Closure;
-use BadMethodCallException;
-use Kitar\Dynamodb\Connection;
-use Kitar\Dynamodb\Query\Grammar;
-use Kitar\Dynamodb\Query\Processor;
-use Kitar\Dynamodb\Query\ExpressionAttributes;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Builder as BaseBuilder;
+use Attla\Dynamodb\Connection;
+use Attla\Dynamodb\Query\{
+    Grammar,
+    Processor,
+    ExpressionAttributes
+};
+use Illuminate\Support\{ Arr, Str };
+use Illuminate\Database\Query\{
+    Expression,
+    Builder as BaseBuilder
+};
+use Attla\Dynamodb\Helpers\Collection;
 
 class Builder extends BaseBuilder
 {
@@ -87,7 +89,7 @@ class Builder extends BaseBuilder
 
     /**
      * The ExpressionAttributes object.
-     * @var Kitar\Dynamodb\Query\ExpressionAttributes
+     * @var Attla\Dynamodb\Query\ExpressionAttributes
      */
     protected $expression_attributes;
 
@@ -105,29 +107,29 @@ class Builder extends BaseBuilder
 
     /**
      * Dedicated query for building FilterExpression.
-     * @var \Kitar\Dynamodb\Query\Builder
+     * @var \Attla\Dynamodb\Query\Builder
      */
     protected $filter_query;
 
     /**
      * Dedicated query for building ConditionExpression.
-     * @var \Kitar\Dynamodb\Query\Builder
+     * @var \Attla\Dynamodb\Query\Builder
      */
     protected $condition_query;
 
     /**
      * Dedicated query for building KeyConditionExpression.
-     * @var \Kitar\Dynamodb\Query\Builder
+     * @var \Attla\Dynamodb\Query\Builder
      */
     protected $key_condition_query;
 
     /**
      * Create a new query builder instance.
      *
-     * @param \Kitar\Dynamodb\Connection $connection
-     * @param \Kitar\Dynamodb\Query\Grammar $grammar
-     * @param \Kitar\Dynamodb\Query\Processor $processor
-     * @param \Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
+     * @param \Attla\Dynamodb\Connection $connection
+     * @param \Attla\Dynamodb\Query\Grammar $grammar
+     * @param \Attla\Dynamodb\Query\Processor $processor
+     * @param \Attla\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
      * @param bool $is_nested_query
      * @return void
      */
@@ -141,7 +143,7 @@ class Builder extends BaseBuilder
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
-        if (! $is_nested_query) {
+        if (!$is_nested_query) {
             $this->initializeDedicatedQueries();
         }
     }
@@ -155,7 +157,6 @@ class Builder extends BaseBuilder
     public function index(string $index)
     {
         $this->index = $index;
-
         return $this;
     }
 
@@ -168,7 +169,6 @@ class Builder extends BaseBuilder
     public function key(array $key)
     {
         $this->key = $key;
-
         return $this;
     }
 
@@ -181,7 +181,6 @@ class Builder extends BaseBuilder
     public function scanIndexForward($bool)
     {
         $this->scan_index_forward = $bool;
-
         return $this;
     }
 
@@ -194,7 +193,6 @@ class Builder extends BaseBuilder
     public function exclusiveStartKey($key)
     {
         $this->exclusive_start_key = $key;
-
         return $this;
     }
 
@@ -207,7 +205,6 @@ class Builder extends BaseBuilder
     public function consistentRead($active = true)
     {
         $this->consistent_read = $active;
-
         return $this;
     }
 
@@ -220,7 +217,6 @@ class Builder extends BaseBuilder
     public function dryRun($active = true)
     {
         $this->dry_run = $active;
-
         return $this;
     }
 
@@ -234,7 +230,6 @@ class Builder extends BaseBuilder
     public function usingModel($class_name)
     {
         $this->model_class = $class_name;
-
         return $this;
     }
 
@@ -247,7 +242,6 @@ class Builder extends BaseBuilder
     protected function whereAs($condition_key_name)
     {
         $this->where_as = $condition_key_name;
-
         return $this;
     }
 
@@ -269,9 +263,7 @@ class Builder extends BaseBuilder
      */
     public function getItem($key = null)
     {
-        if ($key) {
-            $this->key($key);
-        }
+        $key && $this->key($key);
 
         return $this->process('getItem', 'processSingleItem');
     }
@@ -327,6 +319,7 @@ class Builder extends BaseBuilder
         return $this->process('updateItem', 'processSingleItem');
     }
 
+    // TODO: document..
     public function batchGetItem($keys)
     {
         $this->batch_get_keys = $keys;
@@ -334,6 +327,7 @@ class Builder extends BaseBuilder
         return $this->process('batchGetItem', 'processBatchGetItems');
     }
 
+    // TODO: document..
     public function batchPutItem($items)
     {
         $this->batch_write_request_items = collect($items)->map(function ($item) {
@@ -347,6 +341,7 @@ class Builder extends BaseBuilder
         return $this->batchWriteItem();
     }
 
+    // TODO: document..
     public function batchDeleteItem($keys)
     {
         $this->batch_write_request_items = collect($keys)->map(function ($key) {
@@ -360,26 +355,23 @@ class Builder extends BaseBuilder
         return $this->batchWriteItem();
     }
 
+    // TODO: document..
     public function batchWriteItem($request_items = [])
     {
-        if (! empty($request_items)) {
+        if (!empty($request_items)) {
             $this->batch_write_request_items = $request_items;
         }
 
         return $this->process('batchWriteItem', null);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function increment($column, $amount = 1, array $extra = [])
     {
         return $this->incrementOrDecrement($column, '+', $amount, $extra);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function decrement($column, $amount = 1, array $extra = [])
     {
         return $this->incrementOrDecrement($column, '-', $amount, $extra);
@@ -408,8 +400,9 @@ class Builder extends BaseBuilder
      *
      * @return \Illuminate\Support\Collection|array
      */
-    public function query()
+    public function query($columns = [])
     {
+        !empty($columns) && $this->select($columns);
         return $this->process('clientQuery', 'processMultipleItems');
     }
 
@@ -421,11 +414,14 @@ class Builder extends BaseBuilder
      */
     public function scan($columns = [])
     {
-        if (! empty($columns)) {
-            $this->select($columns);
-        }
-
+        !empty($columns) && $this->select($columns);
         return $this->process('scan', 'processMultipleItems');
+    }
+
+    /** @inheritdoc */
+    public function get($columns = [])
+    {
+        return $this->scan($columns);
     }
 
     /**
@@ -441,7 +437,6 @@ class Builder extends BaseBuilder
         $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
 
         // Make method map.
-        // Array of: 'incomingMethodName' => [ 'target_builder_instance_name', 'targetMethodName' ]
         foreach (['filter', 'condition', 'key_condition'] as $query_type) {
             foreach (['', 'or'] as $boolean) {
                 foreach (['', 'in', 'between'] as $where_type) {
@@ -473,16 +468,14 @@ class Builder extends BaseBuilder
             return $this;
         }
 
-        throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
+        throw new \BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
         // Convert column and value to ExpressionAttributes.
-        if (! $column instanceof Closure) {
+        if (!$column instanceof \Closure) {
             $column = $this->expression_attributes->addName($column);
             if ($value !== null) {
                 $value = $this->expression_attributes->addValue($value);
@@ -492,7 +485,7 @@ class Builder extends BaseBuilder
         // If the columns is actually a Closure instance, we will assume the developer
         // wants to begin a nested where statement which is wrapped in parenthesis.
         // We'll add that Closure to the query then return back out immediately.
-        if ($column instanceof Closure) {
+        if ($column instanceof \Closure) {
             return $this->whereNested($column, $boolean);
         }
 
@@ -517,28 +510,23 @@ class Builder extends BaseBuilder
             'boolean'
         );
 
-        if (! $value instanceof Expression) {
+        if (!$value instanceof Expression) {
             $this->addBinding($value, 'where');
         }
 
         return $this;
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function orWhere($column, $operator = null, $value = null)
     {
         return $this->where($column, $operator, $value, 'or');
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
         $column = $this->expression_attributes->addName($column);
-
         foreach ($values as &$value) {
             $value = $this->expression_attributes->addValue($value);
         }
@@ -546,13 +534,10 @@ class Builder extends BaseBuilder
         return parent::whereIn($column, $values, $boolean, $not);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
     {
         $column = $this->expression_attributes->addName($column);
-
         foreach ($values as &$value) {
             $value = $this->expression_attributes->addValue($value);
         }
@@ -560,12 +545,16 @@ class Builder extends BaseBuilder
         return parent::whereBetween($column, $values, $boolean, $not);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function newQuery()
     {
-        return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes, true);
+        return new static(
+            $this->connection,
+            $this->grammar,
+            $this->processor,
+            $this->expression_attributes,
+            true
+        );
     }
 
     /**
@@ -618,51 +607,38 @@ class Builder extends BaseBuilder
         $response = $this->connection->$query_method($params);
 
         // Process.
-        if ($processor_method) {
-            return $this->processor->$processor_method($response, $this->model_class);
-        } else {
-            return $response;
-        }
+        return $processor_method
+            ? $this->processor->$processor_method($response, $this->model_class)
+            : $response;
     }
 
-    /** LARAVEL methods */
-
-    /**
-     * Insert new records into the database.
-     *
-     * @param  array  $values
-     * @return bool
-     */
-    public function insert(array $values)
+    /** @inheritdoc */
+    public function delete($ids = null)
     {
-        $result = $this->putItem(is_array($values) ? $values : func_get_args());
+        $ids = is_null($ids) ? $this->key : (is_array($ids) ? $ids : func_get_args());
+        $result = $this->deleteItem($ids);
 
-        return count(Arr::get($result, '@metadata.transferStats')) > 0;
+        return count(Arr::get($result, '@metadata.transferStats'));
     }
 
-    /**
-     * Update records in the database.
-     *
-     * @param  array  $values
-     * @return int
-     */
+    /** @inheritdoc */
     public function update($values = null)
     {
         $result = $this->updateItem(is_array($values) ? $values : func_get_args());
-
         return count(Arr::get($result, '@metadata.transferStats'));
     }
 
-    /**
-     * Delete records from the database.
-     *
-     * @param  mixed  $ids
-     * @return int
-     */
-    public function delete($ids = null)
+    /** @inheritdoc */
+    public function count($columns = [])
     {
-        $result = $this->deleteItem(is_array($ids) ? $ids : func_get_args());
+        $result = $this->query($columns);
+        return $result instanceof Collection ? $result->count() : 0;
+    }
 
-        return count(Arr::get($result, '@metadata.transferStats'));
+    /** @inheritdoc */
+    public function countScan($columns = [])
+    {
+        $result = $this->scan($columns);
+        return $result instanceof Collection ? $result->count() : 0;
     }
 }

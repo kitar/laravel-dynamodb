@@ -1,8 +1,8 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Helpers;
+namespace Attla\Dynamodb\Tests\Helpers;
 
-use Kitar\Dynamodb\Helpers\NumberIterator;
+use Attla\Dynamodb\Helpers\NumberIterator;
 use PHPUnit\Framework\TestCase;
 
 class NumberIteratorTest extends TestCase

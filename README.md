@@ -1,7 +1,7 @@
 # Laravel DynamoDB
 
-[![test](https://github.com/kitar/laravel-dynamodb/workflows/test/badge.svg)](https://github.com/kitar/laravel-dynamodb/actions)
-[![codecov](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master/graph/badge.svg)](https://codecov.io/gh/kitar/laravel-dynamodb/branch/master)
+[![test](https://github.com/attla/dynamodb/workflows/test/badge.svg)](https://github.com/attla/dynamodb/actions)
+[![codecov](https://codecov.io/gh/attla/dynamodb/branch/master/graph/badge.svg)](https://codecov.io/gh/attla/dynamodb/branch/master)
 
 A DynamoDB based Eloquent model and Query builder for Laravel.
 
@@ -79,7 +79,7 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
 Install the package via Composer:
 
 ```
-$ composer require kitar/laravel-dynamodb
+$ composer require attla/dynamodb
 ```
 
 ### Laravel (6.x, 7.x, 8.x, 9.x, 10.x, 11.x)
@@ -115,7 +115,7 @@ DB_CONNECTION=dynamodb
 For usage outside Laravel, you can create the connection manually and start querying with [Query Builder](#query-builder).
 
 ```php
-$connection = new Kitar\Dynamodb\Connection([
+$connection = new Attla\Dynamodb\Connection([
     'key' => env('AWS_ACCESS_KEY_ID'),
     'secret' => env('AWS_SECRET_ACCESS_KEY'),
     'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
@@ -158,7 +158,7 @@ Most of the attributes are the same as the original Eloquent model, but there ar
 For example, if our table has only partition key, the model will look like this:
 
 ```php
-use Kitar\Dynamodb\Model\Model;
+use Attla\Dynamodb\Model\Model;
 
 class ProductCatalog extends Model
 {
@@ -171,7 +171,7 @@ class ProductCatalog extends Model
 If our table also has sort key:
 
 ```php
-use Kitar\Dynamodb\Model\Model;
+use Attla\Dynamodb\Model\Model;
 
 class Thread extends Model
 {
@@ -185,7 +185,7 @@ class Thread extends Model
 If we set `sortKeyDefault`, it will be used when we instantiate or call `find` without sort key.
 
 ```php
-use Kitar\Dynamodb\Model\Model;
+use Attla\Dynamodb\Model\Model;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 
@@ -349,12 +349,12 @@ To use authentication with the model, the model should implement `Illuminate\Con
 
 ### Register custom user provider
 
-After we prepare authenticatable model, we need to make the custom user provider. We can make it own (it's simple), but we'll use `Kitar\Dynamodb\Model\AuthUserProvider` in this section.
+After we prepare authenticatable model, we need to make the custom user provider. We can make it own (it's simple), but we'll use `Attla\Dynamodb\Model\AuthUserProvider` in this section.
 
 To register custom user provider, add codes below in `App/Providers/AuthServiceProvider.php`.
 
 ```php
-use Kitar\Dynamodb\Model\AuthUserProvider;
+use Attla\Dynamodb\Model\AuthUserProvider;
 ...
 public function boot()
 {
@@ -445,7 +445,7 @@ $result = DB::table('Thread')->scan();
 Or even outside Laravel.
 
 ```php
-$connection = new Kitar\Dynamodb\Connection([
+$connection = new Attla\Dynamodb\Connection([
     'key' => env('AWS_ACCESS_KEY_ID'),
     'secret' => env('AWS_SECRET_ACCESS_KEY'),
     'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
@@ -472,7 +472,7 @@ $response = DB::table('ProductCatalog')
     ->getItem(['Id' => 101]);
 ```
 
-> Instead of marshaling manually, pass a plain array. `Kitar\Dynamodb\Query\Grammar` will automatically marshal them before querying.
+> Instead of marshaling manually, pass a plain array. `Attla\Dynamodb\Query\Grammar` will automatically marshal them before querying.
 
 #### putItem()
 
@@ -882,6 +882,6 @@ dump($request);
 
 ## Testing
 
-```
-$ ./vendor/bin/phpunit
+```bash
+composer test
 ```

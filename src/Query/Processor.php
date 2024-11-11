@@ -1,11 +1,13 @@
 <?php
 
-namespace Kitar\Dynamodb\Query;
+namespace Attla\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
 use Aws\Result;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Processors\Processor as BaseProcessor;
-use Kitar\Dynamodb\Helpers\Collection;
+use Attla\Dynamodb\Helpers\Collection;
+use Attla\Dynamodb\Helpers\Data;
 
 class Processor extends BaseProcessor
 {
@@ -19,22 +21,21 @@ class Processor extends BaseProcessor
     protected function unmarshal(Result $res)
     {
         $responseArray = $res->toArray();
-
-        if (! empty($responseArray['Item'])) {
+        if (!empty($responseArray['Item'])) {
             $responseArray['Item'] = $this->marshaler->unmarshalItem($responseArray['Item']);
         }
 
-        if (! empty($responseArray['Items'])) {
+        if (!empty($responseArray['Items'])) {
             foreach ($responseArray['Items'] as &$item) {
                 $item = $this->marshaler->unmarshalItem($item);
             }
         }
 
-        if (! empty($responseArray['Attributes'])) {
+        if (!empty($responseArray['Attributes'])) {
             $responseArray['Attributes'] = $this->marshaler->unmarshalItem($responseArray['Attributes']);
         }
 
-        if (! empty($responseArray['Responses'])) {
+        if (!empty($responseArray['Responses'])) {
             foreach ($responseArray['Responses'] as &$items) {
                 foreach ($items as &$item) {
                     $item = $this->marshaler->unmarshalItem($item);
@@ -49,19 +50,15 @@ class Processor extends BaseProcessor
     {
         $response = $this->unmarshal($awsResponse);
 
-        if (empty($modelClass)) {
-            return $response;
+        if (empty($modelClass) && !empty($response['Item'])) {
+            return new Data($response['Item']);
         }
 
-        if (! empty($response['Item'])) {
-            $item = (new $modelClass)->newFromBuilder($response['Item']);
-            unset($response['Item']);
-            $item->setMeta($response ?? null);
-
-            return $item;
+        if (!empty($response['Item'])) {
+            return (new $modelClass)->newFromBuilder($response['Item']);
         }
 
-        if (! empty($response['Attributes'])) {
+        if (!empty($response['Attributes'])) {
             return $response;
         }
     }
@@ -69,55 +66,46 @@ class Processor extends BaseProcessor
     public function processMultipleItems(Result $awsResponse, $modelClass = null)
     {
         $response = $this->unmarshal($awsResponse);
-
-        if (empty($modelClass)) {
-            return $response;
-        }
-
         $items = new Collection([]);
 
-        foreach ($response['Items'] as $item) {
-            $item = (new $modelClass)->newFromBuilder($item);
-            $items->push($item);
+        if (empty($modelClass)) {
+            foreach ($response['Items'] as $item) {
+                $items->push(new Data($item));
+            }
+        } else if (count($response['Items']) && $response['Items'][0] instanceof Model) {
+            foreach ($response['Items'] as $item) {
+                $items->push($item);
+            }
+        } else {
+            foreach ($response['Items'] as $item) {
+                $items->push((new $modelClass)->newFromBuilder($item));
+            }
         }
 
         unset($response['Items']);
-
-        $items = $items->map(function ($item) use ($response) {
-            $item->setMeta($response);
-
-            return $item;
-        });
-
-        // set meta at the collection level
-        $items->setMeta($response);
-
-        return $items;
+        return $items->setMeta($response);
     }
 
     public function processBatchGetItems(Result $awsResponse, $modelClass = null)
     {
         $response = $this->unmarshal($awsResponse);
+        $items = new Collection([]);
 
         if (empty($modelClass)) {
-            return $response;
-        }
-
-        $items = collect();
-
-        foreach ($response['Responses'] as $_ => $table_items) {
-            foreach ($table_items as $item) {
-                $item = (new $modelClass)->newFromBuilder($item);
-                $items->push($item);
+            foreach ($response['Responses'] as $_ => $table_items) {
+                foreach ($table_items as $item) {
+                    $items->push(new Data($item));
+                }
+            }
+        } else {
+            foreach ($response['Responses'] as $_ => $table_items) {
+                foreach ($table_items as $item) {
+                    $items->push((new $modelClass)->newFromBuilder($item));
+                }
             }
         }
 
         unset($response['Responses']);
-
-        return $items->map(function ($item) use ($response) {
-            $item->setMeta($response);
-
-            return $item;
-        });
+        return $items->setMeta($response);
     }
 }

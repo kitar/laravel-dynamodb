@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Concerns;
+namespace Attla\Dynamodb\Concerns;
 
 use Illuminate\Support\Arr;
 
@@ -11,10 +11,10 @@ trait HasMeta
      *
      * @var mixed
      */
-    protected $meta;
+    private $meta;
 
     /**
-     * Get @metadata attribute of AWS\Result response.
+     * Get @metadata attribute.
      *
      * @return mixed
      */
@@ -24,22 +24,43 @@ trait HasMeta
     }
 
     /**
-     * Set @metadata attribute from AWS\Result response.
+     * Get @metadata attribute.
+     *
+     * @return mixed
+     */
+    public function getMeta()
+    {
+        return $this->meta;
+    }
+
+    /**
+     * Set @metadata attribute.
      *
      * @return mixed
      */
     public function setMeta(array $meta)
     {
         $this->meta = $meta;
+        return $this;
     }
 
     /**
-     * Determine if @metadata attribute from AWS\Result response.
+     * Determine if @metadata has any errors.
      *
-     * @return mixed
+     * @return bool
      */
     public function hasErrors() {
         $status = (int) Arr::get($this->meta(), '@metadata.statusCode');
         return $status >= 200 && $status < 300;
+    }
+
+    /**
+     * Get LastEvaluatedKey from @metadata.
+     *
+     * @return bool
+     */
+    public function getLastEvaluatedKey()
+    {
+        return $this->meta['LastEvaluatedKey'] ?? null;
     }
 }

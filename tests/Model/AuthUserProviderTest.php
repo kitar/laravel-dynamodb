@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Model;
+namespace Attla\Dynamodb\Tests\Model;
 
 use Aws\Result;
 use PHPUnit\Framework\TestCase;
@@ -8,8 +8,8 @@ use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Hashing\BcryptHasher;
-use Kitar\Dynamodb\Exceptions\KeyMissingException;
-use Kitar\Dynamodb\Model\AuthUserProvider;
+use Attla\Dynamodb\Exceptions\KeyMissingException;
+use Attla\Dynamodb\Model\AuthUserProvider;
 
 class AuthUserProviderTest extends TestCase
 {
@@ -39,7 +39,7 @@ class AuthUserProviderTest extends TestCase
 
     protected function newConnectionMock()
     {
-        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [[]]);
+        $connection = m::mock('Attla\Dynamodb\Connection[clientQuery]', [[]]);
 
         return $connection;
     }

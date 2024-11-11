@@ -1,8 +1,8 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Helpers;
+namespace Attla\Dynamodb\Tests\Helpers;
 
-use Kitar\Dynamodb\Helpers\Collection;
+use Attla\Dynamodb\Helpers\Collection;
 use PHPUnit\Framework\TestCase;
 
 class CollectionTest extends TestCase

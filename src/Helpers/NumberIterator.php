@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Helpers;
+namespace Attla\Dynamodb\Helpers;
 
 class NumberIterator implements \Iterator
 {

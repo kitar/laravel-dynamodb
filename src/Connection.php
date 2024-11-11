@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb;
+namespace Attla\Dynamodb;
 
 use Aws\Sdk as AwsSdk;
 use Aws\DynamoDb\DynamoDbClient;
@@ -39,12 +39,16 @@ class Connection extends BaseConnection
         return $query->from($table, $as);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function getDriverName()
     {
         return 'dynamodb';
+    }
+
+    /** @inheritdoc */
+    public function getName()
+    {
+        return $this->getDriverName();
     }
 
     /**
@@ -107,25 +111,19 @@ class Connection extends BaseConnection
         return (new AwsSdk($dynamoConfig))->createDynamoDb();
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     public function disconnect()
     {
         //
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     protected function getDefaultPostProcessor()
     {
         return new Query\Processor();
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** @inheritdoc */
     protected function getDefaultQueryGrammar()
     {
         return $this->withTablePrefix(new Query\Grammar());

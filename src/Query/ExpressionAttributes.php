@@ -1,9 +1,9 @@
 <?php
 
-namespace Kitar\Dynamodb\Query;
+namespace Attla\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
-use Kitar\Dynamodb\Helpers\NumberIterator;
+use Attla\Dynamodb\Helpers\NumberIterator;
 
 class ExpressionAttributes
 {
@@ -22,7 +22,7 @@ class ExpressionAttributes
 
     public function addName($name)
     {
-        if (! in_array($name, $this->names, true)) {
+        if (!in_array($name, $this->names, true)) {
             $this->names[$this->makeNameKey()] = $name;
         }
 
@@ -31,7 +31,7 @@ class ExpressionAttributes
 
     public function addValue($value)
     {
-        if (! in_array($value, $this->values, true)) {
+        if (!in_array($value, $this->values, true)) {
             $this->values[$this->makeValueKey()] = $value;
         }
 
@@ -54,12 +54,12 @@ class ExpressionAttributes
 
     public function hasName()
     {
-        return ! empty($this->names);
+        return !empty($this->names);
     }
 
     public function hasValue()
     {
-        return ! empty($this->values);
+        return !empty($this->values);
     }
 
     public function names()

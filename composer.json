@@ -1,15 +1,22 @@
 {
-    "name": "kitar/laravel-dynamodb",
-    "description": "A DynamoDB based Eloquent model and Query builder for Laravel.",
+    "name": "attla/dynamodb",
+    "description": "A DynamoDB-based Eloquent model and query builder with all the features of Laravel.",
     "keywords": [
         "laravel",
         "dynamodb",
         "database",
         "model",
-        "auth"
+        "auth",
+        "nosql",
+        "documentdb",
+        "ddb"
     ],
-    "homepage": "https://github.com/kitar/laravel-dynamodb",
+    "homepage": "https://github.com/attla/dynamodb",
     "authors": [
+        {
+            "name": "Lucas Nicolau",
+            "email": "nicolau@zunq.com"
+        },
         {
             "name": "Satoshi Kita"
         }
@@ -20,7 +27,8 @@
         "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
     },
     "require": {
-        "php": "^7.3|^7.4|^8.0|^8.1|^8.2|^8.3",
+        "php": ">=7.3",
+        "attla/support": "dev-main",
         "illuminate/support": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
         "illuminate/container": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
         "illuminate/database": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
@@ -36,18 +44,21 @@
     },
     "autoload": {
         "psr-4": {
-            "Kitar\\Dynamodb\\": "src/Kitar/Dynamodb/"
+            "Attla\\Dynamodb\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kitar\\Dynamodb\\Tests\\": "tests/"
+            "Attla\\Dynamodb\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "./vendor/bin/phpunit"
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Kitar\\Dynamodb\\DynamodbServiceProvider"
+                "Attla\\Dynamodb\\ServiceProvider"
             ]
         }
     }

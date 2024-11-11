@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Model;
+namespace Attla\Dynamodb\Model;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider as BaseUserProvider;
@@ -169,7 +169,7 @@ class AuthUserProvider implements BaseUserProvider
     /**
      * Create a new instance of the model.
      *
-     * @return \Kitar\Dynamodb\Model\Model
+     * @return \Attla\Dynamodb\Model\Model
      */
     public function createModel()
     {

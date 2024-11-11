@@ -1,10 +1,10 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Query;
+namespace Attla\Dynamodb\Tests\Query;
 
 use Aws\Result;
-use Kitar\Dynamodb\Model\Model;
-use Kitar\Dynamodb\Query\Processor;
+use Attla\Dynamodb\Model\Model;
+use Attla\Dynamodb\Query\Processor;
 use PHPUnit\Framework\TestCase;
 
 class User extends Model

@@ -1,15 +1,15 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Model;
+namespace Attla\Dynamodb\Tests\Model;
 
 use Aws\Result;
 use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
-use Kitar\Dynamodb\Exceptions\KeyMissingException;
+use Attla\Dynamodb\Exceptions\KeyMissingException;
 use BadMethodCallException;
-use Kitar\Dynamodb\Helpers\Collection;
+use Attla\Dynamodb\Helpers\Collection;
 
 class ModelTest extends TestCase
 {
@@ -32,7 +32,7 @@ class ModelTest extends TestCase
 
     protected function newConnectionMock()
     {
-        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [[]]);
+        $connection = m::mock('Attla\Dynamodb\Connection[clientQuery]', [[]]);
 
         return $connection;
     }
