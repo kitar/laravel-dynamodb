@@ -12,6 +12,7 @@
         "ddb"
     ],
     "homepage": "https://github.com/attla/dynamodb",
+    "license": "MIT",
     "authors": [
         {
             "name": "Lucas Nicolau",
@@ -21,7 +22,6 @@
             "name": "Satoshi Kita"
         }
     ],
-    "license": "MIT",
     "scripts": {
         "test": "vendor/bin/phpunit",
         "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
@@ -61,5 +61,7 @@
                 "Attla\\Dynamodb\\ServiceProvider"
             ]
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
