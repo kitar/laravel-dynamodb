@@ -8,6 +8,8 @@ trait HasAttributeFactory
 {
     protected array $_properties = [];
 
+    protected $attributeFactory = [];
+
     /** @inheritdoc */
     public function fill(array $attributes)
     {
@@ -33,7 +35,7 @@ trait HasAttributeFactory
 
     protected function attributeFactory($key = null)
     {
-        $factory = empty($this->attributeFactory) ? [] : $this->attributeFactory;
+        $factory = $this->attributeFactory;
         return $key ? $factory[$key] ?? null : $factory;
     }
 
