@@ -4,12 +4,13 @@ namespace Attla\Dynamodb\Model;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
-use Attla\Dynamodb\Concerns\HasMeta;
+use Attla\Dynamodb\Concerns\{ HasAttributeFactory, HasMeta };
 use Attla\Dynamodb\Exceptions\KeyMissingException;
 
 class Model extends BaseModel
 {
     use HasMeta;
+    use HasAttributeFactory;
 
     /**
      * The Partition Key.
