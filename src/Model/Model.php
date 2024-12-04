@@ -70,6 +70,16 @@ class Model extends BaseModel
     }
 
     /**
+     * Get the default short key.
+     *
+     * @return string
+     */
+    public function getDefaultSortKey()
+    {
+        return $this->sortKeyDefault ?? null;
+    }
+
+    /**
      * Get the key names.
      *
      * @return array
