@@ -58,8 +58,7 @@ class Builder extends EloquentBuilder
         }
 
         if (is_array($key) && Arr::isList($key)) {
-            $model = $this->newModelInstance();
-            $key = array_combine($model->getKeySchema(), $key);
+            $key = array_combine($this->model->getKeySchema(), $key);
         } else if (is_string($key) || is_numeric($key)) {
             $model = $this->newModelInstance();
             $model->setAttribute($model->getKeyName(), $key);
