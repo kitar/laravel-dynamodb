@@ -7,14 +7,14 @@ use Illuminate\Support\Arr;
 trait HasMeta
 {
     /**
-     * The @metadata attribute of AWS\Result response.
+     * The @metadata attribute of AWS\Result response
      *
      * @var mixed
      */
     private $meta;
 
     /**
-     * Get @metadata attribute.
+     * Get @metadata attribute
      *
      * @return mixed
      */
@@ -24,7 +24,7 @@ trait HasMeta
     }
 
     /**
-     * Get @metadata attribute.
+     * Get @metadata attribute
      *
      * @return mixed
      */
@@ -34,9 +34,10 @@ trait HasMeta
     }
 
     /**
-     * Set @metadata attribute.
+     * Set @metadata attribute
      *
-     * @return mixed
+     * @param array $meta
+     * @return $this
      */
     public function setMeta(array $meta)
     {
@@ -45,7 +46,7 @@ trait HasMeta
     }
 
     /**
-     * Determine if @metadata has any errors.
+     * Determine if @metadata has any errors
      *
      * @return bool
      */
@@ -55,7 +56,7 @@ trait HasMeta
     }
 
     /**
-     * Get LastEvaluatedKey from @metadata.
+     * Get LastEvaluatedKey from @metadata
      *
      * @return bool
      */

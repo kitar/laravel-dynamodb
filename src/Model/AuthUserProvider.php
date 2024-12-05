@@ -9,28 +9,28 @@ use Illuminate\Contracts\Hashing\Hasher as HasherContract;
 class AuthUserProvider implements BaseUserProvider
 {
     /**
-     * The hasher implementation.
+     * The hasher implementation
      *
      * @var \Illuminate\Contracts\Hashing\Hasher
      */
     protected $hasher;
 
     /**
-     * The Eloquent user model.
+     * The Eloquent user model
      *
      * @var string
      */
     protected $model;
 
     /**
-     * The column name of the api token.
+     * The column name of the api token
      *
      * @var string
      */
     protected $apiTokenName;
 
     /**
-     * The index name to use when querying by api token.
+     * The index name to use when querying by api token
      *
      * @var string
      */
@@ -45,30 +45,27 @@ class AuthUserProvider implements BaseUserProvider
     }
 
     /**
-     * Retrieve a user by their unique identifier.
+     * Retrieve a user by their unique identifier
      *
-     * @param  mixed  $identifier
+     * @param mixed $identifier
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
     public function retrieveById($identifier)
     {
         $model = $this->createModel();
-
         return $model->find($identifier);
     }
 
     /**
-     * Retrieve a user by their unique identifier and "remember me" token.
+     * Retrieve a user by their unique identifier and "remember me" token
      *
-     * @param  mixed  $identifier
-     * @param  string  $token
+     * @param mixed $identifier
+     * @param string $token
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
     public function retrieveByToken($identifier, $token)
     {
-        $user = $this->retrieveById($identifier);
-
-        if (! $user) {
+        if (!$user = $this->retrieveById($identifier)) {
             return;
         }
 
@@ -79,30 +76,26 @@ class AuthUserProvider implements BaseUserProvider
     }
 
     /**
-     * Update the "remember me" token for the given user in storage.
+     * Update the "remember me" token for the given user in storage
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  string  $token
+     * @param \Illuminate\Contracts\Auth\Authenticatable $user
+     * @param string $token
      * @return void
      */
     public function updateRememberToken(Authenticatable $user, $token)
     {
         $user->setRememberToken($token);
-
         $timestamps = $user->timestamps;
-
         $user->timestamps = false;
-
         $user->save();
-
         $user->timestamps = $timestamps;
     }
 
     /**
-     * Retrieve a user by the given credentials.
-     * Identifier or API Token are supported.
+     * Retrieve a user by the given credentials
+     * Identifier or API Token are supported
      *
-     * @param  array  $credentials
+     * @param array $credentials
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
     public function retrieveByCredentials(array $credentials)
@@ -116,10 +109,7 @@ class AuthUserProvider implements BaseUserProvider
         }
 
         $model = $this->createModel();
-
-        $id = $credentials[$model->getAuthIdentifierName()] ?? null;
-
-        if ($id) {
+        if ($id = $credentials[$model->getAuthIdentifierName()] ?? null) {
             return $this->retrieveById($id);
         }
 
@@ -134,30 +124,29 @@ class AuthUserProvider implements BaseUserProvider
     }
 
     /**
-     * Validate a user against the given credentials.
+     * Validate a user against the given credentials
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
+     * @param \Illuminate\Contracts\Auth\Authenticatable $user
+     * @param array $credentials
      * @return bool
      */
     public function validateCredentials(Authenticatable $user, array $credentials)
     {
         $plain = $credentials['password'];
-
         return $this->hasher->check($plain, $user->getAuthPassword());
     }
 
     /**
-     * Rehash the user's password if required and supported.
+     * Rehash the user's password if required and supported
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
-     * @param  bool  $force
+     * @param \Illuminate\Contracts\Auth\Authenticatable $user
+     * @param array $credentials
+     * @param bool $force
      * @return void
      */
     public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
     {
-        if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
+        if (!$this->hasher->needsRehash($user->getAuthPassword()) && !$force) {
             return;
         }
 
@@ -167,14 +156,13 @@ class AuthUserProvider implements BaseUserProvider
     }
 
     /**
-     * Create a new instance of the model.
+     * Create a new instance of the model
      *
      * @return \Attla\Dynamodb\Model\Model
      */
     public function createModel()
     {
         $class = '\\'.ltrim($this->model, '\\');
-
         return new $class;
     }
 }
