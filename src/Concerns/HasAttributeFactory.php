@@ -33,23 +33,63 @@ trait HasAttributeFactory
         return parent::getAttribute($key) ?? $this->resolveAttribute($key);
     }
 
+    /**
+     * Retrieve a atribute mask factory
+     *
+     * @param string $key
+     * @return string|array<string, string>
+     */
     protected function attributeFactory($key = null)
     {
         $factory = $this->attributeFactory;
         return $key ? $factory[$key] ?? null : $factory;
     }
 
+    /**
+     * Resolve the mask if necessary
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return mixed
+     */
     protected function resolveAttribute($key, $value = null) {
-        if (empty($factory = $this->attributeFactory($key))) {
+        if (
+            empty($factory = $this->attributeFactory($key))
+            || $this->matchesMask($factory, $value)
+        ) {
             return $value;
         }
 
         return $this->resolvePlaceholder($factory, $value, $key);
     }
 
-    protected function resolvePlaceholder($template, $value = null, $key = null)
+    /**
+     * Check if value is masked
+     *
+     * @param string $mask
+     * @param mixed $value
+     * @return bool
+     */
+    protected function matchesMask($mask, $value)
     {
-        return preg_replace_callback('/\{(\w+(?:::\w+|->\w+)?|\w+)\(?(\w+)?\)?\}/', function ($matches) use ($template, $value, $key) {
+        $pattern = preg_replace('/\{[^}]+\}/', '.*', preg_quote($mask, '/'));
+        return (bool) preg_match(
+            '/^' . str_replace('\.*', '.*', $pattern) . '$/',
+            $value
+        );
+    }
+
+    /**
+     * Resolve attribute mask
+     *
+     * @param string $mask
+     * @param mixed|null $value
+     * @param string|null $key
+     * @return mixed
+     */
+    protected function resolvePlaceholder($mask, $value = null, $key = null)
+    {
+        return preg_replace_callback('/\{(\w+(?:::\w+|->\w+)?|\w+)\(?(\w+)?\)?\}/', function ($matches) use ($mask, $value, $key) {
             $function = isset($matches[2]) ? $matches[1] : null;
             $property = $matches[2] ?? $matches[1];
 
@@ -66,7 +106,7 @@ trait HasAttributeFactory
                 return Invoke::resolve($function, $value);
             }
 
-            return $value == $template ? '' : $value;
-        }, $template);
+            return $value == $mask ? '' : $value;
+        }, $mask);
     }
 }
