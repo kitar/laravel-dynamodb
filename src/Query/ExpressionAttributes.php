@@ -20,6 +20,18 @@ class ExpressionAttributes
         $this->value_keys_iterator = new NumberIterator(1, ':');
     }
 
+    public function addColumn($column, $value = null)
+    {
+        if ($new = !in_array($column, $this->names, true)) {
+            $this->names[$this->makeNameKey()] = $column;
+        }
+
+        return [
+            array_search($column, $this->names, true),
+            $new ? $this->addValue($value) : false,
+        ];
+    }
+
     public function addName($name)
     {
         if (!in_array($name, $this->names, true)) {
@@ -52,8 +64,12 @@ class ExpressionAttributes
         return $current;
     }
 
-    public function hasName()
+    public function hasName($key = null)
     {
+        if (!empty($key)) {
+            return in_array($key, $this->names);
+        }
+
         return !empty($this->names);
     }
 

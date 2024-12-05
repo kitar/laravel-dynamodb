@@ -137,6 +137,13 @@ class Builder extends BaseBuilder
     protected $key_condition_query;
 
     /**
+     * Model keys
+     *
+     * @var string[]
+     */
+    protected $modelKeys = [];
+
+    /**
      * Create a new query builder instance
      *
      * @param \Attla\Dynamodb\Connection $connection
@@ -434,7 +441,20 @@ class Builder extends BaseBuilder
     /** @inheritdoc */
     public function get($columns = [])
     {
-        return $this->scan($columns);
+        $hasKey = Arr::first($this->modelKeys, fn($key) => $this->expression_attributes->hasName($key));
+        return $hasKey ? $this->query($columns) : $this->scan($columns);
+    }
+
+    /**
+     * Set model keys
+     *
+     * @param string|string[] $keys
+     * @return $this
+     */
+    public function withKeys($keys)
+    {
+        $this->modelKeys = Arr::wrap($keys);
+        return $this;
     }
 
     /**
@@ -487,14 +507,6 @@ class Builder extends BaseBuilder
     /** @inheritdoc */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
-        // Convert column and value to ExpressionAttributes
-        if (!$column instanceof \Closure) {
-            $column = $this->expression_attributes->addName($column);
-            if ($value !== null) {
-                $value = $this->expression_attributes->addValue($value);
-            }
-        }
-
         // If the columns is actually a Closure instance, we will assume the developer
         // wants to begin a nested where statement which is wrapped in parenthesis
         // We'll add that Closure to the query then return back out immediately
@@ -506,8 +518,13 @@ class Builder extends BaseBuilder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately
         if ($this->invalidOperator($operator)) {
-            $operator = $this->expression_attributes->addValue($operator);
             [$value, $operator] = [$operator, '='];
+        }
+
+        // Convert column and value to ExpressionAttributes
+        [$column, $value] = $this->expression_attributes->addColumn($column, $value);
+        if ($column === false || $value === false) {
+            return $this;
         }
 
         $type = 'Basic';

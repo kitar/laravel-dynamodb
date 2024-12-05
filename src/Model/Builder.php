@@ -5,11 +5,12 @@ namespace Attla\Dynamodb\Model;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Arr;
 use Attla\Dynamodb\Exceptions\KeyMissingException;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 
 class Builder extends EloquentBuilder
 {
     /**
-     * The methods that should be returned from query builder.
+     * The methods that should be returned from query builder
      *
      * @var string[]
      */
@@ -37,6 +38,17 @@ class Builder extends EloquentBuilder
         'sum',
         'tomql',
     ];
+
+    /** @inheritdoc */
+    public function setModel(EloquentModel $model)
+    {
+        $this->model = $model;
+        $this->query
+            ->from($model->getTable())
+            ->withKeys($model->getKeySchema());
+
+        return $this;
+    }
 
     /** @inheritdoc */
     public function find($key, $columns = ['*'])
@@ -93,7 +105,7 @@ class Builder extends EloquentBuilder
     /** @inheritdoc */
     public function get($columns = [])
     {
-        return $this->scan(is_array($columns) ? $columns : func_get_args());
+        return $this->query->get(is_array($columns) ? $columns : func_get_args());
     }
 
     public function first($columns = [])
