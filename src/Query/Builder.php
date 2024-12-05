@@ -3,11 +3,6 @@
 namespace Attla\Dynamodb\Query;
 
 use Attla\Dynamodb\Connection;
-use Attla\Dynamodb\Query\{
-    Grammar,
-    Processor,
-    ExpressionAttributes
-};
 use Illuminate\Support\{ Arr, Str };
 use Illuminate\Database\Query\{
     Expression,
@@ -102,7 +97,7 @@ class Builder extends BaseBuilder
     /**
      * The ExpressionAttributes object
      *
-     * @var Attla\Dynamodb\Query\ExpressionAttributes
+     * @var \Attla\Dynamodb\Query\ExpressionAttributes
      */
     protected $expression_attributes;
 
