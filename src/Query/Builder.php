@@ -18,25 +18,29 @@ use Attla\Dynamodb\Helpers\Collection;
 class Builder extends BaseBuilder
 {
     /**
-     * Name of the index.
+     * Name of the index
+     *
      * @var string|null
      */
     public $index;
 
     /**
-     * The key.
+     * The key
+     *
      * @var array
      */
     public $key = [];
 
     /**
-     * The item.
+     * The item
+     *
      * @var array
      */
     public $item = [];
 
     /**
-     * The key/values to update.
+     * The key/values to update
+     *
      * @var array
      */
     public $updates = [
@@ -47,6 +51,7 @@ class Builder extends BaseBuilder
     /**
      * Keys array for BatchGetItem
      * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+     *
      * @var array
      */
     public $batch_get_keys = [];
@@ -54,77 +59,90 @@ class Builder extends BaseBuilder
     /**
      * RequestItems array for BatchWriteItem
      * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html
+     *
      * @var array
      */
     public $batch_write_request_items = [];
 
     /**
-     * ScanIndexForward option.
+     * ScanIndexForward option
+     *
+     * @var bool
      */
     public $scan_index_forward;
 
     /**
-     * LastEvaluatedKey option.
+     * LastEvaluatedKey option
+     *
      * @var array|null
      */
     public $exclusive_start_key;
 
     /**
-     * ConsistentRead option.
+     * ConsistentRead option
+     *
      * @var boolean|null
      */
     public $consistent_read;
 
     /**
-     * dry run option.
+     * dry run option
+     *
      * @var boolean
      */
     public $dry_run = false;
 
     /**
-     * The model class name used to transform the DynamoDB responses.
+     * The model class name used to transform the DynamoDB responses
+     *
      * @var string|null
      */
     public $model_class;
 
     /**
-     * The ExpressionAttributes object.
+     * The ExpressionAttributes object
+     *
      * @var Attla\Dynamodb\Query\ExpressionAttributes
      */
     protected $expression_attributes;
 
     /**
-     * Available where methods which will pass to dedicated queries.
+     * Available where methods which will pass to dedicated queries
+     *
      * @var array
      */
     protected $available_wheres;
 
     /**
-     * The attribute name to place compiled wheres.
+     * The attribute name to place compiled wheres
+     *
      * @var string
      */
     protected $where_as;
 
     /**
-     * Dedicated query for building FilterExpression.
+     * Dedicated query for building FilterExpression
+     *
      * @var \Attla\Dynamodb\Query\Builder
      */
     protected $filter_query;
 
     /**
-     * Dedicated query for building ConditionExpression.
+     * Dedicated query for building ConditionExpression
+     *
      * @var \Attla\Dynamodb\Query\Builder
      */
     protected $condition_query;
 
     /**
-     * Dedicated query for building KeyConditionExpression.
+     * Dedicated query for building KeyConditionExpression
+     *
      * @var \Attla\Dynamodb\Query\Builder
      */
     protected $key_condition_query;
 
     /**
-     * Create a new query builder instance.
+     * Create a new query builder instance
      *
      * @param \Attla\Dynamodb\Connection $connection
      * @param \Attla\Dynamodb\Query\Grammar $grammar
@@ -133,14 +151,16 @@ class Builder extends BaseBuilder
      * @param bool $is_nested_query
      * @return void
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null, $is_nested_query = false)
-    {
+    public function __construct(
+        Connection $connection,
+        Grammar $grammar,
+        Processor $processor,
+        $expression_attributes = null,
+        $is_nested_query = false
+    ) {
         $this->connection = $connection;
-
         $this->grammar = $grammar;
-
         $this->processor = $processor;
-
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
         if (!$is_nested_query) {
@@ -149,7 +169,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the index name.
+     * Set the index name
      *
      * @param string $index
      * @return $this
@@ -161,7 +181,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the key.
+     * Set the key
      *
      * @param array $key
      * @return $this
@@ -173,7 +193,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the ScanIndexForward option.
+     * Set the ScanIndexForward option
      *
      * @param bool $bool
      * @return $this
@@ -185,7 +205,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the ExclusiveStartKey option.
+     * Set the ExclusiveStartKey option
      *
      * @param array $key
      * @return $this
@@ -197,7 +217,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the ConsistentRead option.
+     * Set the ConsistentRead option
      *
      * @param bool $active
      * @return $this
@@ -209,7 +229,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Set the dry run option.
+     * Set the dry run option
      *
      * @param bool $active
      * @return $this
@@ -222,7 +242,7 @@ class Builder extends BaseBuilder
 
     /**
      * If set, response items will be converted to the model instance by using:
-     * (new $model_class)->newFromBuilder($item).
+     * (new $model_class)->newFromBuilder($item)
      *
      * @var string
      * @return $this
@@ -246,7 +266,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Get the where_as attribute.
+     * Get the where_as attribute
      *
      * @return string
      */
@@ -256,7 +276,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Get item.
+     * Get item
      *
      * @param array|null $key
      * @return array|null
@@ -264,12 +284,11 @@ class Builder extends BaseBuilder
     public function getItem($key = null)
     {
         $key && $this->key($key);
-
         return $this->process('getItem', 'processSingleItem');
     }
 
     /**
-     * Put item.
+     * Put item
      *
      * @param array $item
      * @return \Aws\Result
@@ -277,14 +296,13 @@ class Builder extends BaseBuilder
     public function putItem($item)
     {
         $this->item = $item;
-
         return $this->process('putItem', null);
     }
 
     /**
-     * Delete item.
+     * Delete item
      *
-     * @param array $key;
+     * @param array $key
      * @return \Aws\Result
      */
     public function deleteItem($key)
@@ -295,7 +313,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Update item.
+     * Update item
      *
      * @param array $item
      * @return array|null
@@ -305,11 +323,11 @@ class Builder extends BaseBuilder
         foreach ($item as $name => $value) {
             $name = $this->expression_attributes->addName($name);
 
-            // If value is null, it will pass to REMOVE actions.
+            // If value is null, it will pass to REMOVE actions
             if ($value === null) {
                 $this->updates['remove'][] = $name;
 
-            // If value set, it will pass to SET actions.
+            // If value set, it will pass to SET actions
             } else {
                 $value = $this->expression_attributes->addValue($value);
                 $this->updates['set'][] = "{$name} = {$value}";
@@ -378,7 +396,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Increment or decrement column's value by a given amount.
+     * Increment or decrement column's value by a given amount
      *
      * @param $column
      * @param $symbol
@@ -396,7 +414,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Query.
+     * Query
      *
      * @return \Illuminate\Support\Collection|array
      */
@@ -407,7 +425,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Scan.
+     * Scan
      *
      * @param  array $columns
      * @return \Illuminate\Support\Collection|array
@@ -425,18 +443,18 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Make individual Builder instance for condition types.
+     * Make individual Builder instance for condition types
      *
      * @return void
      */
     protected function initializeDedicatedQueries()
     {
-        // Set builder instances.
+        // Set builder instances
         $this->filter_query = $this->newQuery()->whereAs('FilterExpression');
         $this->condition_query = $this->newQuery()->whereAs('ConditionExpression');
         $this->key_condition_query = $this->newQuery()->whereAs('KeyConditionExpression');
 
-        // Make method map.
+        // Make method map
         foreach (['filter', 'condition', 'key_condition'] as $query_type) {
             foreach (['', 'or'] as $boolean) {
                 foreach (['', 'in', 'between'] as $where_type) {
@@ -451,7 +469,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Perform where methods within dedicated queries.
+     * Perform where methods within dedicated queries
      *
      * @param string $method
      * @param array $parameters
@@ -474,7 +492,7 @@ class Builder extends BaseBuilder
     /** @inheritdoc */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
-        // Convert column and value to ExpressionAttributes.
+        // Convert column and value to ExpressionAttributes
         if (!$column instanceof \Closure) {
             $column = $this->expression_attributes->addName($column);
             if ($value !== null) {
@@ -483,15 +501,15 @@ class Builder extends BaseBuilder
         }
 
         // If the columns is actually a Closure instance, we will assume the developer
-        // wants to begin a nested where statement which is wrapped in parenthesis.
-        // We'll add that Closure to the query then return back out immediately.
+        // wants to begin a nested where statement which is wrapped in parenthesis
+        // We'll add that Closure to the query then return back out immediately
         if ($column instanceof \Closure) {
             return $this->whereNested($column, $boolean);
         }
 
         // If the given operator is not found in the list of valid operators we will
         // assume that the developer is just short-cutting the '=' operators and
-        // we will set the operators to '=' and set the values appropriately.
+        // we will set the operators to '=' and set the values appropriately
         if ($this->invalidOperator($operator)) {
             $operator = $this->expression_attributes->addValue($operator);
             [$value, $operator] = [$operator, '='];
@@ -501,7 +519,7 @@ class Builder extends BaseBuilder
 
         // Now that we are working with just a simple query we can put the elements
         // in our array and add the query binding to our array of bindings that
-        // will be bound to each SQL statements when it is finally executed.
+        // will be bound to each SQL statements when it is finally executed
         $this->wheres[] = compact(
             'type',
             'column',
@@ -558,7 +576,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Execute DynamoDB call and returns processed result.
+     * Execute DynamoDB call and returns processed result
      *
      * @param string $query_method
      * @param array $params
@@ -567,9 +585,9 @@ class Builder extends BaseBuilder
      */
     protected function process($query_method, $processor_method)
     {
-        // Compile columns and wheres attributes.
+        // Compile columns and wheres attributes
         // These attributes needs to interact with ExpressionAttributes during compile,
-        // so it need to run before compileExpressionAttributes.
+        // so it need to run before compileExpressionAttributes
         $params = array_merge(
             $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
             $this->grammar->compileConditions($this->filter_query),
@@ -577,7 +595,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileConditions($this->key_condition_query)
         );
 
-        // Compile rest of attributes.
+        // Compile rest of attributes
         $params = array_merge(
             $params,
             $this->grammar->compileTableName($this->from),
@@ -594,7 +612,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileExpressionAttributes($this->expression_attributes)
         );
 
-        // Dry run.
+        // Dry run
         if ($this->dry_run) {
             return [
                 'method' => $query_method,
@@ -603,10 +621,10 @@ class Builder extends BaseBuilder
             ];
         }
 
-        // Execute.
+        // Execute
         $response = $this->connection->$query_method($params);
 
-        // Process.
+        // Process
         return $processor_method
             ? $this->processor->$processor_method($response, $this->model_class)
             : $response;

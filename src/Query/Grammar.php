@@ -10,14 +10,16 @@ use Illuminate\Database\Query\Grammars\Grammar as BaseGrammer;
 class Grammar extends BaseGrammer
 {
     /**
-     * The marshaler.
+     * The marshaler
+     *
      * @var Aws\DynamoDb\Marshaler
      */
     protected $marshaler;
 
     /**
      * The operators for FilterExpression
-     * @var array
+     *
+     * @var string[]
      */
     protected $operators = [
         '=',
@@ -30,6 +32,7 @@ class Grammar extends BaseGrammer
 
     /**
      * The functions for FilterExpression
+     *
      * @var array
      */
     protected $functions = [
@@ -47,7 +50,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the TableName attribute.
+     * Compile the TableName attribute
      *
      * @param string $table_name
      * @return array
@@ -60,7 +63,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the IndexName attribute.
+     * Compile the IndexName attribute
      *
      * @param string $index
      * @return array
@@ -75,7 +78,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the Key attribute.
+     * Compile the Key attribute
      *
      * @param array $key
      * @return array
@@ -92,7 +95,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the Item attribute.
+     * Compile the Item attribute
      *
      * @param array $key
      * @return array
@@ -109,7 +112,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the Updates attribute.
+     * Compile the Updates attribute
      *
      * @param array $updates
      * @return array
@@ -185,7 +188,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the Limit attribute.
+     * Compile the Limit attribute
      *
      * @param int|null $limit
      * @return array
@@ -224,7 +227,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the ConsistentRead attribute.
+     * Compile the ConsistentRead attribute
      *
      * @param bool $bool
      * @return array
@@ -241,7 +244,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the ProjectionExpression attribute.
+     * Compile the ProjectionExpression attribute
      *
      * @return void
      */
@@ -262,7 +265,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a ExpressionAttriute* attributes.
+     * Compile a ExpressionAttriute* attributes
      *
      * @param ExpressionAttributes $expression_attributes
      * @return array
@@ -281,7 +284,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile the FilterExpression/ConditionExpression/KeyConditionExpression attribute.
+     * Compile the FilterExpression/ConditionExpression/KeyConditionExpression attribute
      *
      * @param Builder $query
      * @return array
@@ -302,12 +305,12 @@ class Grammar extends BaseGrammer
     /** @inheritdoc */
     protected function whereBasic($query, $where)
     {
-        // if operator specified, compile to simple condition string.
+        // if operator specified, compile to simple condition string
         if (in_array($where['operator'], $this->operators)) {
             return "{$where['column']} {$where['operator']} {$where['value']}";
         }
 
-        // if function name specified, run individual compile functions.
+        // if function name specified, run individual compile functions
         if (in_array($where['operator'], $this->functions)) {
             $function = 'compile' . Str::studly($where['operator']) . 'Condition';
             return $this->$function($where);
@@ -315,7 +318,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a attribute_exists condition.
+     * Compile a attribute_exists condition
      *
      * @param array $where
      * @return string
@@ -326,7 +329,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a attribute_not_exists condition.
+     * Compile a attribute_not_exists condition
      *
      * @param array $where
      * @return string
@@ -337,7 +340,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a attribute_type condition.
+     * Compile a attribute_type condition
      *
      * @param array $where
      * @return string
@@ -348,7 +351,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a begins_with condition.
+     * Compile a begins_with condition
      *
      * @param array $where
      * @return string
@@ -359,7 +362,7 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * Compile a contains condition.
+     * Compile a contains condition
      *
      * @param array $where
      * @return string
@@ -373,7 +376,6 @@ class Grammar extends BaseGrammer
     protected function whereBetween($query, $where)
     {
         $min = reset($where['values']);
-
         $max = end($where['values']);
 
         return "({$where['column']} between {$min} and {$max})";
@@ -383,7 +385,6 @@ class Grammar extends BaseGrammer
     protected function whereIn($query, $where)
     {
         $values = implode(', ', $where['values']);
-
         return "({$where['column']} in ({$values}))";
     }
 
