@@ -10,7 +10,8 @@ use Illuminate\Support\Arr;
 class Connection extends BaseConnection
 {
     /**
-     * The DynamoDB client.
+     * The DynamoDB client
+     *
      * @var \Aws\Dynamodb\DynamoDbClient
      */
     protected $client;
@@ -18,16 +19,14 @@ class Connection extends BaseConnection
     public function __construct($config)
     {
         $this->client = $this->createClient($config);
-
         $this->tablePrefix = $config['prefix'] ?? '';
-
         $this->useDefaultPostProcessor();
-
         $this->useDefaultQueryGrammar();
     }
 
     /**
-     * Begin a fluent query against a database table.
+     * Begin a fluent query against a database table
+     *
      * @param string $table
      * @param string|null $as
      * @return Query\Builder
@@ -52,7 +51,8 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Get the DynamoDB Client object.
+     * Get the DynamoDB Client object
+     *
      * @return \Aws\Dynamodb\DynamoDbClient
      */
     public function getClient()
@@ -61,7 +61,8 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Set the DynamoDB client.
+     * Set the DynamoDB client
+     *
      * @param DynamoDbClient $client
      * @return void
      */
@@ -71,7 +72,8 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Create a new DynamoDB client.
+     * Create a new DynamoDB client
+     *
      * @param array $config
      * @return \Aws\Dynamodb\DynamoDbClient
      */
@@ -88,7 +90,7 @@ class Connection extends BaseConnection
             && preg_match('#^https?://#i', $dynamoConfig['endpoint']) === 0
             && preg_match('#\.[a-z]{2,}$#i', $dynamoConfig['endpoint'])
         ) {
-            $dynamoConfig['endpoint'] = "https://" . $dynamoConfig['endpoint'];
+            $dynamoConfig['endpoint'] = 'https://' . $dynamoConfig['endpoint'];
         }
 
         if ($key = $config['access_key'] ?? null) {
@@ -130,7 +132,8 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Execute query with the DynamoDB Client.
+     * Execute query with the DynamoDB Client
+     *
      * @return \Aws\Result
      */
     public function clientQuery($params)
@@ -139,7 +142,8 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Dynamically pass methods to the connection.
+     * Dynamically pass methods to the connection
+     *
      * @param string $method
      * @param array $parameters
      * @return mixed

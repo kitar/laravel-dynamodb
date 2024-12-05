@@ -7,7 +7,7 @@ use Attla\Dynamodb\Validation\DatabasePresenceVerifier;
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
     /**
-     * Bootstrap the application events.
+     * Bootstrap the application events
      */
     public function boot()
     {
@@ -15,7 +15,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     }
 
     /**
-     * Register the service provider.
+     * Register the service provider
      */
     public function register()
     {
@@ -36,7 +36,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     }
 
     /**
-     * Register the database presence verifier.
+     * Register the database presence verifier
      *
      * @return void
      */
@@ -48,7 +48,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     }
 
     /**
-     * Register the uncompromised password verifier.
+     * Register the uncompromised password verifier
      *
      * @return void
      */
@@ -61,7 +61,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     }
 
     /**
-     * Register the validation factory.
+     * Register the validation factory
      *
      * @return void
      */
@@ -73,7 +73,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     }
 
     /**
-     * Get the services provided by the provider.
+     * Get the services provided by the provider
      *
      * @return array
      */
