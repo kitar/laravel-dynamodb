@@ -5,6 +5,8 @@ namespace Attla\Dynamodb\Model;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Arr;
 use Attla\Dynamodb\Exceptions\KeyMissingException;
+use Attla\Dynamodb\Pagination\Paginator;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
 class Builder extends EloquentBuilder
@@ -154,5 +156,40 @@ class Builder extends EloquentBuilder
         }
 
         throw new \Exception("Property [{$key}] does not exist on the Eloquent builder instance.");
+    }
+
+    /** @inheritdoc */
+    public function simplePaginate($perPage = null, $columns = [], $pageName = 'page', $page = null)
+    {
+        $this->limit($perPage ?: Paginator::resolvePageSize() ?: $this->model->getPerPage());
+
+        if (!empty($page = $page ?: Paginator::resolveCurrentPage())) {
+            $this->query->exclusiveStartKey($page);
+        }
+
+        return $this->simplePaginator($this->get($columns), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => 'page',
+        ]);
+    }
+
+    /** @inheritdoc */
+    public function paginate($perPage = null, $columns = [], $pageName = 'page', $page = null, $total = null)
+    {
+        return $this->simplePaginate($perPage, $columns, $pageName, $page);
+    }
+
+    /** @inheritdoc */
+    public function cursorPaginate($perPage = null, $columns = [], $pageName = 'page', $page = null)
+    {
+        return $this->simplePaginate($perPage, $columns, $pageName, $page);
+    }
+
+    /** @inheritdoc */
+    protected function simplePaginator($items, $perPage, $currentPage, $options)
+    {
+        return Container::getInstance()->makeWith(Paginator::class, compact(
+            'items', 'perPage', 'currentPage', 'options'
+        ));
     }
 }

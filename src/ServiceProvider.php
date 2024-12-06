@@ -2,7 +2,9 @@
 
 namespace Attla\Dynamodb;
 
+use Attla\Dynamodb\Pagination\Paginator;
 use Attla\Dynamodb\Validation\DatabasePresenceVerifier;
+use Illuminate\Support\Arr;
 
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
@@ -24,6 +26,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         $this->registerPresenceVerifier();
         $this->registerUncompromisedVerifier();
         $this->registerValidationFactory();
+        $this->registerPagination();
     }
 
     protected function registerDynamodb() {
@@ -69,6 +72,31 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     {
         $this->app->resolving('validator', function ($validator, $app) {
             $validator->setPresenceVerifier(new DatabasePresenceVerifier($app['db']));
+        });
+    }
+
+    /**
+     * Register the paginator
+     *
+     * @return void
+     */
+    protected function registerPagination()
+    {
+        $request = $this->app['request'];
+        Paginator::viewFactoryResolver(fn () => $this->app['view']);
+        Paginator::currentPageResolver(fn ($page = '') => $request->input('page'));
+        Paginator::queryStringResolver(fn () => $request->query());
+        Paginator::pageSizeResolver(fn () => $request->input('pageSize'));
+        // Paginator::currentPathResolver(fn () => explode('?', $request->getRequestUri())[0] ?? '/');
+        Paginator::currentPathResolver(function () use ($request) {
+            $baseUrl = explode('?', $request->getRequestUri())[0] ?? '/';
+
+            $filtered = Arr::except($request->query(), 'page');
+            if ($query = Arr::query($filtered)){
+                $baseUrl .= '?' . $query;
+            }
+
+            return $baseUrl;
         });
     }
 
