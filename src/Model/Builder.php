@@ -161,7 +161,7 @@ class Builder extends EloquentBuilder
     /** @inheritdoc */
     public function simplePaginate($perPage = null, $columns = [], $pageName = 'page', $page = null)
     {
-        $this->limit($perPage ?: Paginator::resolvePageSize() ?: $this->model->getPerPage());
+        $this->limit($perPage = $perPage ?: Paginator::resolvePageSize() ?: $this->model->getPerPage());
 
         if (!empty($page = $page ?: Paginator::resolveCurrentPage())) {
             $this->query->exclusiveStartKey($page);
