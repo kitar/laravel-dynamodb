@@ -11,23 +11,23 @@ use Illuminate\Validation\{
 class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePresenceVerifierInterface
 {
     /**
-     * The database connection instance.
+     * The database connection instance
      *
      * @var \Illuminate\Database\ConnectionResolverInterface
      */
     protected $db;
 
     /**
-     * The database connection to use.
+     * The database connection to use
      *
      * @var string
      */
     protected $connection;
 
     /**
-     * Create a new database presence verifier.
+     * Create a new database presence verifier
      *
-     * @param  \Illuminate\Database\ConnectionResolverInterface  $db
+     * @param \Illuminate\Database\ConnectionResolverInterface $db
      * @return void
      */
     public function __construct(ConnectionResolverInterface $db)
@@ -40,14 +40,16 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePre
     {
         $value = $value ?: $column;
         $column = $column ?: 'pk';
-        $keySearch = in_array($column, ['pk', 'sk']);
+        $keySearch = in_array($column, $keys = ['pk', 'sk']);
         $method = $keySearch ? 'keyCondition' : 'filter';
 
         $query = $this->table($collection)
             ->$method($column, '=', $value);
 
-        if (!is_null($excludeId) && $excludeId !== 'NULL') {
-            $query->$method($idColumn ?: 'pk', '<>', $excludeId);
+        if (in_array($excludeId, $keys) && $excludeId !== 'NULL') {
+            $query = $query->$method($excludeId ?: 'pk', '=', $idColumn);
+        } else if (!is_null($excludeId) && $excludeId !== 'NULL') {
+            $query = $query->$method($idColumn ?: 'pk', '<>', $excludeId);
         }
 
         $query = $this->addConditions($query, $extra, $keySearch);
@@ -72,11 +74,11 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePre
     }
 
     /**
-     * Add the given conditions to the query.
+     * Add the given conditions to the query
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  array  $conditions
-     * @param  bool  $keySearch
+     * @param \Illuminate\Database\Query\Builder $query
+     * @param array $conditions
+     * @param bool $keySearch
      * @return \Illuminate\Database\Query\Builder
      */
     protected function addConditions($query, $conditions, bool $keySearch)
@@ -96,11 +98,11 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePre
     }
 
     /**
-     * Add a "where" clause to the given query.
+     * Add a "where" clause to the given query
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  string  $key
-     * @param  string  $extraValue
+     * @param \Illuminate\Database\Query\Builder $query
+     * @param string $key
+     * @param string $extraValue
      * @return void
      */
     protected function addWhere($query, $key, $val, $keySearch)
@@ -123,9 +125,9 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePre
     }
 
     /**
-     * Get a query builder for the given table.
+     * Get a query builder for the given table
      *
-     * @param  string  $table
+     * @param string $table
      * @return \Illuminate\Database\Query\Builder
      */
     protected function table($table)
