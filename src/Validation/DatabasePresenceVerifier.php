@@ -40,23 +40,37 @@ class DatabasePresenceVerifier implements PresenceVerifierInterface, DatabasePre
     {
         $value = $value ?: $column;
         $column = $column ?: 'pk';
-        $keySearch = in_array($column, $keys = ['pk', 'sk']);
-        $method = $keySearch ? 'keyCondition' : 'filter';
+        $query = $this->table($collection);
+        $keySearch = true;
 
-        $query = $this->table($collection)
-            ->$method($column, '=', $value);
+        if (strpos($column, '&') !== false) {
+            foreach (explode('&', $column) as $item) {
+                [$col, $val] = strpos($item, '=') !== false
+                    ? explode('=', $item)
+                    : [$item, $value];
 
-        if (in_array($excludeId, $keys) && $excludeId !== 'NULL') {
-            $query = $query->$method($excludeId ?: 'pk', '=', $idColumn);
-        } else if (!is_null($excludeId) && $excludeId !== 'NULL') {
+                if ($keySearch) {
+                    $keySearch = in_array($col, ['pk', 'sk']);
+                }
+                $method = $keySearch ? 'keyCondition' : 'filter';
+
+                $query = $query->$method($col, '=', $val);
+            }
+        } else {
+            $keySearch = in_array($column, ['pk', 'sk']);
+            $method = $keySearch ? 'keyCondition' : 'filter';
+
+            $query = $this->table($collection)->$method($column, '=', $value);
+        }
+
+        if (!is_null($excludeId) && $excludeId !== 'NULL') {
             $query = $query->$method($idColumn ?: 'pk', '<>', $excludeId);
         }
 
-        $query = $this->addConditions($query, $extra, $keySearch);
         try {
+            $query = $this->addConditions($query, $extra, $keySearch);
             return $keySearch ? $query->count() : $query->countScan();
         } catch (\Throwable $e) {
-            throw $e;
             return 0;
         }
     }
