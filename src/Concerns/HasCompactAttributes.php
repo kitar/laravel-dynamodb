@@ -49,14 +49,19 @@ trait HasCompactAttributes
      */
     public static function bootHasCompactAttributes()
     {
-        static::builded(function ($model) {
-            $model->hidden[] = 'v';
-            $model->guarded = array_merge($model->timestamps(), $model->guarded);
+        static::building(function ($model) {
+            $model->fillable(array_merge($model->getFillable(), $model->timestamps()));
         });
 
-        $prepare = fn ($model) => $model->prepareCompacts();
-        static::creating($prepare);
-        static::updating($prepare);
+        static::builded(function ($model) {
+            $model->hidden[] = 'v';
+            $model->guard(array_merge($model->getGuarded(), $model->timestamps()));
+
+        });
+
+        $prepare = fn($event) => fn ($model) => $model->prepareCompacts($event);
+        static::creating($prepare('create'));
+        static::updating($prepare('update'));
 
         $load = fn ($model) => $model->loadCompacts();
         static::retrieved($load);
@@ -87,7 +92,7 @@ trait HasCompactAttributes
      */
     protected function timestamps()
     {
-        return array_filter([$this->getCreatedAtColumn(), $this->getUpdatedAtColumn()], fn ($col) => is_string($col));
+        return array_filter([static::CREATED_AT, static::UPDATED_AT], fn ($col) => is_string($col));
     }
 
     /**
@@ -106,14 +111,23 @@ trait HasCompactAttributes
     /**
      * Prepare the compact attributes to persiste on database
      *
+     * @param string|null $event
      * @return void
      */
-    public function prepareCompacts()
+    public function prepareCompacts(string $event = null)
     {
-        $this->updateTimestamps();
-        $this->attributes = array_merge($this->_c, $this->attributes);
         $data = [];
         $fillable = $this->fields();
+        $this->attributes = array_merge($this->_c, $this->attributes);
+
+        if ($event === 'create' && in_array(static::CREATED_AT, $fillable)) {
+            $this->updateTimestamps();
+            $this->setUpdatedAt(null);
+        } else if ($event === 'update') {
+            $this->syncOriginal();
+            $this->updateTimestamps();
+            $this->fillable = array_values(array_diff($this->fillable, $this->timestamps()));
+        }
 
         $array = $this->toArray();
         foreach ($fillable as $field) {
@@ -126,6 +140,26 @@ trait HasCompactAttributes
             'pk' => $this->pk,
             'sk' => $this->sk,
         ];
+    }
+
+    /**
+     * Get the name of the "created at" column
+     *
+     * @return string|null
+     */
+    public function getCreatedAtColumn()
+    {
+        return in_array($column = static::CREATED_AT, $this->fillable) ? $column : null;
+    }
+
+    /**
+     * Get the name of the "updated at" column
+     *
+     * @return string|null
+     */
+    public function getUpdatedAtColumn()
+    {
+        return in_array($column = static::UPDATED_AT, $this->fillable) ? $column : null;
     }
 
     /**
