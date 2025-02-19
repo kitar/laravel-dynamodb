@@ -103,8 +103,8 @@ trait HasCompactAttributes
     protected function fields()
     {
          return array_values(array_diff(
-            array_unique(array_merge($this->getFillable(), $this->timestamps())),
-            $this->getKeySchema(),
+            array_unique(array_merge($this->getFillable(), $timestamps = $this->timestamps())),
+            array_merge($this->getKeySchema(), array_values(array_diff($this->getGuarded(), $timestamps)))
         ));
     }
 
