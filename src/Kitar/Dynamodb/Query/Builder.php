@@ -577,6 +577,8 @@ class Builder extends BaseBuilder
      */
     protected function process($query_method, $processor_method)
     {
+        $table_name = $this->connection->getTablePrefix() . $this->from;
+
         // Compile columns and wheres attributes.
         // These attributes needs to interact with ExpressionAttributes during compile,
         // so it need to run before compileExpressionAttributes.
@@ -590,13 +592,13 @@ class Builder extends BaseBuilder
         // Compile rest of attributes.
         $params = array_merge(
             $params,
-            $this->grammar->compileTableName($this->from),
+            $this->grammar->compileTableName($table_name),
             $this->grammar->compileIndexName($this->index),
             $this->grammar->compileKey($this->key),
             $this->grammar->compileItem($this->item),
             $this->grammar->compileUpdates($this->updates),
-            $this->grammar->compileBatchGetRequestItems($this->from, $this->batch_get_keys),
-            $this->grammar->compileBatchWriteRequestItems($this->from, $this->batch_write_request_items),
+            $this->grammar->compileBatchGetRequestItems($table_name, $this->batch_get_keys),
+            $this->grammar->compileBatchWriteRequestItems($table_name, $this->batch_write_request_items),
             $this->grammar->compileDynamodbLimit($this->limit),
             $this->grammar->compileScanIndexForward($this->scan_index_forward),
             $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),

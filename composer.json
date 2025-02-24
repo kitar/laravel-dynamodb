@@ -20,15 +20,15 @@
         "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
     },
     "require": {
-        "php": "^7.3|^7.4|^8.0|^8.1|^8.2|^8.3",
-        "illuminate/support": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/container": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/database": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/hashing": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+        "php": "^7.3|^7.4|^8.0|^8.1|^8.2|^8.3|^8.4",
+        "illuminate/support": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+        "illuminate/container": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+        "illuminate/database": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+        "illuminate/hashing": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
         "aws/aws-sdk-php": "^3.0"
     },
     "require-dev": {
-        "illuminate/auth": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+        "illuminate/auth": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
         "symfony/var-dumper": "^5.0|^6.0|^7.0",
         "vlucas/phpdotenv": "^4.1|^5.0",
         "mockery/mockery": "^1.3",
