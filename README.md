@@ -82,7 +82,7 @@ Install the package via Composer:
 $ composer require kitar/laravel-dynamodb
 ```
 
-### Laravel (6.x, 7.x, 8.x, 9.x, 10.x, 11.x)
+### Laravel (6.x, 7.x, 8.x, 9.x, 10.x, 11.x, 12.x)
 
 Add dynamodb configs to `config/database.php`:
 
@@ -109,6 +109,14 @@ Update the `DB_CONNECTION` variable in your `.env` file:
 ```
 DB_CONNECTION=dynamodb
 ```
+
+> **Note for Laravel 11+**: Laravel 11 and later versions default to `database` driver for session, cache, and queue, which are not compatible with this DynamoDB package. You'll need to configure these services to use alternative drivers. For instance:
+>
+> ```
+> SESSION_DRIVER=file
+> CACHE_STORE=file
+> QUEUE_CONNECTION=sync
+> ```
 
 ### Non-Laravel projects
 
@@ -397,7 +405,7 @@ Then specify driver and model name for authentication in `config/auth.php`.
 
 ### Registration Controller
 
-You might need to modify the registration controller. For example, if we use Laravel Breeze, the modification looks like below.
+You might need to modify the registration controller. For example, if we use Laravel Starter Kits, the modification looks like below.
 
 ```php
 class RegisteredUserController extends Controller
@@ -408,31 +416,30 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', function ($attribute, $value, $fail) {
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', function ($attribute, $value, $fail) {
                 if (User::find($value)) {
                     $fail('The '.$attribute.' has already been taken.');
                 }
             }],
-            'password' => 'required|string|confirmed|min:8',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = new User([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-        $user->save();
-
-        Auth::login($user);
 
         event(new Registered($user));
 
-        return redirect(RouteServiceProvider::HOME);
+        Auth::login($user);
+
+        return to_route('dashboard');
     }
 }
 ```
 
-There are two modifications. The first one is adding the closure validator for `email` instead of `unique` validator. The second one is using the `save()` method to create user instead of the `create()` method.
+The change is in the email validation rules. Instead of using the `unique` rule, we pass a closure to perform the duplicate check directly.
 
 ## Query Builder
 
