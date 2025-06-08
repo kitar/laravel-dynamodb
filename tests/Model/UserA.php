@@ -13,16 +13,6 @@ class UserA extends Model implements AuthenticatableContract
     protected $table = 'User';
     protected $primaryKey = 'partition';
     protected $fillable = [
-        'partition', 'name', 'password', 'status',
+        'partition', 'name', 'password'
     ];
-
-    public function scopeActive($query)
-    {
-        return $query->filter('status', '=', 'active');
-    }
-
-    public function scopeByName($query, $name)
-    {
-        return $query->filter('name', '=', $name);
-    }
 }
