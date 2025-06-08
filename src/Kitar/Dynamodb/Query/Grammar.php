@@ -55,7 +55,7 @@ class Grammar extends BaseGrammer
     public function compileTableName($table_name)
     {
         return [
-            'TableName' => $this->tablePrefix . $table_name
+            'TableName' => $table_name
         ];
     }
 
@@ -146,8 +146,6 @@ class Grammar extends BaseGrammer
             return $marshaler->marshalItem($key);
         })->toArray();
 
-        $table_name = $this->tablePrefix . $table_name;
-
         return [
             'RequestItems' => [
                 $table_name => [
@@ -173,8 +171,6 @@ class Grammar extends BaseGrammer
                 return $marshaled;
             });
         })->toArray();
-
-        $table_name = $this->tablePrefix . $table_name;
 
         return [
             'RequestItems' => [

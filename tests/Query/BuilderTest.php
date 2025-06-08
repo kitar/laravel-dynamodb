@@ -1165,6 +1165,7 @@ class BuilderTest extends TestCase
     public function it_can_process_process()
     {
         $connection = m::mock(Connection::class);
+        $connection->shouldReceive('getTablePrefix');
         $connection->shouldReceive('scan')
                    ->with(['TableName' => 'Forum'])
                    ->andReturn(new Result(['Items' => []]))
@@ -1179,6 +1180,7 @@ class BuilderTest extends TestCase
     public function it_can_process_process_with_no_processor()
     {
         $connection = m::mock(Connection::class);
+        $connection->shouldReceive('getTablePrefix');
         $connection->shouldReceive('putItem')
                    ->with([
                        'TableName' => 'Thread',

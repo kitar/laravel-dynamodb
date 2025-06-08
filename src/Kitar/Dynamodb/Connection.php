@@ -124,7 +124,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return $this->withTablePrefix(new Query\Grammar());
+        return new Query\Grammar();
     }
 
     /**
