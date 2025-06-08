@@ -51,6 +51,6 @@ Tests use Mockery to mock AWS SDK calls. When writing tests:
 
 ### Version Compatibility
 
-- PHP: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4
-- Laravel: 6.x through 12.x
+- PHP: 8.1, 8.2, 8.3, 8.4
+- Laravel: 10.x through 12.x
 - AWS SDK: ^3.0

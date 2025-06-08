@@ -17,13 +17,7 @@ jobs:
           - php: 8.2
             illuminate: ^10.0
           - php: 8.1
-            illuminate: ^9.0
-          - php: 8.0
-            illuminate: ^8.0
-          - php: 7.4
-            illuminate: ^7.0
-          - php: 7.3
-            illuminate: ^6.0
+            illuminate: ^10.0
 
     name: PHP ${{ matrix.php }} - Illuminate ${{ matrix.illuminate }}
 
@@ -43,4 +37,4 @@ jobs:
       run: composer run-script ci-test
 
     - uses: codecov/codecov-action@v3
-      if: matrix.php == '8.3'
+      if: matrix.php == '8.4'
