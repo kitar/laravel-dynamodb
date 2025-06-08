@@ -3,6 +3,8 @@
 namespace Kitar\Dynamodb;
 
 use Aws\Sdk as AwsSdk;
+use Aws\Sts\StsClient;
+use Aws\Credentials\CredentialProvider;
 use Aws\DynamoDb\DynamoDbClient;
 use Illuminate\Database\Connection as BaseConnection;
 use Illuminate\Support\Arr;
@@ -93,6 +95,42 @@ class Connection extends BaseConnection
         if ($key = $config['secret_key'] ?? null) {
             $config['secret'] = $key;
             unset($config['secret_key']);
+        }
+
+        // Handle the AssumeRole if one is set
+        if ( !empty($config['assume_role']) && preg_match('/^arn:aws:iam::\d{12}:role\/[a-zA-Z0-9+=,.@_-]+$/', $config['assume_role']) ) {
+            try {
+
+                // Use IAM credentials if provided, if not, try to use default discovery. e.g. Default EC2 role.
+                $credentials = [
+                    'key' => $config['key'],
+                    'secret' => $config['secret'],
+                ];
+                if ( empty($config['key']) && empty($config['secret']) ) {
+                    $credentials = CredentialProvider::defaultProvider();
+                }
+
+                $stsClient = new StsClient([
+                    'version' => '2011-06-15',
+                    'region' => $dynamoConfig['region'],
+                    'credentials' => $credentials
+                ]);
+
+                // Assume the provided role
+                $roleCredentials = $stsClient->assumeRole([
+                    'RoleArn' => $config['assume_role'],
+                    'RoleSessionName' => 'KitarDynamodDBConnection',
+                ]);
+
+                $config = [
+                    'key' => $roleCredentials['Credentials']['AccessKeyId'],
+                    'secret' => $roleCredentials['Credentials']['SecretAccessKey'],
+                    'token' => $roleCredentials['Credentials']['SessionToken']  
+                ];
+            } catch (\Exception $e) {
+                throw new \Exception("The assume role failed with message: ".$e->getMessage());
+            }
+            
         }
 
         if (isset($config['key']) && isset($config['secret'])) {
