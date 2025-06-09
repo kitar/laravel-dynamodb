@@ -28,6 +28,9 @@ class ProcessorTest extends TestCase
         'batch_get_items_processed' => '{"Responses":{"Thread":[{"Replies":0,"Answered":0,"Views":0,"ForumName":"Amazon DynamoDB","Subject":"DynamoDB Thread 1"},{"Replies":0,"Answered":0,"Views":0,"ForumName":"Amazon DynamoDB","Subject":"DynamoDB Thread 2"}]},"UnprocessedKeys":[],"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com","transferStats":{"http":[[]]}}}',
         'batch_get_items_empty_result' => '{"Responses":{"Thread":[]},"UnprocessedKeys":[],"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com","transferStats":{"http":[[]]}}}',
         'batch_get_items_empty_processed' => '{"Responses":{"Thread":[]},"UnprocessedKeys":[],"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com","transferStats":{"http":[[]]}}}',
+        'count_result_with_valid_count' => '{"Count":5,"ScannedCount":5,"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com"}}',
+        'count_result_without_count' => '{"ScannedCount":0,"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com"}}',
+        'count_result_with_zero_count' => '{"Count":0,"ScannedCount":0,"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com"}}',
     ];
 
     protected function setUp() :void
@@ -160,5 +163,35 @@ class ProcessorTest extends TestCase
             'Subject' => 'DynamoDB Thread 1',
         ], $item->toArray());
         $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
+    }
+
+    /** @test */
+    public function it_can_process_count_result_with_valid_count()
+    {
+        $awsResult = new Result(json_decode($this->mocks['count_result_with_valid_count'], true));
+
+        $count = $this->processor->processCount($awsResult, User::class);
+
+        $this->assertEquals(5, $count);
+    }
+
+    /** @test */
+    public function it_can_process_count_result_with_no_count()
+    {
+        $awsResult = new Result(json_decode($this->mocks['count_result_without_count'], true));
+
+        $count = $this->processor->processCount($awsResult, User::class);
+
+        $this->assertNull($count);
+    }
+
+    /** @test */
+    public function it_can_process_count_result_with_zero_count()
+    {
+        $awsResult = new Result(json_decode($this->mocks['count_result_with_zero_count'], true));
+
+        $count = $this->processor->processCount($awsResult, User::class);
+
+        $this->assertEquals(0, $count);
     }
 }

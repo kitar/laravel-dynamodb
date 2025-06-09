@@ -1227,4 +1227,77 @@ class BuilderTest extends TestCase
             $result['params']['TableName']
         );
     }
+
+    /** @test */
+    public function it_can_process_count_without_conditions()
+    {
+        $method = 'clientQuery';
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'Select' => 'COUNT'
+        ];
+        $processor = 'processCount';
+
+        $query = $this->newQuery('ProductCatalog')->count();
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_count_with_key_condition()
+    {
+        $method = 'clientQuery';
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'Select' => 'COUNT',
+            'KeyConditionExpression' => '#1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Id'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'N' => '101'
+                ]
+            ]
+        ];
+        $processor = 'processCount';
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->keyCondition('Id', '=', 101)
+                      ->count();
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
+
+    /** @test */
+    public function it_can_process_count_with_filter()
+    {
+        $method = 'clientQuery';
+        $params = [
+            'TableName' => 'Thread',
+            'Select' => 'COUNT',
+            'FilterExpression' => '#1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ForumName'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => [
+                    'S' => 'Amazon DynamoDB'
+                ]
+            ]
+        ];
+        $processor = 'processCount';
+
+        $query = $this->newQuery('Thread')
+                      ->filter('ForumName', '=', 'Amazon DynamoDB')
+                      ->count();
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertEquals($processor, $query['processor']);
+    }
 }

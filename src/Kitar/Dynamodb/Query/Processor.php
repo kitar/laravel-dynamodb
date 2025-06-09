@@ -52,9 +52,11 @@ class Processor extends BaseProcessor
             return $response;
         }
 
-        if (! empty($response['Count'])) {
-            return $response['Count'];
+        if (! empty($response['Count']) && is_numeric($response['Count'])) {
+            return (int) $response['Count'];
         }
+
+        return null;
     }
 
     public function processSingleItem(Result $awsResponse, $modelClass = null)

@@ -399,7 +399,7 @@ class Builder extends BaseBuilder
         // reset columns selection
         $this->select([])->selectAttributes('COUNT');
 
-        return (int) $this->process('clientQuery', 'processCount');
+        return $this->process('clientQuery', 'processCount');
     }
 
     /**
