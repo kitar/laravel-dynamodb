@@ -9,7 +9,6 @@ use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
 use Kitar\Dynamodb\Query\ExpressionAttributes;
 use Illuminate\Support\Str;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 
 class Builder extends BaseBuilder
@@ -127,22 +126,16 @@ class Builder extends BaseBuilder
     protected $selectAttributes = 'ALL_ATTRIBUTES';
 
     /**
-     * Create a new query builder instance.
-     *
      * @param \Kitar\Dynamodb\Connection $connection
-     * @param \Kitar\Dynamodb\Query\Grammar $grammar
-     * @param \Kitar\Dynamodb\Query\Processor $processor
+     * @param \Kitar\Dynamodb\Query\Grammar|null $grammar
+     * @param \Kitar\Dynamodb\Query\Processor|null $processor
      * @param \Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
      * @param bool $is_nested_query
      * @return void
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null, $is_nested_query = false)
+    public function __construct(Connection $connection, ?Grammar $grammar = null, ?Processor $processor = null, $expression_attributes = null, $is_nested_query = false)
     {
-        $this->connection = $connection;
-
-        $this->grammar = $grammar;
-
-        $this->processor = $processor;
+        parent::__construct($connection, $grammar, $processor);
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
@@ -403,6 +396,8 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * DynamoDB uses UpdateExpression SET instead of SQL UPDATE.
+     *
      * @inheritdoc
      */
     public function increment($column, $amount = 1, array $extra = [])
@@ -419,13 +414,13 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Increment or decrement column's value by a given amount.
+     * Increment or decrement a column's value using UpdateExpression.
      *
      * @param $column
      * @param $symbol
      * @param int $amount
      * @param array $extra
-     * @return array|\Aws\Result|Aws\Result|\Illuminate\Support\Collection
+     * @return array|\Aws\Result|\Illuminate\Support\Collection
      */
     protected function incrementOrDecrement($column, $symbol, $amount = 1, array $extra = [])
     {
@@ -489,7 +484,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Perform where methods within dedicated queries.
+     * Route filter/condition/keyCondition methods to dedicated sub-query builders.
      *
      * @param string $method
      * @param array $parameters
@@ -517,7 +512,6 @@ class Builder extends BaseBuilder
      * Determine if the given model has a scope.
      *
      * @param  string  $scope
-     *
      * @return bool
      */
     public function hasNamedScope(string $scope): bool
@@ -530,7 +524,6 @@ class Builder extends BaseBuilder
      *
      * @param  string  $scope
      * @param  array  $parameters
-     *
      * @return mixed
      */
     protected function callNamedScope(string $scope, array $parameters = [])
@@ -539,6 +532,8 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Convert column/value to ExpressionAttribute placeholders, then add where clause.
+     *
      * @inheritdoc
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
@@ -568,9 +563,7 @@ class Builder extends BaseBuilder
 
         $type = 'Basic';
 
-        // Now that we are working with just a simple query we can put the elements
-        // in our array and add the query binding to our array of bindings that
-        // will be bound to each SQL statements when it is finally executed.
+        // Add the where clause components and binding.
         $this->wheres[] = compact(
             'type',
             'column',
@@ -579,7 +572,7 @@ class Builder extends BaseBuilder
             'boolean'
         );
 
-        if (! $value instanceof Expression) {
+        if (! $value instanceof \Illuminate\Database\Query\Expression) {
             $this->addBinding($value, 'where');
         }
 
@@ -595,6 +588,8 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Convert column/values to ExpressionAttribute placeholders, then delegate to parent.
+     *
      * @inheritdoc
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
@@ -609,6 +604,8 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Convert column/values to ExpressionAttribute placeholders, then delegate to parent.
+     *
      * @inheritdoc
      */
     public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
@@ -623,11 +620,21 @@ class Builder extends BaseBuilder
     }
 
     /**
+     * Create a nested query sharing the same ExpressionAttributes instance.
+     *
      * @inheritdoc
      */
     public function newQuery()
     {
         return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes, true);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function forNestedWhere()
+    {
+        return $this->newQuery()->from($this->from);
     }
 
     /**

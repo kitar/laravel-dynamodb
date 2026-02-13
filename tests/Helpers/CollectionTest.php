@@ -3,11 +3,12 @@
 namespace Kitar\Dynamodb\Tests\Helpers;
 
 use Kitar\Dynamodb\Helpers\Collection;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class CollectionTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_can_set_and_get_meta()
     {
         $items = new Collection([]);
@@ -21,7 +22,7 @@ class CollectionTest extends TestCase
         $this->assertSame($meta, $items->getMeta());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_last_evaluated_key()
     {
         $items = new Collection([]);

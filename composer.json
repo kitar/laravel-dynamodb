@@ -20,19 +20,19 @@
         "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
     },
     "require": {
-        "php": "^8.1|^8.2|^8.3|^8.4",
-        "illuminate/support": "^10.0|^11.0|^12.0",
-        "illuminate/container": "^10.0|^11.0|^12.0",
-        "illuminate/database": "^10.0|^11.0|^12.0",
-        "illuminate/hashing": "^10.0|^11.0|^12.0",
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "illuminate/container": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/hashing": "^12.0",
         "aws/aws-sdk-php": "^3.0"
     },
     "require-dev": {
-        "illuminate/auth": "^10.0|^11.0|^12.0",
-        "symfony/var-dumper": "^6.0|^7.0",
+        "illuminate/auth": "^12.0",
+        "symfony/var-dumper": "^7.0",
         "vlucas/phpdotenv": "^5.0",
         "mockery/mockery": "^1.6",
-        "phpunit/phpunit": "^10.0"
+        "phpunit/phpunit": "^11.0"
     },
     "autoload": {
         "psr-4": {

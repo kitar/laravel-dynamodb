@@ -6,6 +6,7 @@ use Mockery as m;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Builder;
 use Aws\DynamoDb\DynamoDbClient;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
@@ -25,13 +26,13 @@ class ConnectionTest extends TestCase
         m::close();
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_connection()
     {
         $this->assertInstanceOf(Connection::class, $this->connection);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_dynamodb_client()
     {
         $this->assertInstanceOf(
@@ -40,7 +41,7 @@ class ConnectionTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_driver_name()
     {
         $this->assertEquals(
@@ -49,7 +50,7 @@ class ConnectionTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_keeps_dynamodb_client_on_disconnect()
     {
         $this->connection->disconnect();
@@ -57,7 +58,7 @@ class ConnectionTest extends TestCase
         $this->assertNotNull($this->connection->getClient());
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_query_builder_instance()
     {
         $query = $this->connection->table('test');
@@ -67,7 +68,7 @@ class ConnectionTest extends TestCase
         $this->assertEquals('test', $query->from);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_call_client_query()
     {
         $client = m::mock(DynamoDbClient::class);
@@ -82,7 +83,7 @@ class ConnectionTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_forward_call_to_dynamodb_client()
     {
         $client = m::mock(DynamoDbClient::class);
@@ -97,7 +98,7 @@ class ConnectionTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_prepends_default_protocol_if_not_given()
     {
         $connection = new Connection(['endpoint' => 'examples.com']);
@@ -107,7 +108,7 @@ class ConnectionTest extends TestCase
         $this->assertEquals($this->connection->getClient()->getEndpoint()->getHost(), 'dynamodb.us-east-1.amazonaws.com');
     }
 
-    /** @test */
+    #[Test]
     public function it_dont_prepends_default_protocol_if_http_given()
     {
         $connection = new Connection(['endpoint' => 'http://examples.com']);
@@ -115,7 +116,7 @@ class ConnectionTest extends TestCase
         $this->assertEquals($connection->getClient()->getEndpoint()->getHost(), 'examples.com');
     }
 
-    /** @test */
+    #[Test]
     public function it_dont_prepends_default_protocol_if_https_given()
     {
         $connection = new Connection(['endpoint' => 'https://examples.com']);

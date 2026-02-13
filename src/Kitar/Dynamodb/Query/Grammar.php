@@ -3,11 +3,12 @@
 namespace Kitar\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Kitar\Dynamodb\Query\Builder;
-use Illuminate\Database\Query\Grammars\Grammar as BaseGrammer;
+use Illuminate\Database\Query\Grammars\Grammar as BaseGrammar;
 
-class Grammar extends BaseGrammer
+class Grammar extends BaseGrammar
 {
     /**
      * The marshaler.
@@ -38,11 +39,15 @@ class Grammar extends BaseGrammer
         'attribute_type',
         'begins_with',
         'contains',
-        'size'
     ];
 
-    public function __construct()
+    /**
+     * @param \Illuminate\Database\Connection $connection
+     */
+    public function __construct(Connection $connection)
     {
+        parent::__construct($connection);
+
         $this->marshaler = new Marshaler;
     }
 
@@ -312,6 +317,8 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Compile a basic where clause using DynamoDB operators and functions.
+     *
      * @inheritdoc
      */
     protected function whereBasic($query, $where)
@@ -384,6 +391,8 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Values are already ExpressionAttribute placeholders. "NOT BETWEEN" is not supported.
+     *
      * @inheritdoc
      */
     protected function whereBetween($query, $where)
@@ -396,6 +405,8 @@ class Grammar extends BaseGrammer
     }
 
     /**
+     * Values are already ExpressionAttribute placeholders.
+     *
      * @inheritdoc
      */
     protected function whereIn($query, $where)
@@ -406,7 +417,9 @@ class Grammar extends BaseGrammer
     }
 
     /**
-     * @inheritdoc
+     * Merge comparison operators with DynamoDB functions (begins_with, contains, etc.).
+     *
+     * @return array
      */
     public function getOperators()
     {

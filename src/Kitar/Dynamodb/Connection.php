@@ -15,6 +15,11 @@ class Connection extends BaseConnection
      */
     protected $client;
 
+    /**
+     * Bypass the parent constructor because DynamoDB does not use PDO.
+     *
+     * @param array $config
+     */
     public function __construct($config)
     {
         $this->config = $config;
@@ -29,16 +34,22 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Begin a fluent query against a database table.
-     * @param string $table
-     * @param string|null $as
-     * @return Query\Builder
+     * @inheritdoc
      */
     public function table($table, $as = null)
     {
-        $query = new Query\Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
+        $table = $table instanceof \BackedEnum ? $table->value
+            : ($table instanceof \UnitEnum ? $table->name : $table);
 
-        return $query->from($table, $as);
+        return $this->query()->from($table, $as);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function query()
+    {
+        return new Query\Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
     }
 
     /**
@@ -106,7 +117,9 @@ class Connection extends BaseConnection
     }
 
     /**
-     * @inheritdoc
+     * No-op. DynamoDB is HTTP-based and has no persistent connection.
+     *
+     * @return void
      */
     public function disconnect()
     {
@@ -126,7 +139,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return new Query\Grammar();
+        return new Query\Grammar($this);
     }
 
     /**

@@ -64,7 +64,7 @@ class AuthUserProvider implements BaseUserProvider
      * @param  string  $token
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
-    public function retrieveByToken($identifier, $token)
+    public function retrieveByToken($identifier, #[\SensitiveParameter] $token)
     {
         $user = $this->retrieveById($identifier);
 
@@ -85,7 +85,7 @@ class AuthUserProvider implements BaseUserProvider
      * @param  string  $token
      * @return void
      */
-    public function updateRememberToken(Authenticatable $user, $token)
+    public function updateRememberToken(Authenticatable $user, #[\SensitiveParameter] $token)
     {
         $user->setRememberToken($token);
 
@@ -105,7 +105,7 @@ class AuthUserProvider implements BaseUserProvider
      * @param  array  $credentials
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
-    public function retrieveByCredentials(array $credentials)
+    public function retrieveByCredentials(#[\SensitiveParameter] array $credentials)
     {
         if (isset($credentials['password'])) {
             unset($credentials['password']);
@@ -140,7 +140,7 @@ class AuthUserProvider implements BaseUserProvider
      * @param  array  $credentials
      * @return bool
      */
-    public function validateCredentials(Authenticatable $user, array $credentials)
+    public function validateCredentials(Authenticatable $user, #[\SensitiveParameter] array $credentials)
     {
         $plain = $credentials['password'];
 
@@ -155,7 +155,7 @@ class AuthUserProvider implements BaseUserProvider
      * @param  bool  $force
      * @return void
      */
-    public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
+    public function rehashPasswordIfRequired(Authenticatable $user, #[\SensitiveParameter] array $credentials, bool $force = false)
     {
         if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
             return;

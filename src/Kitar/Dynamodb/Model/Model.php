@@ -53,7 +53,7 @@ class Model extends BaseModel
     }
 
     /**
-     * Get the key of the current item.
+     * Get the composite primary key (partition key + optional sort key) as an array.
      *
      * @return array
      */
@@ -88,7 +88,7 @@ class Model extends BaseModel
     }
 
     /**
-     * Get a new query builder for the model's table.
+     * Return a DynamoDB Query Builder directly, bypassing Eloquent Builder.
      *
      * @return \Kitar\Dynamodb\Query\Builder
      */
@@ -98,7 +98,7 @@ class Model extends BaseModel
     }
 
     /**
-     * Find a model by its primary (partition) key or key array.
+     * Find a model by its primary key using DynamoDB's getItem.
      *
      * @param string|array $key
      * @return static|null
@@ -119,10 +119,10 @@ class Model extends BaseModel
     }
 
     /**
-     * Get all of the models from the database.
+     * Get all models using DynamoDB scan.
      *
      * @param  array $columns
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Kitar\Dynamodb\Helpers\Collection
      */
     public static function all($columns = [])
     {
@@ -144,13 +144,12 @@ class Model extends BaseModel
     }
 
     /**
-     * Save the model to the database.
-     *
-     * @param  array  $options
-     * @return bool
+     * @inheritdoc
      */
     public function save(array $options = [])
     {
+        $this->mergeAttributesFromCachedCasts();
+
         $query = $this->newQuery();
 
         // If the "saving" event returns false we'll bail out of the save and return
@@ -186,6 +185,8 @@ class Model extends BaseModel
     }
 
     /**
+     * Use DynamoDB's key() and UpdateExpression instead of SQL-based key query.
+     *
      * @inheritdoc
      */
     protected function incrementOrDecrement($column, $amount, $extra, $method)
@@ -210,7 +211,7 @@ class Model extends BaseModel
     }
 
     /**
-     * Perform a model update operation.
+     * Perform a model update using DynamoDB's updateItem with explicit key.
      *
      * @param  \Kitar\Dynamodb\Query\Builder  $query
      * @return bool
@@ -248,7 +249,7 @@ class Model extends BaseModel
     }
 
     /**
-     * Perform a model insert operation.
+     * Perform a model insert using DynamoDB's putItem with attribute_not_exists guard.
      *
      * @param  \Kitar\Dynamodb\Query\Builder  $query
      * @return bool
@@ -268,14 +269,11 @@ class Model extends BaseModel
 
         $attributes = $this->getAttributes();
 
-        // If the table isn't incrementing we'll simply insert these attributes as they
-        // are. These attribute arrays must contain an "id" column previously placed
-        // there by the developer as the manually determined key for these models.
         if (empty($attributes)) {
             return true;
         }
 
-        // Prevent overwrites of an existing item.
+        // Prevent overwrites of an existing item via attribute_not_exists condition.
         foreach (array_keys($this->getKey()) as $keyName) {
             $query = $query->condition($keyName, 'attribute_not_exists');
         }
@@ -295,12 +293,14 @@ class Model extends BaseModel
     }
 
     /**
-     * Delete the model from the database.
+     * Delete the model using DynamoDB's deleteItem with the composite key.
      *
      * @return bool|null
      */
     public function delete()
     {
+        $this->mergeAttributesFromCachedCasts();
+
         $key = $this->getKey();
 
         // If the model doesn't exist, there is nothing to delete so we'll just return
@@ -337,6 +337,8 @@ class Model extends BaseModel
     }
 
     /**
+     * Forward calls to the DynamoDB query builder via an allowlist.
+     *
      * @inheritdoc
      */
     public function __call($method, $parameters)
@@ -371,7 +373,7 @@ class Model extends BaseModel
             "keyConditionBetween",
         ];
 
-        if (in_array($method, ['increment', 'decrement'])) {
+        if (in_array($method, ['increment', 'decrement', 'incrementQuietly', 'decrementQuietly'])) {
             return $this->$method(...$parameters);
         }
 
