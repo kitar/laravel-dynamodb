@@ -23,6 +23,7 @@ class DynamodbServiceProvider extends ServiceProvider
         $this->app->resolving('db', function ($db) {
             $db->extend('dynamodb', function ($config, $name) {
                 $config['name'] = $name;
+
                 return new Connection($config);
             });
         });

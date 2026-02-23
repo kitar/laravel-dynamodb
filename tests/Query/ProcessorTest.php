@@ -8,9 +8,7 @@ use Kitar\Dynamodb\Query\Processor;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-class User extends Model
-{
-}
+class User extends Model {}
 
 class ProcessorTest extends TestCase
 {
@@ -34,7 +32,7 @@ class ProcessorTest extends TestCase
         'count_result_with_zero_count' => '{"Count":0,"ScannedCount":0,"@metadata":{"statusCode":200,"effectiveUri":"https:\/\/dynamodb.ap-northeast-1.amazonaws.com"}}',
     ];
 
-    protected function setUp() :void
+    protected function setUp(): void
     {
         $this->processor = new Processor;
     }
@@ -124,7 +122,7 @@ class ProcessorTest extends TestCase
             'Category' => 'Amazon Web Services',
             'Messages' => 4,
             'Views' => 1000,
-            'Name' => 'Amazon DynamoDB'
+            'Name' => 'Amazon DynamoDB',
         ], $item->toArray());
         $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }
@@ -141,7 +139,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals(User::class, get_class($item));
         $this->assertEquals([
             'Category' => 'Amazon Web Services',
-            'Name' => 'Amazon S3'
+            'Name' => 'Amazon S3',
         ], $item->toArray());
         $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }

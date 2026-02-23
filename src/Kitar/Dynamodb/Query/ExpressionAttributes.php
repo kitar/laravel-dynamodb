@@ -8,9 +8,13 @@ use Kitar\Dynamodb\Helpers\NumberIterator;
 class ExpressionAttributes
 {
     protected $marshaler;
+
     protected $names = [];
+
     protected $values = [];
+
     protected $name_keys_iterator;
+
     protected $value_keys_iterator;
 
     public function __construct()
@@ -42,6 +46,7 @@ class ExpressionAttributes
     {
         $current = $this->name_keys_iterator->current();
         $this->name_keys_iterator->next();
+
         return $current;
     }
 
@@ -49,6 +54,7 @@ class ExpressionAttributes
     {
         $current = $this->value_keys_iterator->current();
         $this->value_keys_iterator->next();
+
         return $current;
     }
 

@@ -2,47 +2,49 @@
 
 namespace Kitar\Dynamodb\Query;
 
-use Closure;
 use BadMethodCallException;
-use Kitar\Dynamodb\Connection;
-use Kitar\Dynamodb\Query\Grammar;
-use Kitar\Dynamodb\Query\Processor;
-use Kitar\Dynamodb\Query\ExpressionAttributes;
-use Illuminate\Support\Str;
+use Closure;
 use Illuminate\Database\Query\Builder as BaseBuilder;
+use Illuminate\Support\Str;
+use Kitar\Dynamodb\Connection;
 
 class Builder extends BaseBuilder
 {
     /**
      * Name of the index.
+     *
      * @var string|null
      */
     public $index;
 
     /**
      * The key.
+     *
      * @var array
      */
     public $key = [];
 
     /**
      * The item.
+     *
      * @var array
      */
     public $item = [];
 
     /**
      * The key/values to update.
+     *
      * @var array
      */
     public $updates = [
         'set' => [],
-        'remove' => []
+        'remove' => [],
     ];
 
     /**
      * Keys array for BatchGetItem
      * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchGetItem.html
+     *
      * @var array
      */
     public $batch_get_keys = [];
@@ -50,6 +52,7 @@ class Builder extends BaseBuilder
     /**
      * RequestItems array for BatchWriteItem
      * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html
+     *
      * @var array
      */
     public $batch_write_request_items = [];
@@ -61,83 +64,91 @@ class Builder extends BaseBuilder
 
     /**
      * LastEvaluatedKey option.
+     *
      * @var array|null
      */
     public $exclusive_start_key;
 
     /**
      * ConsistentRead option.
-     * @var boolean|null
+     *
+     * @var bool|null
      */
     public $consistent_read;
 
     /**
      * dry run option.
-     * @var boolean
+     *
+     * @var bool
      */
     public $dry_run = false;
 
     /**
      * The model class name used to transform the DynamoDB responses.
+     *
      * @var string|null
      */
     public $model_class;
 
     /**
      * The ExpressionAttributes object.
+     *
      * @var Kitar\Dynamodb\Query\ExpressionAttributes
      */
     protected $expression_attributes;
 
     /**
      * Available where methods which will pass to dedicated queries.
+     *
      * @var array
      */
     protected $available_wheres;
 
     /**
      * The attribute name to place compiled wheres.
+     *
      * @var string
      */
     protected $where_as;
 
     /**
      * Dedicated query for building FilterExpression.
+     *
      * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $filter_query;
 
     /**
      * Dedicated query for building ConditionExpression.
+     *
      * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $condition_query;
 
     /**
      * Dedicated query for building KeyConditionExpression.
+     *
      * @var \Kitar\Dynamodb\Query\Builder
      */
     protected $key_condition_query;
 
     /**
      * The attributes to be returned in the result
+     *
      * @var string
      */
     protected $selectAttributes = 'ALL_ATTRIBUTES';
 
     /**
-     * @param \Kitar\Dynamodb\Connection $connection
-     * @param \Kitar\Dynamodb\Query\Grammar|null $grammar
-     * @param \Kitar\Dynamodb\Query\Processor|null $processor
-     * @param \Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
-     * @param bool $is_nested_query
+     * @param  \Kitar\Dynamodb\Query\ExpressionAttributes|null  $expression_attributes
+     * @param  bool  $is_nested_query
      * @return void
      */
     public function __construct(Connection $connection, ?Grammar $grammar = null, ?Processor $processor = null, $expression_attributes = null, $is_nested_query = false)
     {
         parent::__construct($connection, $grammar, $processor);
 
-        $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
+        $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes;
 
         if (! $is_nested_query) {
             $this->initializeDedicatedQueries();
@@ -147,7 +158,6 @@ class Builder extends BaseBuilder
     /**
      * Set the index name.
      *
-     * @param string $index
      * @return $this
      */
     public function index(string $index)
@@ -160,7 +170,6 @@ class Builder extends BaseBuilder
     /**
      * Set the key.
      *
-     * @param array $key
      * @return $this
      */
     public function key(array $key)
@@ -173,7 +182,7 @@ class Builder extends BaseBuilder
     /**
      * Set the ScanIndexForward option.
      *
-     * @param bool $bool
+     * @param  bool  $bool
      * @return $this
      */
     public function scanIndexForward($bool)
@@ -186,7 +195,7 @@ class Builder extends BaseBuilder
     /**
      * Set the ExclusiveStartKey option.
      *
-     * @param array $key
+     * @param  array  $key
      * @return $this
      */
     public function exclusiveStartKey($key)
@@ -199,7 +208,7 @@ class Builder extends BaseBuilder
     /**
      * Set the ConsistentRead option.
      *
-     * @param bool $active
+     * @param  bool  $active
      * @return $this
      */
     public function consistentRead($active = true)
@@ -212,7 +221,7 @@ class Builder extends BaseBuilder
     /**
      * Set the dry run option.
      *
-     * @param bool $active
+     * @param  bool  $active
      * @return $this
      */
     public function dryRun($active = true)
@@ -227,6 +236,7 @@ class Builder extends BaseBuilder
      * (new $model_class)->newFromBuilder($item).
      *
      * @var string
+     *
      * @return $this
      */
     public function usingModel($class_name)
@@ -239,7 +249,7 @@ class Builder extends BaseBuilder
     /**
      * Set key name of wheres. eg. FilterExpression
      *
-     * @param string $condition_key_name
+     * @param  string  $condition_key_name
      * @return $this
      */
     protected function whereAs($condition_key_name)
@@ -262,10 +272,10 @@ class Builder extends BaseBuilder
     /**
      * Set select attributes
      *
-     * @param  string  $selectAttributes
      * @return $this
      */
-    protected function selectAttributes(string $selectAttributes) {
+    protected function selectAttributes(string $selectAttributes)
+    {
         $this->selectAttributes = $selectAttributes;
 
         return $this;
@@ -276,14 +286,15 @@ class Builder extends BaseBuilder
      *
      * @return string
      */
-    public function getSelectAttributes() {
+    public function getSelectAttributes()
+    {
         return $this->selectAttributes;
     }
 
     /**
      * Get item.
      *
-     * @param array|null $key
+     * @param  array|null  $key
      * @return array|null
      */
     public function getItem($key = null)
@@ -298,7 +309,7 @@ class Builder extends BaseBuilder
     /**
      * Put item.
      *
-     * @param array $item
+     * @param  array  $item
      * @return \Aws\Result
      */
     public function putItem($item)
@@ -311,7 +322,7 @@ class Builder extends BaseBuilder
     /**
      * Delete item.
      *
-     * @param array $key;
+     * @param  array  $key;
      * @return \Aws\Result
      */
     public function deleteItem($key)
@@ -324,7 +335,7 @@ class Builder extends BaseBuilder
     /**
      * Update item.
      *
-     * @param array $item
+     * @param  array  $item
      * @return array|null
      */
     public function updateItem($item)
@@ -336,7 +347,7 @@ class Builder extends BaseBuilder
             if ($value === null) {
                 $this->updates['remove'][] = $name;
 
-            // If value set, it will pass to SET actions.
+                // If value set, it will pass to SET actions.
             } else {
                 $value = $this->expression_attributes->addValue($value);
                 $this->updates['set'][] = "{$name} = {$value}";
@@ -388,7 +399,8 @@ class Builder extends BaseBuilder
         return $this->process('batchWriteItem', null);
     }
 
-    public function count($columns = '*') {
+    public function count($columns = '*')
+    {
         // reset columns selection
         $this->select([])->selectAttributes('COUNT');
 
@@ -398,7 +410,7 @@ class Builder extends BaseBuilder
     /**
      * DynamoDB uses UpdateExpression SET instead of SQL UPDATE.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
@@ -406,7 +418,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function decrement($column, $amount = 1, array $extra = [])
     {
@@ -416,10 +428,7 @@ class Builder extends BaseBuilder
     /**
      * Increment or decrement a column's value using UpdateExpression.
      *
-     * @param $column
-     * @param $symbol
-     * @param int $amount
-     * @param array $extra
+     * @param  int  $amount
      * @return array|\Aws\Result|\Illuminate\Support\Collection
      */
     protected function incrementOrDecrement($column, $symbol, $amount = 1, array $extra = [])
@@ -444,7 +453,7 @@ class Builder extends BaseBuilder
     /**
      * Scan.
      *
-     * @param  array $columns
+     * @param  array  $columns
      * @return \Illuminate\Support\Collection|array
      */
     public function scan($columns = [])
@@ -473,7 +482,7 @@ class Builder extends BaseBuilder
         foreach (['filter', 'condition', 'key_condition'] as $query_type) {
             foreach (['', 'or'] as $boolean) {
                 foreach (['', 'in', 'between'] as $where_type) {
-                    $target_query = $query_type . '_query';
+                    $target_query = $query_type.'_query';
                     $source_method = Str::camel(implode('_', [$boolean, $query_type, $where_type]));
                     $target_method = Str::camel(implode('_', [$boolean, 'where', $where_type]));
 
@@ -486,8 +495,8 @@ class Builder extends BaseBuilder
     /**
      * Route filter/condition/keyCondition methods to dedicated sub-query builders.
      *
-     * @param string $method
-     * @param array $parameters
+     * @param  string  $method
+     * @param  array  $parameters
      * @return $this
      */
     public function __call($method, $parameters)
@@ -505,14 +514,11 @@ class Builder extends BaseBuilder
             return $this->callNamedScope($method, $parameters);
         }
 
-        throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
+        throw new BadMethodCallException('Call to undefined method '.static::class."::{$method}()");
     }
 
     /**
      * Determine if the given model has a scope.
-     *
-     * @param  string  $scope
-     * @return bool
      */
     public function hasNamedScope(string $scope): bool
     {
@@ -522,8 +528,6 @@ class Builder extends BaseBuilder
     /**
      * Apply the given named scope on the current builder instance.
      *
-     * @param  string  $scope
-     * @param  array  $parameters
      * @return mixed
      */
     protected function callNamedScope(string $scope, array $parameters = [])
@@ -534,7 +538,7 @@ class Builder extends BaseBuilder
     /**
      * Convert column/value to ExpressionAttribute placeholders, then add where clause.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
@@ -580,7 +584,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function orWhere($column, $operator = null, $value = null)
     {
@@ -590,7 +594,7 @@ class Builder extends BaseBuilder
     /**
      * Convert column/values to ExpressionAttribute placeholders, then delegate to parent.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
@@ -606,7 +610,7 @@ class Builder extends BaseBuilder
     /**
      * Convert column/values to ExpressionAttribute placeholders, then delegate to parent.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
     {
@@ -622,7 +626,7 @@ class Builder extends BaseBuilder
     /**
      * Create a nested query sharing the same ExpressionAttributes instance.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function newQuery()
     {
@@ -630,7 +634,7 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function forNestedWhere()
     {
@@ -640,14 +644,14 @@ class Builder extends BaseBuilder
     /**
      * Execute DynamoDB call and returns processed result.
      *
-     * @param string $query_method
-     * @param array $params
-     * @param string $processor_method
+     * @param  string  $query_method
+     * @param  array  $params
+     * @param  string  $processor_method
      * @return array|\Illuminate\Support\Collection|\Aws\Result
      */
     protected function process($query_method, $processor_method = null)
     {
-        $table_name = $this->connection->getTablePrefix() . $this->from;
+        $table_name = $this->connection->getTablePrefix().$this->from;
 
         // Compile columns and wheres attributes.
         // These attributes needs to interact with ExpressionAttributes during compile,
@@ -682,7 +686,7 @@ class Builder extends BaseBuilder
             return [
                 'method' => $query_method,
                 'params' => $params,
-                'processor' => $processor_method
+                'processor' => $processor_method,
             ];
         }
 

@@ -3,7 +3,6 @@
 namespace Kitar\Dynamodb\Model;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
-use Kitar\Dynamodb\Model\KeyMissingException;
 
 class Model extends BaseModel
 {
@@ -16,30 +15,34 @@ class Model extends BaseModel
 
     /**
      * The Partition Key.
+     *
      * @var string
      */
     protected $primaryKey;
 
     /**
      * The Sort Key.
+     *
      * @var string|null
      */
     protected $sortKey;
 
     /**
      * The default value of the Sort Key.
+     *
      * @var string|null
      */
     protected $sortKeyDefault;
 
     /**
      * The @metadata attribute of AWS\Result response.
+     *
      * @var mixed
      */
     protected $meta;
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function __construct(array $attributes = [])
     {
@@ -60,7 +63,7 @@ class Model extends BaseModel
     public function getKey()
     {
         if (empty($this->primaryKey)) {
-            throw new KeyMissingException("Primary (Partition) key is not defined.");
+            throw new KeyMissingException('Primary (Partition) key is not defined.');
         }
 
         $key = [];
@@ -100,17 +103,17 @@ class Model extends BaseModel
     /**
      * Find a model by its primary key using DynamoDB's getItem.
      *
-     * @param string|array $key
+     * @param  string|array  $key
      * @return static|null
      */
     public static function find($key)
     {
         if (empty($key)) {
-            throw new KeyMissingException("Primary (Partition) key has no value.");
+            throw new KeyMissingException('Primary (Partition) key has no value.');
         }
 
         if (is_string($key) || is_numeric($key)) {
-            $model = new static();
+            $model = new static;
             $model->setAttribute($model->getKeyName(), $key);
             $key = $model->getKey();
         }
@@ -121,7 +124,7 @@ class Model extends BaseModel
     /**
      * Get all models using DynamoDB scan.
      *
-     * @param  array $columns
+     * @param  array  $columns
      * @return \Kitar\Dynamodb\Helpers\Collection
      */
     public static function all($columns = [])
@@ -132,19 +135,18 @@ class Model extends BaseModel
     /**
      * Save a new model and return the instance.
      *
-     * @param  array  $fillables
-     * @param  array  $options
      * @return \Kitar\Dynamodb\Model\Model|$this
      */
     public static function create(array $fillables = [], array $options = [])
     {
         $instance = new static($fillables);
         $instance->save($options);
+
         return $instance;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function save(array $options = [])
     {
@@ -187,7 +189,7 @@ class Model extends BaseModel
     /**
      * Use DynamoDB's key() and UpdateExpression instead of SQL-based key query.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function incrementOrDecrement($column, $amount, $extra, $method)
     {
@@ -339,38 +341,38 @@ class Model extends BaseModel
     /**
      * Forward calls to the DynamoDB query builder via an allowlist.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function __call($method, $parameters)
     {
         $allowedBuilderMethods = [
-            "select",
-            "count",
-            "take",
-            "limit",
-            "index",
-            "key",
-            "exclusiveStartKey",
-            "consistentRead",
-            "dryRun",
-            "getItem",
-            "putItem",
-            "deleteItem",
-            "updateItem",
-            "batchGetItem",
-            "batchPutItem",
-            "batchDeleteItem",
-            "batchWriteItem",
-            "scan",
-            "filter",
-            "filterIn",
-            "filterBetween",
-            "condition",
-            "conditionIn",
-            "conditionBetween",
-            "keyCondition",
-            "keyConditionIn",
-            "keyConditionBetween",
+            'select',
+            'count',
+            'take',
+            'limit',
+            'index',
+            'key',
+            'exclusiveStartKey',
+            'consistentRead',
+            'dryRun',
+            'getItem',
+            'putItem',
+            'deleteItem',
+            'updateItem',
+            'batchGetItem',
+            'batchPutItem',
+            'batchDeleteItem',
+            'batchWriteItem',
+            'scan',
+            'filter',
+            'filterIn',
+            'filterBetween',
+            'condition',
+            'conditionIn',
+            'conditionBetween',
+            'keyCondition',
+            'keyConditionIn',
+            'keyConditionBetween',
         ];
 
         if (in_array($method, ['increment', 'decrement', 'incrementQuietly', 'decrementQuietly'])) {

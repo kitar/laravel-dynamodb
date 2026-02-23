@@ -2,13 +2,13 @@
 
 namespace Kitar\Dynamodb\Tests;
 
-use Mockery as m;
+use Aws\DynamoDb\DynamoDbClient;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Builder;
-use Aws\DynamoDb\DynamoDbClient;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery as m;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
 class ConnectionTest extends TestCase
 {
@@ -16,12 +16,12 @@ class ConnectionTest extends TestCase
 
     protected $connection;
 
-    protected function setUp() :void
+    protected function setUp(): void
     {
         $this->connection = new Connection([]);
     }
 
-    protected function tearDown() :void
+    protected function tearDown(): void
     {
         m::close();
     }
@@ -73,13 +73,13 @@ class ConnectionTest extends TestCase
     {
         $client = m::mock(DynamoDbClient::class);
         $client->shouldReceive('query')->with([
-            'TableName' => 'User'
+            'TableName' => 'User',
         ])->once();
 
         $connection = new Connection([]);
         $connection->setClient($client);
         $connection->clientQuery([
-            'TableName' => 'User'
+            'TableName' => 'User',
         ]);
     }
 
@@ -88,13 +88,13 @@ class ConnectionTest extends TestCase
     {
         $client = m::mock(DynamoDbClient::class);
         $client->shouldReceive('getItem')->with([
-            'TableName' => 'User'
+            'TableName' => 'User',
         ])->once();
 
         $connection = new Connection([]);
         $connection->setClient($client);
         $connection->getItem([
-            'TableName' => 'User'
+            'TableName' => 'User',
         ]);
     }
 

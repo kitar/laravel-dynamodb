@@ -4,20 +4,21 @@ namespace Kitar\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
 use Illuminate\Database\Connection;
-use Illuminate\Support\Str;
-use Kitar\Dynamodb\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar as BaseGrammar;
+use Illuminate\Support\Str;
 
 class Grammar extends BaseGrammar
 {
     /**
      * The marshaler.
+     *
      * @var Aws\DynamoDb\Marshaler
      */
     protected $marshaler;
 
     /**
      * The operators for FilterExpression
+     *
      * @var array
      */
     protected $operators = [
@@ -26,11 +27,12 @@ class Grammar extends BaseGrammar
         '<',
         '<=',
         '>',
-        '>='
+        '>=',
     ];
 
     /**
      * The functions for FilterExpression
+     *
      * @var array
      */
     protected $functions = [
@@ -41,9 +43,6 @@ class Grammar extends BaseGrammar
         'contains',
     ];
 
-    /**
-     * @param \Illuminate\Database\Connection $connection
-     */
     public function __construct(Connection $connection)
     {
         parent::__construct($connection);
@@ -54,10 +53,10 @@ class Grammar extends BaseGrammar
     /**
      * Compile the Select attribute.
      *
-     * @param $select_attributes
      * @return array
      */
-    public function compileSelectAttributes($select_attributes) {
+    public function compileSelectAttributes($select_attributes)
+    {
         if ($select_attributes === 'ALL_ATTRIBUTES') {
             return [];
         }
@@ -70,20 +69,20 @@ class Grammar extends BaseGrammar
     /**
      * Compile the TableName attribute.
      *
-     * @param string $table_name
+     * @param  string  $table_name
      * @return array
      */
     public function compileTableName($table_name)
     {
         return [
-            'TableName' => $table_name
+            'TableName' => $table_name,
         ];
     }
 
     /**
      * Compile the IndexName attribute.
      *
-     * @param string $index
+     * @param  string  $index
      * @return array
      */
     public function compileIndexName($index)
@@ -91,15 +90,16 @@ class Grammar extends BaseGrammar
         if (empty($index)) {
             return [];
         }
+
         return [
-            'IndexName' => $index
+            'IndexName' => $index,
         ];
     }
 
     /**
      * Compile the Key attribute.
      *
-     * @param array $key
+     * @param  array  $key
      * @return array
      */
     public function compileKey($key)
@@ -107,15 +107,16 @@ class Grammar extends BaseGrammar
         if (empty($key)) {
             return [];
         }
+
         return [
-            'Key' => $this->marshaler->marshalItem($key)
+            'Key' => $this->marshaler->marshalItem($key),
         ];
     }
 
     /**
      * Compile the Item attribute.
      *
-     * @param array $key
+     * @param  array  $key
      * @return array
      */
     public function compileItem($item)
@@ -123,15 +124,16 @@ class Grammar extends BaseGrammar
         if (empty($item)) {
             return [];
         }
+
         return [
-            'Item' => $this->marshaler->marshalItem($item)
+            'Item' => $this->marshaler->marshalItem($item),
         ];
     }
 
     /**
      * Compile the Updates attribute.
      *
-     * @param array $updates
+     * @param  array  $updates
      * @return array
      */
     public function compileUpdates($updates)
@@ -139,11 +141,11 @@ class Grammar extends BaseGrammar
         $expressions = [];
 
         if (! empty($updates['set'])) {
-            $expressions[] = 'set ' . implode(', ', $updates['set']);
+            $expressions[] = 'set '.implode(', ', $updates['set']);
         }
 
         if (! empty($updates['remove'])) {
-            $expressions[] = 'remove ' . implode(', ', $updates['remove']);
+            $expressions[] = 'remove '.implode(', ', $updates['remove']);
         }
 
         if (empty($expressions)) {
@@ -172,7 +174,7 @@ class Grammar extends BaseGrammar
                 $table_name => [
                     'Keys' => $marshaled_items,
                 ],
-            ]
+            ],
         ];
     }
 
@@ -189,6 +191,7 @@ class Grammar extends BaseGrammar
                 foreach ($request_body as $key => $body) {
                     $marshaled[$key] = $marshaler->marshalItem($body);
                 }
+
                 return $marshaled;
             });
         })->toArray();
@@ -203,7 +206,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile the Limit attribute.
      *
-     * @param int|null $limit
+     * @param  int|null  $limit
      * @return array
      */
     public function compileDynamodbLimit($limit)
@@ -213,7 +216,7 @@ class Grammar extends BaseGrammar
         }
 
         return [
-            'Limit' => $limit
+            'Limit' => $limit,
         ];
     }
 
@@ -224,7 +227,7 @@ class Grammar extends BaseGrammar
         }
 
         return [
-            'ScanIndexForward' => $bool
+            'ScanIndexForward' => $bool,
         ];
     }
 
@@ -235,14 +238,14 @@ class Grammar extends BaseGrammar
         }
 
         return [
-            'ExclusiveStartKey' => $key
+            'ExclusiveStartKey' => $key,
         ];
     }
 
     /**
      * Compile the ConsistentRead attribute.
      *
-     * @param bool $bool
+     * @param  bool  $bool
      * @return array
      */
     public function compileConsistentRead($bool)
@@ -250,8 +253,9 @@ class Grammar extends BaseGrammar
         if ($bool == null) {
             return [];
         }
+
         return [
-            'ConsistentRead' => $bool
+            'ConsistentRead' => $bool,
         ];
     }
 
@@ -273,14 +277,13 @@ class Grammar extends BaseGrammar
         }
 
         return [
-            'ProjectionExpression' => implode(', ', $projections)
+            'ProjectionExpression' => implode(', ', $projections),
         ];
     }
 
     /**
      * Compile a ExpressionAttriute* attributes.
      *
-     * @param ExpressionAttributes $expression_attributes
      * @return array
      */
     public function compileExpressionAttributes(ExpressionAttributes $expression_attributes)
@@ -300,7 +303,6 @@ class Grammar extends BaseGrammar
     /**
      * Compile the FilterExpression/ConditionExpression/KeyConditionExpression attribute.
      *
-     * @param Builder $query
      * @return array
      */
     public function compileConditions(Builder $query)
@@ -312,14 +314,14 @@ class Grammar extends BaseGrammar
         $key = $query->getWhereAs();
 
         return [
-            $key => preg_replace('/^where\s/', '', $this->compileWheres($query))
+            $key => preg_replace('/^where\s/', '', $this->compileWheres($query)),
         ];
     }
 
     /**
      * Compile a basic where clause using DynamoDB operators and functions.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereBasic($query, $where)
     {
@@ -330,7 +332,8 @@ class Grammar extends BaseGrammar
 
         // if function name specified, run individual compile functions.
         if (in_array($where['operator'], $this->functions)) {
-            $function = 'compile' . Str::studly($where['operator']) . 'Condition';
+            $function = 'compile'.Str::studly($where['operator']).'Condition';
+
             return $this->$function($where);
         }
     }
@@ -338,7 +341,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile a attribute_exists condition.
      *
-     * @param array $where
+     * @param  array  $where
      * @return string
      */
     protected function compileAttributeExistsCondition($where)
@@ -349,7 +352,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile a attribute_not_exists condition.
      *
-     * @param array $where
+     * @param  array  $where
      * @return string
      */
     protected function compileAttributeNotExistsCondition($where)
@@ -360,7 +363,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile a attribute_type condition.
      *
-     * @param array $where
+     * @param  array  $where
      * @return string
      */
     protected function compileAttributeTypeCondition($where)
@@ -371,7 +374,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile a begins_with condition.
      *
-     * @param array $where
+     * @param  array  $where
      * @return string
      */
     protected function compileBeginsWithCondition($where)
@@ -382,7 +385,7 @@ class Grammar extends BaseGrammar
     /**
      * Compile a contains condition.
      *
-     * @param array $where
+     * @param  array  $where
      * @return string
      */
     protected function compileContainsCondition($where)
@@ -393,7 +396,7 @@ class Grammar extends BaseGrammar
     /**
      * Values are already ExpressionAttribute placeholders. "NOT BETWEEN" is not supported.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereBetween($query, $where)
     {
@@ -407,7 +410,7 @@ class Grammar extends BaseGrammar
     /**
      * Values are already ExpressionAttribute placeholders.
      *
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereIn($query, $where)
     {

@@ -2,9 +2,9 @@
 
 namespace Kitar\Dynamodb\Tests\Model;
 
-use Kitar\Dynamodb\Model\Model;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Kitar\Dynamodb\Model\Model;
 
 class UserX extends Model implements AuthenticatableContract
 {

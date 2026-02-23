@@ -81,7 +81,6 @@ class AuthUserProvider implements BaseUserProvider
     /**
      * Update the "remember me" token for the given user in storage.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
      * @param  string  $token
      * @return void
      */
@@ -102,7 +101,6 @@ class AuthUserProvider implements BaseUserProvider
      * Retrieve a user by the given credentials.
      * Identifier or API Token are supported.
      *
-     * @param  array  $credentials
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      */
     public function retrieveByCredentials(#[\SensitiveParameter] array $credentials)
@@ -127,17 +125,15 @@ class AuthUserProvider implements BaseUserProvider
 
         if ($apiToken && $this->apiTokenIndex) {
             return $model->index($this->apiTokenIndex)
-                         ->keyCondition($this->apiTokenName, '=', $apiToken)
-                         ->query()
-                         ->first();
+                ->keyCondition($this->apiTokenName, '=', $apiToken)
+                ->query()
+                ->first();
         }
     }
 
     /**
      * Validate a user against the given credentials.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
      * @return bool
      */
     public function validateCredentials(Authenticatable $user, #[\SensitiveParameter] array $credentials)
@@ -150,9 +146,6 @@ class AuthUserProvider implements BaseUserProvider
     /**
      * Rehash the user's password if required and supported.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
-     * @param  bool  $force
      * @return void
      */
     public function rehashPasswordIfRequired(Authenticatable $user, #[\SensitiveParameter] array $credentials, bool $force = false)

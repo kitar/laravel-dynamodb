@@ -3,14 +3,14 @@
 namespace Kitar\Dynamodb\Tests\Model;
 
 use Aws\Result;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
-use Mockery as m;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Hashing\BcryptHasher;
-use Kitar\Dynamodb\Model\KeyMissingException;
 use Kitar\Dynamodb\Model\AuthUserProvider;
+use Kitar\Dynamodb\Model\KeyMissingException;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery as m;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
 
 class AuthUserProviderTest extends TestCase
 {
@@ -18,12 +18,12 @@ class AuthUserProviderTest extends TestCase
 
     protected $hasher;
 
-    protected function setUp() :void
+    protected function setUp(): void
     {
         $this->hasher = new BcryptHasher;
     }
 
-    protected function tearDown() :void
+    protected function tearDown(): void
     {
         m::close();
     }
@@ -50,21 +50,21 @@ class AuthUserProviderTest extends TestCase
         return new Result([
             'Item' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
+                    'S' => 'foo@bar.com',
                 ],
                 'password' => [
-                    'S' => 'foo'
+                    'S' => 'foo',
                 ],
                 'remember_token' => [
-                    'S' => 'valid_token'
+                    'S' => 'valid_token',
                 ],
                 'api_token' => [
-                    'S' => 'valid_api_token'
-                ]
+                    'S' => 'valid_api_token',
+                ],
             ],
             '@metadata' => [
-                'statuscode' => 200
-            ]
+                'statuscode' => 200,
+            ],
         ]);
     }
 
@@ -74,22 +74,22 @@ class AuthUserProviderTest extends TestCase
             'Items' => [
                 [
                     'partition' => [
-                        'S' => 'foo@bar.com'
+                        'S' => 'foo@bar.com',
                     ],
                     'password' => [
-                        'S' => 'foo'
+                        'S' => 'foo',
                     ],
                     'remember_token' => [
-                        'S' => 'valid_token'
+                        'S' => 'valid_token',
                     ],
                     'api_token' => [
-                        'S' => 'valid_api_token'
-                    ]
-                ]
+                        'S' => 'valid_api_token',
+                    ],
+                ],
             ],
             '@metadata' => [
-                'statuscode' => 200
-            ]
+                'statuscode' => 200,
+            ],
         ]);
     }
 
@@ -97,8 +97,8 @@ class AuthUserProviderTest extends TestCase
     {
         return new Result([
             '@metadata' => [
-                'statuscode' => 200
-            ]
+                'statuscode' => 200,
+            ],
         ]);
     }
 
@@ -110,9 +110,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
@@ -131,12 +131,12 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
+                    'S' => 'foo@bar.com',
                 ],
                 'sort' => [
-                    'S' => 'sort_default'
-                ]
-            ]
+                    'S' => 'sort_default',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
@@ -168,9 +168,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
@@ -189,9 +189,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
@@ -210,9 +210,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
@@ -231,9 +231,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
@@ -252,19 +252,19 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
+                    'S' => 'foo@bar.com',
+                ],
             ],
             'UpdateExpression' => 'set #1 = :1',
             'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
-                '#1' => 'remember_token'
+                '#1' => 'remember_token',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'new_token'
-                ]
-            ]
+                    'S' => 'new_token',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResultEmpty());
         $this->setConnectionResolver($connection);
 
@@ -285,9 +285,9 @@ class AuthUserProviderTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo@bar.com'
-                ]
-            ]
+                    'S' => 'foo@bar.com',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult());
         $this->setConnectionResolver($connection);
 
@@ -295,7 +295,7 @@ class AuthUserProviderTest extends TestCase
 
         $user = $provider->retrieveByCredentials([
             'partition' => 'foo@bar.com',
-            'password' => 'foo'
+            'password' => 'foo',
         ]);
 
         $this->assertInstanceOf(UserA::class, $user);
@@ -310,13 +310,13 @@ class AuthUserProviderTest extends TestCase
             'IndexName' => 'api_token-index',
             'KeyConditionExpression' => '#1 = :1',
             'ExpressionAttributeNames' => [
-                '#1' => 'api_token'
+                '#1' => 'api_token',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'valid_api_token'
-                ]
-            ]
+                    'S' => 'valid_api_token',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResultMultiple());
         $this->setConnectionResolver($connection);
 
@@ -336,7 +336,7 @@ class AuthUserProviderTest extends TestCase
 
         $result = $provider->retrieveByCredentials([
             'partition' => 'foo@bar.com',
-            'foo' => 'bar'
+            'foo' => 'bar',
         ]);
 
         $this->assertNull($result);
@@ -348,7 +348,7 @@ class AuthUserProviderTest extends TestCase
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $result = $provider->retrieveByCredentials([
-            'foo' => 'bar'
+            'foo' => 'bar',
         ]);
 
         $this->assertNull($result);
@@ -359,19 +359,19 @@ class AuthUserProviderTest extends TestCase
     {
         $user = new UserA([
             'partition' => 'foo@bar.com',
-            'password' => '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G'
+            'password' => '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G',
         ]);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
         $success = $provider->validateCredentials($user, [
             'partition' => 'foo@bar.com',
-            'password'=> 'foo'
+            'password' => 'foo',
         ]);
 
         $fail = $provider->validateCredentials($user, [
             'partition' => 'foo@bar.com',
-            'password' => 'bar'
+            'password' => 'bar',
         ]);
 
         $this->assertTrue($success);

@@ -3,20 +3,20 @@
 namespace Kitar\Dynamodb\Tests\Model;
 
 use Aws\Result;
+use BadMethodCallException;
+use Illuminate\Database\ConnectionResolver;
+use Kitar\Dynamodb\Helpers\Collection;
+use Kitar\Dynamodb\Model\KeyMissingException;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery as m;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Mockery as m;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Illuminate\Database\ConnectionResolver;
-use Kitar\Dynamodb\Model\KeyMissingException;
-use BadMethodCallException;
-use Kitar\Dynamodb\Helpers\Collection;
 
 class ModelTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
-    protected function tearDown() :void
+    protected function tearDown(): void
     {
         m::close();
     }
@@ -51,8 +51,8 @@ class ModelTest extends TestCase
     {
         return new Result([
             '@metadata' => [
-                'statuscode' => 200
-            ]
+                'statuscode' => 200,
+            ],
         ]);
     }
 
@@ -75,18 +75,18 @@ class ModelTest extends TestCase
             'partition' => 'p',
             'sort' => 's',
             'name' => 'n',
-            'unknowun' => 'u'
+            'unknowun' => 'u',
         ]);
 
         $this->assertEquals([
             'partition' => 'p',
             'sort' => 's',
-            'name' => 'n'
+            'name' => 'n',
         ], $user->attributesToArray());
 
         $this->assertEquals([
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ], $user->getKey());
     }
 
@@ -96,7 +96,7 @@ class ModelTest extends TestCase
         $user = new UserC;
 
         $expected = [
-            'sort' => 'sort_default'
+            'sort' => 'sort_default',
         ];
 
         $this->assertEquals($expected, $user->attributesToArray());
@@ -107,18 +107,18 @@ class ModelTest extends TestCase
     {
         $user = new UserC([
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ]);
 
         $expected = [
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ];
 
         $this->assertEquals($expected, $user->attributesToArray());
         $this->assertEquals([
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ], $user->getKey());
     }
 
@@ -128,7 +128,7 @@ class ModelTest extends TestCase
         // partition key only
         $userA = (new UserA)->newFromBuilder([
             'partition' => 'p',
-            'name' => 'n'
+            'name' => 'n',
         ]);
 
         $this->assertFalse($userA->incrementing);
@@ -137,36 +137,36 @@ class ModelTest extends TestCase
         $this->assertTrue($userA->timestamps);
         $this->assertEquals([
             'partition' => 'p',
-            'name' => 'n'
+            'name' => 'n',
         ], $userA->attributesToArray());
         $this->assertEquals([
-            'partition' => 'p'
+            'partition' => 'p',
         ], $userA->getKey());
 
         // sort key required, with sort key
         $userC = (new UserC)->newFromBuilder([
             'partition' => 'p',
             'sort' => 's',
-            'name' => 'n'
+            'name' => 'n',
         ]);
 
         $this->assertEquals([
             'partition' => 'p',
             'name' => 'n',
-            'sort' => 's'
+            'sort' => 's',
         ], $userC->attributesToArray());
         $this->assertEquals([
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ], $userC->getKey());
 
         // sort key required, without sort key but don't use default value
         $userC2 = (new UserC)->newFromBuilder([
-            'partition' => 'p'
+            'partition' => 'p',
         ]);
 
         $this->assertEquals([
-            'partition' => 'p'
+            'partition' => 'p',
         ], $userC2->attributesToArray());
     }
 
@@ -174,11 +174,11 @@ class ModelTest extends TestCase
     public function it_can_process_get_key_with_primary_key()
     {
         $user1 = new UserA(['partition' => 'p']);
-        $user2 = new UserA(['partition' => "0"]);
+        $user2 = new UserA(['partition' => '0']);
         $user3 = new UserA(['partition' => 0]);
 
         $this->assertEquals(['partition' => 'p'], $user1->getKey());
-        $this->assertEquals(['partition' => "0"], $user2->getKey());
+        $this->assertEquals(['partition' => '0'], $user2->getKey());
         $this->assertEquals(['partition' => 0], $user3->getKey());
     }
 
@@ -186,11 +186,11 @@ class ModelTest extends TestCase
     public function it_can_process_get_key_with_primary_key_and_sort_key()
     {
         $user1 = new UserB(['partition' => 'p', 'sort' => 's']);
-        $user2 = new UserB(['partition' => 'p', 'sort' => "0"]);
+        $user2 = new UserB(['partition' => 'p', 'sort' => '0']);
         $user3 = new UserB(['partition' => 'p', 'sort' => 0]);
 
         $this->assertEquals(['partition' => 'p', 'sort' => 's'], $user1->getKey());
-        $this->assertEquals(['partition' => 'p', 'sort' => "0"], $user2->getKey());
+        $this->assertEquals(['partition' => 'p', 'sort' => '0'], $user2->getKey());
         $this->assertEquals(['partition' => 'p', 'sort' => 0], $user3->getKey());
     }
 
@@ -230,7 +230,7 @@ class ModelTest extends TestCase
     #[Test]
     public function get_key_raise_exception_if_primary_and_sort_key_is_missing()
     {
-        $user = new UserB();
+        $user = new UserB;
 
         $this->expectException(KeyMissingException::class);
         $this->expectExceptionMessage('Some required key(s) has no value: partition, sort');
@@ -245,17 +245,17 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
-            ]
+                    'S' => 'p',
+                ],
+            ],
         ];
 
         $return = new Result([
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
-            ]
+                    'S' => 'p',
+                ],
+            ],
         ]);
 
         $connection = $this->newConnectionMock();
@@ -273,23 +273,23 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 's'
-                ]
-            ]
+                    'S' => 's',
+                ],
+            ],
         ];
 
         $return = new Result([
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 's'
-                ]
-            ]
+                    'S' => 's',
+                ],
+            ],
         ]);
 
         $connection = $this->newConnectionMock();
@@ -307,23 +307,23 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 'sort_default'
-                ]
-            ]
+                    'S' => 'sort_default',
+                ],
+            ],
         ];
 
         $return = new Result([
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 'sort_default'
-                ]
-            ]
+                    'S' => 'sort_default',
+                ],
+            ],
         ]);
 
         $connection = $this->newConnectionMock();
@@ -341,23 +341,23 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 's'
-                ]
-            ]
+                    'S' => 's',
+                ],
+            ],
         ];
 
         $return = new Result([
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
+                    'S' => 'p',
                 ],
                 'sort' => [
-                    'S' => 's'
-                ]
-            ]
+                    'S' => 's',
+                ],
+            ],
         ]);
 
         $connection = $this->newConnectionMock();
@@ -366,7 +366,7 @@ class ModelTest extends TestCase
 
         $user = UserC::find([
             'partition' => 'p',
-            'sort' => 's'
+            'sort' => 's',
         ]);
         $this->assertInstanceOf(UserC::class, $user);
     }
@@ -378,9 +378,9 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'foo'
-                ]
-            ]
+                    'S' => 'foo',
+                ],
+            ],
         ];
 
         $return = new Result([]);
@@ -407,14 +407,14 @@ class ModelTest extends TestCase
     public function it_can_process_all()
     {
         $params = [
-            'TableName' => 'User'
+            'TableName' => 'User',
         ];
 
         $return = new Result([
             'Items' => [
                 ['name' => ['S' => 'User 1']],
-                ['name' => ['S' => 'User 2']]
-            ]
+                ['name' => ['S' => 'User 2']],
+            ],
         ]);
 
         $connection = $this->newConnectionMock();
@@ -434,7 +434,7 @@ class ModelTest extends TestCase
     public function it_can_get_last_evaluated_key()
     {
         $params = [
-            'TableName' => 'User'
+            'TableName' => 'User',
         ];
 
         $connection = $this->newConnectionMock();
@@ -453,13 +453,13 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
-             ],
-             'ConditionExpression' => 'attribute_not_exists(#1)',
-             'ExpressionAttributeNames' => [
-                 '#1' => 'partition'
-             ]
+                    'S' => 'p',
+                ],
+            ],
+            'ConditionExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition',
+            ],
         ];
 
         $connection = $this->newConnectionMock();
@@ -478,13 +478,13 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
+                    'S' => 'p',
+                ],
             ],
             'ConditionExpression' => 'attribute_not_exists(#1)',
             'ExpressionAttributeNames' => [
-                '#1' => 'partition'
-            ]
+                '#1' => 'partition',
+            ],
         ];
 
         $connection = $this->newConnectionMock();
@@ -514,19 +514,19 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
+                    'S' => 'p',
+                ],
             ],
             'UpdateExpression' => 'set #1 = :1',
             'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
-                '#1' => 'name'
+                '#1' => 'name',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'foo'
-                ]
-            ]
+                    'S' => 'foo',
+                ],
+            ],
         ];
 
         $connection = $this->newConnectionMock();
@@ -560,9 +560,9 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Key' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
-            ]
+                    'S' => 'p',
+                ],
+            ],
         ];
 
         $connection = $this->newConnectionMock();
@@ -612,14 +612,14 @@ class ModelTest extends TestCase
             'TableName' => 'User',
             'Item' => [
                 'partition' => [
-                    'S' => 'p'
-                ]
-            ]
+                    'S' => 'p',
+                ],
+            ],
         ])->once();
         $this->setConnectionResolver($connection);
 
         UserA::putItem([
-            'partition' => 'p'
+            'partition' => 'p',
         ]);
     }
 
@@ -641,16 +641,16 @@ class ModelTest extends TestCase
             'FilterExpression' => '#2 = :2',
             'ExpressionAttributeNames' => [
                 '#1' => 'partition',
-                '#2' => 'status'
+                '#2' => 'status',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'test'
+                    'S' => 'test',
                 ],
                 ':2' => [
-                    'S' => 'active'
-                ]
-            ]
+                    'S' => 'active',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult())->once();
         $this->setConnectionResolver($connection);
 
@@ -667,16 +667,16 @@ class ModelTest extends TestCase
             'FilterExpression' => '#2 = :2',
             'ExpressionAttributeNames' => [
                 '#1' => 'partition',
-                '#2' => 'name'
+                '#2' => 'name',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'test'
+                    'S' => 'test',
                 ],
                 ':2' => [
-                    'S' => 'John'
-                ]
-            ]
+                    'S' => 'John',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult())->once();
         $this->setConnectionResolver($connection);
 
@@ -694,19 +694,19 @@ class ModelTest extends TestCase
             'ExpressionAttributeNames' => [
                 '#1' => 'partition',
                 '#2' => 'status',
-                '#3' => 'name'
+                '#3' => 'name',
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
-                    'S' => 'test'
+                    'S' => 'test',
                 ],
                 ':2' => [
-                    'S' => 'active'
+                    'S' => 'active',
                 ],
                 ':3' => [
-                    'S' => 'John'
-                ]
-            ]
+                    'S' => 'John',
+                ],
+            ],
         ])->andReturn($this->sampleAwsResult())->once();
         $this->setConnectionResolver($connection);
 

@@ -2,8 +2,8 @@
 
 namespace Kitar\Dynamodb;
 
-use Aws\Sdk as AwsSdk;
 use Aws\DynamoDb\DynamoDbClient;
+use Aws\Sdk as AwsSdk;
 use Illuminate\Database\Connection as BaseConnection;
 use Illuminate\Support\Arr;
 
@@ -11,6 +11,7 @@ class Connection extends BaseConnection
 {
     /**
      * The DynamoDB client.
+     *
      * @var \Aws\Dynamodb\DynamoDbClient
      */
     protected $client;
@@ -18,7 +19,7 @@ class Connection extends BaseConnection
     /**
      * Bypass the parent constructor because DynamoDB does not use PDO.
      *
-     * @param array $config
+     * @param  array  $config
      */
     public function __construct($config)
     {
@@ -34,7 +35,7 @@ class Connection extends BaseConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function table($table, $as = null)
     {
@@ -45,7 +46,7 @@ class Connection extends BaseConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function query()
     {
@@ -53,7 +54,7 @@ class Connection extends BaseConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getDriverName()
     {
@@ -62,6 +63,7 @@ class Connection extends BaseConnection
 
     /**
      * Get the DynamoDB Client object.
+     *
      * @return \Aws\Dynamodb\DynamoDbClient
      */
     public function getClient()
@@ -71,7 +73,7 @@ class Connection extends BaseConnection
 
     /**
      * Set the DynamoDB client.
-     * @param DynamoDbClient $client
+     *
      * @return void
      */
     public function setClient(DynamoDbClient $client)
@@ -81,7 +83,7 @@ class Connection extends BaseConnection
 
     /**
      * Create a new DynamoDB client.
-     * @param array $config
+     *
      * @return \Aws\Dynamodb\DynamoDbClient
      */
     protected function createClient(array $config)
@@ -93,7 +95,7 @@ class Connection extends BaseConnection
         ];
 
         if (! empty($dynamoConfig['endpoint']) && preg_match('#^https?://#i', $dynamoConfig['endpoint']) === 0) {
-            $dynamoConfig['endpoint'] = "https://" . $dynamoConfig['endpoint'];
+            $dynamoConfig['endpoint'] = 'https://'.$dynamoConfig['endpoint'];
         }
 
         if ($key = $config['access_key'] ?? null) {
@@ -127,15 +129,15 @@ class Connection extends BaseConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getDefaultPostProcessor()
     {
-        return new Query\Processor();
+        return new Query\Processor;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getDefaultQueryGrammar()
     {
@@ -144,6 +146,7 @@ class Connection extends BaseConnection
 
     /**
      * Execute query with the DynamoDB Client.
+     *
      * @return \Aws\Result
      */
     public function clientQuery($params)
@@ -153,8 +156,9 @@ class Connection extends BaseConnection
 
     /**
      * Dynamically pass methods to the connection.
-     * @param string $method
-     * @param array $parameters
+     *
+     * @param  string  $method
+     * @param  array  $parameters
      * @return mixed
      */
     public function __call($method, $parameters)

@@ -5,7 +5,9 @@ namespace Kitar\Dynamodb\Helpers;
 class NumberIterator implements \Iterator
 {
     private $start = 0;
+
     private $current = 0;
+
     private $prefix = '';
 
     public function __construct($start = 1, $prefix = '')

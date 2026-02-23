@@ -45,7 +45,8 @@ class Processor extends BaseProcessor
         return $responseArray;
     }
 
-    public function processCount(Result $awsResponse, $modelClass = null) {
+    public function processCount(Result $awsResponse, $modelClass = null)
+    {
         $response = $this->unmarshal($awsResponse);
 
         if (empty($modelClass)) {

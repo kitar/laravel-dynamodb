@@ -4,6 +4,4 @@ namespace Kitar\Dynamodb\Model;
 
 use RuntimeException;
 
-class KeyMissingException extends RuntimeException
-{
-}
+class KeyMissingException extends RuntimeException {}
