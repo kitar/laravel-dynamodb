@@ -1,56 +1,80 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Commands
 
-### Testing
-- Run all tests: `./vendor/bin/phpunit`
-- Run a single test: `vendor/bin/phpunit tests/Path/To/TestFile.php`
-- Run a single test method: `vendor/bin/phpunit --filter testMethodName`
+```bash
+composer install                                    # Install deps
+./vendor/bin/phpunit                                # All tests
+./vendor/bin/phpunit tests/Path/To/TestFile.php     # Single file
+./vendor/bin/phpunit --filter testMethodName        # Single method
+```
 
-### Development
-- Install dependencies: `composer install`
-- Update dependencies: `composer update`
+## What This Package Does
 
-## Architecture Overview
+A Laravel package that adapts Laravel's database layer (Connection, Query Builder, Grammar, Processor, Eloquent Model) to work with AWS DynamoDB. It overrides SQL-oriented parent methods with DynamoDB API calls.
 
-This is a Laravel package that provides DynamoDB integration by adapting Laravel's database layer to work with AWS DynamoDB.
+**Targets:** PHP ^8.2, Laravel ^12.0, AWS SDK ^3.0
 
-### Key Design Patterns
+## Critical Concepts for Making Changes
 
-1. **Adapter Pattern**: The package adapts Laravel's database abstractions to DynamoDB
-   - `Connection` extends Laravel's base connection class
-   - `Model` extends Eloquent with DynamoDB-specific behavior
-   - Query results are processed through `Processor` to match Laravel's expectations
+### Override Strategy
 
-2. **Builder Pattern**: DynamoDB queries are constructed using a fluent interface
-   - `Query\Builder` provides chainable methods
-   - Separate query objects for different DynamoDB operations (filter, condition, keyCondition)
-   - `ExpressionAttributes` manages placeholder generation for expressions
+Every class in `src/` extends a Laravel base class and overrides specific methods. When modifying any override:
 
-3. **Grammar Translation**: `Query\Grammar` translates Laravel-style queries to DynamoDB API format
-   - Uses AWS Marshaler for type conversions
-   - Compiles expressions using DynamoDB syntax
-   - Handles reserved words and attribute name conflicts
+1. **Check the current Laravel 12.x parent** (`vendor/illuminate/database/...`) for the method signature and behavior
+2. **Preserve DynamoDB-specific adaptations** (see `docs/architecture.md` for the full override inventory)
+3. **Document intentionally omitted features** with comments explaining why (e.g., subqueries, relationships, bitwise ops)
 
-### Important Architectural Decisions
+### ExpressionAttributes — The Key Abstraction
 
-- **No Eloquent Relationships**: Models intentionally don't support relationships as DynamoDB is NoSQL
-- **Primary Keys**: Models require `primaryKey` and optionally `sortKey` properties
-- **Authentication**: Custom `AuthUserProvider` supports both primary key and API token authentication using DynamoDB indexes
-- **Batch Operations**: Native support for DynamoDB batch operations (batchGetItem, batchPutItem, etc.)
-- **Testing**: Use `dryRun()` method to inspect generated DynamoDB parameters without making API calls
+`ExpressionAttributes` replaces SQL parameter binding. It generates placeholders (`#1`, `#2` for names; `:1`, `:2` for values) that DynamoDB requires. All where/filter/condition methods must convert column names and values through this object **before** building the where clause. A single `ExpressionAttributes` instance is shared across the main builder and all nested/dedicated queries to ensure placeholder uniqueness.
 
-### Testing Approach
+### Three Dedicated Query Builders
 
-Tests use Mockery to mock AWS SDK calls. When writing tests:
-- Mock the DynamoDB client for unit tests
-- Use `dryRun()` to test query building without API calls
-- Follow existing test patterns in the `tests/` directory
+`Query\Builder` maintains three internal sub-builders, each compiling to a different DynamoDB expression:
+- `filter_query` → `FilterExpression` (post-query filtering)
+- `condition_query` → `ConditionExpression` (write preconditions)
+- `key_condition_query` → `KeyConditionExpression` (partition/sort key conditions)
 
-### Version Compatibility
+Methods like `filter()`, `condition()`, `keyCondition()` (and their `In`/`Between` variants) are routed to these via `__call()`. This is the most complex part of the codebase.
 
-- PHP: 8.1, 8.2, 8.3, 8.4
-- Laravel: 10.x through 12.x
-- AWS SDK: ^3.0
+### Model Bypasses Eloquent Builder
+
+`Model::newQuery()` returns a `Query\Builder` directly (not an Eloquent Builder). This means:
+- No scopes, eager loading, or relationships
+- `find()`, `create()`, `all()` are implemented directly on Model as static methods
+- `__call()` uses an allowlist to restrict which builder methods are forwarded
+
+### DynamoDB Keys ≠ SQL Primary Keys
+
+Models have `$primaryKey` (partition key) + optional `$sortKey`. `getKey()` returns an associative array, not a scalar. This affects all key-dependent operations (find, update, delete, increment).
+
+## Testing Patterns
+
+- **Mock the DynamoDB client** via Mockery (see existing tests for patterns)
+- **Use `dryRun()`** to test query building — returns compiled params without API calls
+- **Test models** (UserA–UserD, UserX in `tests/Model/`) have different key configurations (with/without sort key, with defaults)
+
+## File Map
+
+```
+src/Kitar/Dynamodb/
+├── Connection.php            # Extends DB Connection (no PDO, DynamoDB client)
+├── DynamodbServiceProvider.php  # Registers 'dynamodb' driver
+├── Query/
+│   ├── Builder.php           # Core: overrides where/increment + adds DynamoDB ops
+│   ├── Grammar.php           # Compiles queries to DynamoDB API params
+│   ├── Processor.php         # Unmarshals DynamoDB responses to models/collections
+│   └── ExpressionAttributes.php  # Placeholder manager (#n, :n)
+├── Model/
+│   ├── Model.php             # Eloquent adapter with composite key support
+│   ├── AuthUserProvider.php  # DynamoDB-based auth (find by ID or API token via GSI)
+│   └── KeyMissingException.php
+└── Helpers/
+    ├── Collection.php        # Adds metadata (LastEvaluatedKey for pagination)
+    └── NumberIterator.php    # Infinite counter for placeholder generation
+```
+
+## Detailed Reference
+
+For the full override inventory (which methods override which parent, what's DynamoDB-specific), see `docs/architecture.md`.

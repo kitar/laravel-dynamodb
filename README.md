@@ -22,6 +22,8 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
     + [update()](#update)
     + [delete()](#delete)
     + [increment() / decrement()](#increment--decrement)
+  * [Scopes](#scopes)
+  * [count()](#count)
   * [Advanced Queries](#advanced-queries)
 - [Authentication with model](#authentication-with-model)
   * [Register custom user provider](#register-custom-user-provider)
@@ -76,13 +78,15 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
 
 ## Installation
 
+> **Using Laravel 11 or earlier?** Please refer to the [v1.x branch](https://github.com/kitar/laravel-dynamodb/tree/v1.x).
+
 Install the package via Composer:
 
 ```
 $ composer require kitar/laravel-dynamodb
 ```
 
-### Laravel (10.x, 11.x, 12.x)
+### Laravel (12.x)
 
 Add dynamodb configs to `config/database.php`:
 
@@ -110,7 +114,7 @@ Update the `DB_CONNECTION` variable in your `.env` file:
 DB_CONNECTION=dynamodb
 ```
 
-> **Note for Laravel 11+**: Laravel 11 and later versions default to `database` driver for session, cache, and queue, which are not compatible with this DynamoDB package. You'll need to configure these services to use alternative drivers. For instance:
+> **Note**: Laravel 12 defaults to `database` driver for session, cache, and queue, which are not compatible with this DynamoDB package. You'll need to configure these services to use alternative drivers. For instance:
 >
 > ```
 > SESSION_DRIVER=file
@@ -333,6 +337,56 @@ We can also pass additional attributes to update.
 $user->increment('views', 1, [
     'last_viewed_at' => '...',
 ]);
+```
+
+### Scopes
+
+You can define [named scopes](https://laravel.com/docs/eloquent#query-scopes) on your model:
+
+```php
+use Kitar\Dynamodb\Model\Model;
+
+class User extends Model
+{
+    protected $table = 'User';
+    protected $primaryKey = 'partition';
+
+    public function scopeActive($query)
+    {
+        return $query->filter('status', '=', 'active');
+    }
+
+    public function scopeByName($query, $name)
+    {
+        return $query->filter('name', '=', $name);
+    }
+}
+```
+
+Then use them in your queries:
+
+```php
+User::keyCondition('partition', '=', 'test')->active()->query();
+
+User::keyCondition('partition', '=', 'test')->byName('John')->query();
+
+// Chaining multiple scopes
+User::keyCondition('partition', '=', 'test')->active()->byName('John')->query();
+```
+
+### count()
+
+You can count items using the `count()` method. This uses DynamoDB's `Select => COUNT` to return only the count without fetching the actual items.
+
+```php
+// Count all items
+$count = ProductCatalog::count();
+
+// Count with key condition
+$count = Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')->count();
+
+// Count with filter
+$count = Thread::filter('LastPostedBy', '=', 'User A')->count();
 ```
 
 ### Advanced Queries
