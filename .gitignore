@@ -13,3 +13,4 @@ composer.lock
 .phpunit.result.cache
 .phpunit.cache
 .env
+compose.override.yaml

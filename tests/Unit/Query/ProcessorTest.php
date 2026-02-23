@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Query;
+namespace Kitar\Dynamodb\Tests\Unit\Query;
 
 use Aws\Result;
 use Kitar\Dynamodb\Model\Model;

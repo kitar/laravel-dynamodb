@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Helpers;
+namespace Kitar\Dynamodb\Tests\Unit\Helpers;
 
 use Kitar\Dynamodb\Helpers\NumberIterator;
 use PHPUnit\Framework\Attributes\Test;

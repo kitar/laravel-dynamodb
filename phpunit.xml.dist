@@ -6,8 +6,14 @@
     </include>
   </source>
   <testsuites>
-    <testsuite name="laravel-dynamodb Test Suite">
-      <directory>tests</directory>
+    <testsuite name="Unit">
+      <directory>tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Feature">
+      <directory>tests/Feature</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory>tests/Integration</directory>
     </testsuite>
   </testsuites>
 </phpunit>

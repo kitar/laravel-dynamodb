@@ -1,39 +1,30 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Model;
+namespace Kitar\Dynamodb\Tests\Feature\Model;
 
 use Aws\Result;
 use BadMethodCallException;
-use Illuminate\Database\ConnectionResolver;
 use Kitar\Dynamodb\Helpers\Collection;
 use Kitar\Dynamodb\Model\KeyMissingException;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Kitar\Dynamodb\Tests\Model\UserA;
+use Kitar\Dynamodb\Tests\Model\UserB;
+use Kitar\Dynamodb\Tests\Model\UserC;
+use Kitar\Dynamodb\Tests\Model\UserD;
+use Kitar\Dynamodb\Tests\Model\UserX;
+use Kitar\Dynamodb\Tests\TestCase;
 use Mockery as m;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 class ModelTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
-
-    protected function tearDown(): void
-    {
-        m::close();
-    }
-
-    protected function setConnectionResolver($connection)
-    {
-        $connectionResolver = new ConnectionResolver;
-        $connectionResolver->addConnection('dynamodb', $connection);
-        $connectionResolver->setDefaultConnection('dynamodb');
-        UserA::setConnectionResolver($connectionResolver);
-        UserB::setConnectionResolver($connectionResolver);
-        UserC::setConnectionResolver($connectionResolver);
-    }
-
     protected function newConnectionMock()
     {
-        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [[]]);
+        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [
+            $this->app['config']->get('database.connections.dynamodb'),
+        ]);
+
+        $this->app['db']->extend('dynamodb', fn () => $connection);
+        $this->app['db']->purge('dynamodb');
 
         return $connection;
     }
@@ -260,7 +251,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with($params)->andReturn($return);
-        $this->setConnectionResolver($connection);
 
         $user = UserA::find('p');
         $this->assertInstanceOf(UserA::class, $user);
@@ -294,7 +284,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with($params)->andReturn($return);
-        $this->setConnectionResolver($connection);
 
         $user = UserB::find(['partition' => 'p', 'sort' => 's']);
         $this->assertInstanceOf(UserB::class, $user);
@@ -328,7 +317,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with($params)->andReturn($return);
-        $this->setConnectionResolver($connection);
 
         $user = UserC::find('p');
         $this->assertInstanceOf(UserC::class, $user);
@@ -362,7 +350,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with($params)->andReturn($return);
-        $this->setConnectionResolver($connection);
 
         $user = UserC::find([
             'partition' => 'p',
@@ -387,7 +374,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('getItem')->with($params)->andReturn($return);
-        $this->setConnectionResolver($connection);
 
         $user = UserA::find('foo');
         $this->assertNull($user);
@@ -419,7 +405,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('scan')->with($params)->andReturn($return)->once();
-        $this->setConnectionResolver($connection);
 
         $res = UserA::all();
 
@@ -439,7 +424,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('scan')->with($params)->andReturn($this->sampleAwsResult())->once();
-        $this->setConnectionResolver($connection);
 
         $res = UserA::all();
 
@@ -464,7 +448,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('putItem')->with($params)->once();
-        $this->setConnectionResolver($connection);
 
         $user = new UserA(['partition' => 'p']);
         $user->timestamps = false;
@@ -489,7 +472,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('putItem')->with($params)->once();
-        $this->setConnectionResolver($connection);
 
         UserD::create(['partition' => 'p']);
     }
@@ -497,8 +479,7 @@ class ModelTest extends TestCase
     #[Test]
     public function it_cannot_save_new_instance_without_required_key()
     {
-        $connection = $this->newConnectionMock();
-        $this->setConnectionResolver($connection);
+        $this->newConnectionMock();
 
         $user = new UserA(['name' => 'foo']);
 
@@ -531,7 +512,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('updateItem')->with($params)->andReturn($this->sampleAwsResultEmpty())->once();
-        $this->setConnectionResolver($connection);
 
         $user = (new UserA)->newFromBuilder(['partition' => 'p']);
         $user->timestamps = false;
@@ -542,8 +522,7 @@ class ModelTest extends TestCase
     #[Test]
     public function it_cannot_save_existing_instance_without_required_key()
     {
-        $connection = $this->newConnectionMock();
-        $this->setConnectionResolver($connection);
+        $this->newConnectionMock();
 
         $user = (new UserA)->newFromBuilder([]);
         $user->name = 'foo';
@@ -567,7 +546,6 @@ class ModelTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('deleteItem')->with($params)->once();
-        $this->setConnectionResolver($connection);
 
         $user = (new UserA)->newFromBuilder(['partition' => 'p']);
 
@@ -616,7 +594,6 @@ class ModelTest extends TestCase
                 ],
             ],
         ])->once();
-        $this->setConnectionResolver($connection);
 
         UserA::putItem([
             'partition' => 'p',
@@ -652,7 +629,6 @@ class ModelTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult())->once();
-        $this->setConnectionResolver($connection);
 
         UserA::keyCondition('partition', '=', 'test')->active()->query();
     }
@@ -678,7 +654,6 @@ class ModelTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult())->once();
-        $this->setConnectionResolver($connection);
 
         UserA::keyCondition('partition', '=', 'test')->byName('John')->query();
     }
@@ -708,7 +683,6 @@ class ModelTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult())->once();
-        $this->setConnectionResolver($connection);
 
         UserA::keyCondition('partition', '=', 'test')->active()->byName('John')->query();
     }

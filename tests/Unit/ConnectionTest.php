@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests;
+namespace Kitar\Dynamodb\Tests\Unit;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Kitar\Dynamodb\Connection;

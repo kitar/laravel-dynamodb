@@ -1,46 +1,36 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Model;
+namespace Kitar\Dynamodb\Tests\Feature\Model;
 
 use Aws\Result;
-use Illuminate\Database\ConnectionResolver;
 use Illuminate\Hashing\BcryptHasher;
 use Kitar\Dynamodb\Model\AuthUserProvider;
 use Kitar\Dynamodb\Model\KeyMissingException;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Kitar\Dynamodb\Tests\Model\UserA;
+use Kitar\Dynamodb\Tests\Model\UserB;
+use Kitar\Dynamodb\Tests\Model\UserC;
+use Kitar\Dynamodb\Tests\TestCase;
 use Mockery as m;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 class AuthUserProviderTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
-
     protected $hasher;
 
     protected function setUp(): void
     {
+        parent::setUp();
         $this->hasher = new BcryptHasher;
-    }
-
-    protected function tearDown(): void
-    {
-        m::close();
-    }
-
-    protected function setConnectionResolver($connection)
-    {
-        $connectionResolver = new ConnectionResolver;
-        $connectionResolver->addConnection('dynamodb', $connection);
-        $connectionResolver->setDefaultConnection('dynamodb');
-        UserA::setConnectionResolver($connectionResolver);
-        UserB::setConnectionResolver($connectionResolver);
-        UserC::setConnectionResolver($connectionResolver);
     }
 
     protected function newConnectionMock()
     {
-        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [[]]);
+        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [
+            $this->app['config']->get('database.connections.dynamodb'),
+        ]);
+
+        $this->app['db']->extend('dynamodb', fn () => $connection);
+        $this->app['db']->purge('dynamodb');
 
         return $connection;
     }
@@ -114,7 +104,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -138,7 +127,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserC::class);
 
@@ -150,8 +138,7 @@ class AuthUserProviderTest extends TestCase
     #[Test]
     public function it_cannot_retrieve_by_id_without_default_sort_key()
     {
-        $connection = $this->newConnectionMock();
-        $this->setConnectionResolver($connection);
+        $this->newConnectionMock();
 
         $provider = new AuthUserProvider($this->hasher, UserB::class);
 
@@ -172,7 +159,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResultEmpty());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -193,7 +179,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -214,7 +199,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResultEmpty());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -235,7 +219,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -266,7 +249,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResultEmpty());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -289,7 +271,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class);
 
@@ -318,7 +299,6 @@ class AuthUserProviderTest extends TestCase
                 ],
             ],
         ])->andReturn($this->sampleAwsResultMultiple());
-        $this->setConnectionResolver($connection);
 
         $provider = new AuthUserProvider($this->hasher, UserA::class, 'api_token', 'api_token-index');
 
@@ -387,7 +367,6 @@ class AuthUserProviderTest extends TestCase
 
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('putItem')->andReturn($this->sampleAwsResult());
-        $this->setConnectionResolver($connection);
 
         $originalHash = '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G';
         $user = new UserA([

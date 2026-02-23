@@ -17,7 +17,10 @@
     "license": "MIT",
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "ci-test": "vendor/bin/phpunit --coverage-clover coverage.xml"
+        "test:unit": "vendor/bin/phpunit --testsuite Unit",
+        "test:feature": "vendor/bin/phpunit --testsuite Feature",
+        "test:integration": "vendor/bin/phpunit --testsuite Integration",
+        "ci-test": "vendor/bin/phpunit --testsuite Unit,Feature --coverage-clover coverage.xml"
     },
     "require": {
         "php": "^8.2",
@@ -29,6 +32,7 @@
     },
     "require-dev": {
         "illuminate/auth": "^12.0",
+        "orchestra/testbench": "^10.0",
         "symfony/var-dumper": "^7.0",
         "vlucas/phpdotenv": "^5.0",
         "mockery/mockery": "^1.6",

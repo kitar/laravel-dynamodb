@@ -1,6 +1,6 @@
 <?php
 
-namespace Kitar\Dynamodb\Tests\Query;
+namespace Kitar\Dynamodb\Tests\Unit\Query;
 
 use Aws\Result;
 use BadMethodCallException;
@@ -709,11 +709,11 @@ class BuilderTest extends TestCase
                 'ForumName' => 'Laravel',
                 'Subject' => 'Laravel Thread 1',
             ])->updateItem([
-                 'LastPostedBy' => 'User A',
-                 'Replies' => 1,
-                 'Tags' => null,
-                 'Views' => null,
-             ]);
+                'LastPostedBy' => 'User A',
+                'Replies' => 1,
+                'Tags' => null,
+                'Views' => null,
+            ]);
 
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
@@ -1033,8 +1033,8 @@ class BuilderTest extends TestCase
                 'ForumName' => 'Laravel',
                 'Subject' => 'Laravel Thread 1',
             ])->updateItem([
-                 'LastPostedBy' => 'User A',
-             ]);
+                'LastPostedBy' => 'User A',
+            ]);
 
         $this->assertEquals(
             $query['params']['UpdateExpression'],
@@ -1050,9 +1050,9 @@ class BuilderTest extends TestCase
                 'ForumName' => 'Laravel',
                 'Subject' => 'Laravel Thread 1',
             ])->updateItem([
-                 'LastPostedBy' => 'User A',
-                 'Replies' => 1,
-             ]);
+                'LastPostedBy' => 'User A',
+                'Replies' => 1,
+            ]);
 
         $this->assertEquals(
             $query['params']['UpdateExpression'],
@@ -1068,8 +1068,8 @@ class BuilderTest extends TestCase
                 'ForumName' => 'Laravel',
                 'Subject' => 'Laravel Thread 1',
             ])->updateItem([
-                 'Tags' => null,
-             ]);
+                'Tags' => null,
+            ]);
 
         $this->assertEquals(
             $query['params']['UpdateExpression'],
@@ -1085,9 +1085,9 @@ class BuilderTest extends TestCase
                 'ForumName' => 'Laravel',
                 'Subject' => 'Laravel Thread 1',
             ])->updateItem([
-                 'Tags' => null,
-                 'Views' => null,
-             ]);
+                'Tags' => null,
+                'Views' => null,
+            ]);
 
         $this->assertEquals(
             $query['params']['UpdateExpression'],
