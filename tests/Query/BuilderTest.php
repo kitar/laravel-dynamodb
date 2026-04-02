@@ -10,6 +10,7 @@ use Kitar\Dynamodb\Model\Model;
 use Kitar\Dynamodb\Query\Builder;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
@@ -38,7 +39,7 @@ class BuilderTest extends TestCase
         return $this->connection->table($table_name)->dryRun();
     }
 
-    /** @test */
+    #[Test]
     public function dry_run_is_disabled_by_default()
     {
         $builder = (new Connection([]))->table('ProductCatalog');
@@ -46,7 +47,7 @@ class BuilderTest extends TestCase
         $this->assertFalse($builder->dry_run);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_index()
     {
         $params = [
@@ -76,7 +77,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_key()
     {
         $params = [
@@ -93,7 +94,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_limit()
     {
         $params = [
@@ -108,7 +109,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_scan_index_forward()
     {
         $params = [
@@ -127,7 +128,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_exclusive_start_key()
     {
         $params = [
@@ -149,7 +150,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_consistent_read()
     {
         $params = [
@@ -168,7 +169,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_model_class()
     {
         $query = $this->newQuery('ProductCatalog')
@@ -177,7 +178,7 @@ class BuilderTest extends TestCase
         $this->assertEquals(Product::class, $query->model_class);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_filter()
     {
         $params = [
@@ -199,7 +200,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_filter_with_short_syntax()
     {
         $params = [
@@ -221,7 +222,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_condition()
     {
         $params = [
@@ -243,7 +244,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_key_condition()
     {
         $params = [
@@ -265,7 +266,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_key_condition_and_filter_at_the_same_time()
     {
         $params = [
@@ -299,7 +300,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_or_filter()
     {
         $params = [
@@ -326,7 +327,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_or_condition()
     {
         $params = [
@@ -351,7 +352,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_filter_in()
     {
         $params = [
@@ -380,7 +381,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_filter_between()
     {
         $params = [
@@ -406,7 +407,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_nested_filters()
     {
         $params = [
@@ -453,7 +454,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_attribute_exists_function()
     {
         $params = [
@@ -471,7 +472,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_attribute_not_exists_function()
     {
         $params = [
@@ -489,7 +490,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_attribute_type_function()
     {
         $params = [
@@ -512,7 +513,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_begins_with_function()
     {
         $params = [
@@ -535,7 +536,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_contains_function()
     {
         $params = [
@@ -558,7 +559,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_get_item()
     {
         $method = 'getItem';
@@ -580,7 +581,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_get_item_with_key()
     {
         $params = [
@@ -597,7 +598,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_get_item_with_expressions()
     {
         $params = [
@@ -620,7 +621,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($params, $query['params']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_put_item()
     {
         $method = 'putItem';
@@ -646,7 +647,7 @@ class BuilderTest extends TestCase
         $this->assertNull($query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_delete_item()
     {
         $method = 'deleteItem';
@@ -672,7 +673,7 @@ class BuilderTest extends TestCase
         $this->assertNull($query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_update_item()
     {
         $method = 'updateItem';
@@ -721,7 +722,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_get_item()
     {
         $method = 'batchGetItem';
@@ -769,7 +770,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_put_item()
     {
         $method = 'batchWriteItem';
@@ -822,7 +823,7 @@ class BuilderTest extends TestCase
         $this->assertNull($query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_delete_item()
     {
         $method = 'batchWriteItem';
@@ -875,7 +876,7 @@ class BuilderTest extends TestCase
         $this->assertNull($query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_write_item()
     {
         $method = 'batchWriteItem';
@@ -936,7 +937,7 @@ class BuilderTest extends TestCase
         $this->assertNull($query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_increment_value_of_attribute()
     {
         $method = 'updateItem';
@@ -981,7 +982,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_decrement_value_of_attribute()
     {
         $method = 'updateItem';
@@ -1026,7 +1027,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_single_attribute()
     {
         $query = $this->newQuery('Thread')
@@ -1043,7 +1044,7 @@ class BuilderTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_multiple_attributes()
     {
         $query = $this->newQuery('Thread')
@@ -1061,7 +1062,7 @@ class BuilderTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_can_remove_single_attribute()
     {
         $query = $this->newQuery('Thread')
@@ -1078,7 +1079,7 @@ class BuilderTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_can_remove_multiple_attributes()
     {
         $query = $this->newQuery('Thread')
@@ -1096,7 +1097,7 @@ class BuilderTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_query()
     {
         $method = 'clientQuery';
@@ -1122,7 +1123,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_scan()
     {
         $method = 'scan';
@@ -1139,7 +1140,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_scan_with_columns_specified()
     {
         $method = 'scan';
@@ -1161,7 +1162,7 @@ class BuilderTest extends TestCase
         $this->assertEquals($processor, $query['processor']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_process()
     {
         $connection = m::mock(Connection::class);
@@ -1176,7 +1177,7 @@ class BuilderTest extends TestCase
         $query->from('Forum')->scan();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_process_with_no_processor()
     {
         $connection = m::mock(Connection::class);
@@ -1202,7 +1203,7 @@ class BuilderTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_forward_call_to_unknown_method()
     {
         $query = $this->newQuery('Thread');
@@ -1212,7 +1213,7 @@ class BuilderTest extends TestCase
         $query->filterNotIn(['foo', 'bar']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_prefixed_builder()
     {
         $connection = new Connection(['prefix' => 'my_table_prefix_']);

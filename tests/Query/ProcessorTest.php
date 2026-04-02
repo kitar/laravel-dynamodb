@@ -5,6 +5,7 @@ namespace Kitar\Dynamodb\Tests\Query;
 use Aws\Result;
 use Kitar\Dynamodb\Model\Model;
 use Kitar\Dynamodb\Query\Processor;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class User extends Model
@@ -35,7 +36,7 @@ class ProcessorTest extends TestCase
         $this->processor = new Processor;
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_single_item_result()
     {
         $expected = json_decode($this->mocks['single_item_processed'], true);
@@ -47,7 +48,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $item);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_single_item_empty_result()
     {
         $expected = json_decode($this->mocks['single_item_empty_processed'], true);
@@ -59,7 +60,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $item);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_multiple_items_result()
     {
         $expected = json_decode($this->mocks['multiple_items_processed'], true);
@@ -71,7 +72,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $items);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_multiple_items_empty_result()
     {
         $expected = json_decode($this->mocks['multiple_items_empty_processed'], true);
@@ -83,7 +84,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $items);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_get_items_result()
     {
         $expected = json_decode($this->mocks['batch_get_items_processed'], true);
@@ -95,7 +96,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $items);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_batch_get_items_empty_result()
     {
         $expected = json_decode($this->mocks['batch_get_items_empty_processed'], true);
@@ -107,7 +108,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals($expected, $items);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_convert_single_result_to_model_instance()
     {
         $awsResult = new Result(json_decode($this->mocks['single_item_result'], true));
@@ -125,7 +126,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_convert_multiple_results_to_model_instance()
     {
         $awsResult = new Result(json_decode($this->mocks['multiple_items_result'], true));
@@ -142,7 +143,7 @@ class ProcessorTest extends TestCase
         $this->assertEquals(200, $item->meta()['@metadata']['statusCode']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_convert_batch_get_results_to_model_instance()
     {
         $awsResult = new Result(json_decode($this->mocks['batch_get_items_result'], true));

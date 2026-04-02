@@ -3,6 +3,7 @@
 namespace Kitar\Dynamodb\Tests\Model;
 
 use Aws\Result;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
@@ -55,7 +56,7 @@ class ModelTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_new_instance()
     {
         $user = new UserA;
@@ -67,7 +68,7 @@ class ModelTest extends TestCase
         $this->assertEquals([], $user->attributesToArray());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_new_instance_with_attributes()
     {
         $user = new UserB([
@@ -89,7 +90,7 @@ class ModelTest extends TestCase
         ], $user->getKey());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_default_sort_key()
     {
         $user = new UserC;
@@ -101,7 +102,7 @@ class ModelTest extends TestCase
         $this->assertEquals($expected, $user->attributesToArray());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_new_instance_with_overriding_sort_key()
     {
         $user = new UserC([
@@ -121,7 +122,7 @@ class ModelTest extends TestCase
         ], $user->getKey());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_create_instance_with_existing_data()
     {
         // partition key only
@@ -169,7 +170,7 @@ class ModelTest extends TestCase
         ], $userC2->attributesToArray());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_get_key_with_primary_key()
     {
         $user1 = new UserA(['partition' => 'p']);
@@ -181,7 +182,7 @@ class ModelTest extends TestCase
         $this->assertEquals(['partition' => 0], $user3->getKey());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_get_key_with_primary_key_and_sort_key()
     {
         $user1 = new UserB(['partition' => 'p', 'sort' => 's']);
@@ -193,7 +194,7 @@ class ModelTest extends TestCase
         $this->assertEquals(['partition' => 'p', 'sort' => 0], $user3->getKey());
     }
 
-    /** @test */
+    #[Test]
     public function get_key_raise_exception_if_primary_key_is_not_defined()
     {
         $user = new UserX;
@@ -204,7 +205,7 @@ class ModelTest extends TestCase
         $user->getKey();
     }
 
-    /** @test */
+    #[Test]
     public function get_key_raise_exception_if_primary_key_is_missing()
     {
         $user = new UserA;
@@ -215,7 +216,7 @@ class ModelTest extends TestCase
         $user->getKey();
     }
 
-    /** @test */
+    #[Test]
     public function get_key_raise_exception_if_sort_key_is_missing()
     {
         $user = new UserB(['partition' => 'p']);
@@ -226,7 +227,7 @@ class ModelTest extends TestCase
         $user->getKey();
     }
 
-    /** @test */
+    #[Test]
     public function get_key_raise_exception_if_primary_and_sort_key_is_missing()
     {
         $user = new UserB();
@@ -237,7 +238,7 @@ class ModelTest extends TestCase
         $user->getKey();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_find()
     {
         $params = [
@@ -265,7 +266,7 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(UserA::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_find_with_primary_key_and_sort_key()
     {
         $params = [
@@ -299,7 +300,7 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(UserB::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_find_with_primary_key_and_default_sort_key()
     {
         $params = [
@@ -333,7 +334,7 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(UserC::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_find_with_overrided_sort_key()
     {
         $params = [
@@ -370,7 +371,7 @@ class ModelTest extends TestCase
         $this->assertInstanceOf(UserC::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_find_with_keys_not_exists()
     {
         $params = [
@@ -392,7 +393,7 @@ class ModelTest extends TestCase
         $this->assertNull($user);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_process_find_with_empty_argument()
     {
         $this->expectException(KeyMissingException::class);
@@ -402,7 +403,7 @@ class ModelTest extends TestCase
         UserA::find('');
     }
 
-    /** @test */
+    #[Test]
     public function it_can_process_all()
     {
         $params = [
@@ -429,7 +430,7 @@ class ModelTest extends TestCase
         $this->assertNull($res->getLastEvaluatedKey());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_last_evaluated_key()
     {
         $params = [
@@ -445,7 +446,7 @@ class ModelTest extends TestCase
         $this->assertSame(['id' => ['S' => '1']], $res->getLastEvaluatedKey());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_save_new_instance()
     {
         $params = [
@@ -470,7 +471,7 @@ class ModelTest extends TestCase
         $user->save();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_static_create_new_instance()
     {
         $params = [
@@ -493,7 +494,7 @@ class ModelTest extends TestCase
         UserD::create(['partition' => 'p']);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_save_new_instance_without_required_key()
     {
         $connection = $this->newConnectionMock();
@@ -506,7 +507,7 @@ class ModelTest extends TestCase
         $user->save();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_save_existing_instance()
     {
         $params = [
@@ -538,7 +539,7 @@ class ModelTest extends TestCase
         $user->save();
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_save_existing_instance_without_required_key()
     {
         $connection = $this->newConnectionMock();
@@ -552,7 +553,7 @@ class ModelTest extends TestCase
         $user->save();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_delete_existing_instance()
     {
         $params = [
@@ -573,7 +574,7 @@ class ModelTest extends TestCase
         $user->delete();
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_delete_without_primary_keys()
     {
         $user = (new UserC)->newFromBuilder(['sort' => 's']);
@@ -583,7 +584,7 @@ class ModelTest extends TestCase
         $user->delete();
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_delete_without_sort_keys()
     {
         $user = (new UserC)->newFromBuilder(['partition' => 'p']);
@@ -593,7 +594,7 @@ class ModelTest extends TestCase
         $user->delete();
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_delete_new_instance()
     {
         $user = new UserA(['partition' => 'p']);
@@ -603,7 +604,7 @@ class ModelTest extends TestCase
         $this->assertNull($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_call_allowed_builder_method()
     {
         $connection = $this->newConnectionMock();
@@ -622,7 +623,7 @@ class ModelTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_call_disallowed_builder_method()
     {
         $this->expectException(BadMethodCallException::class);
