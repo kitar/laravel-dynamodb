@@ -823,6 +823,43 @@ class BuilderTest extends TestCase
     }
 
     /** @test */
+    public function it_strips_null_attributes_from_each_item_in_batch_put_item()
+    {
+        $method = 'batchWriteItem';
+        $params = [
+            'TableName' => 'Thread',
+            'RequestItems' => [
+                'Thread' => [
+                    [
+                        'PutRequest' => [
+                            'Item' => [
+                                'ForumName' => [
+                                    'S' => 'Amazon DynamoDB'
+                                ]
+                                // 'Subject' must NOT appear: null attributes must be
+                                // omitted to avoid {"NULL":true} ValidationException.
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $query = $this->newQuery('Thread')
+            ->dryRun()
+            ->batchPutItem([
+                [
+                    'ForumName' => 'Amazon DynamoDB',
+                    'Subject' => null
+                ]
+            ]);
+
+        $this->assertEquals($method, $query['method']);
+        $this->assertEquals($params, $query['params']);
+        $this->assertNull($query['processor']);
+    }
+
+    /** @test */
     public function it_can_process_batch_delete_item()
     {
         $method = 'batchWriteItem';
