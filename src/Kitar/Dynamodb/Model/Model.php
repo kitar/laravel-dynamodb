@@ -268,6 +268,11 @@ class Model extends BaseModel
 
         $attributes = array_filter($this->getAttributes(), static function ($value) { return $value !== null; });
 
+        // Validate the key before the early-return guard so that KeyMissingException
+        // is always thrown when a required key attribute is absent or null, even if
+        // all other attributes are also null and $attributes ends up empty.
+        $key = $this->getKey();
+
         // If the table isn't incrementing we'll simply insert these attributes as they
         // are. These attribute arrays must contain an "id" column previously placed
         // there by the developer as the manually determined key for these models.
@@ -276,7 +281,7 @@ class Model extends BaseModel
         }
 
         // Prevent overwrites of an existing item.
-        foreach (array_keys($this->getKey()) as $keyName) {
+        foreach (array_keys($key) as $keyName) {
             $query = $query->condition($keyName, 'attribute_not_exists');
         }
 
