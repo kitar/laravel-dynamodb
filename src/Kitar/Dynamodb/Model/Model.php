@@ -266,7 +266,7 @@ class Model extends BaseModel
             $this->updateTimestamps();
         }
 
-        $attributes = array_filter($this->getAttributes(), static fn ($value) => $value !== null);
+        $attributes = array_filter($this->getAttributes(), static function ($value) { return $value !== null; });
 
         // If the table isn't incrementing we'll simply insert these attributes as they
         // are. These attribute arrays must contain an "id" column previously placed
