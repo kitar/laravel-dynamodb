@@ -338,7 +338,10 @@ class Builder extends BaseBuilder
         $this->batch_write_request_items = collect($items)->map(function ($item) {
             return [
                 'PutRequest' => [
-                    'Item' => $item,
+                    // Strip null values: absent attributes are semantically equivalent
+                    // to null in DynamoDB, and putItem rejects {"NULL": true} for typed
+                    // key attributes (S/N/B) with a ValidationException.
+                    'Item' => array_filter($item, static function ($value) { return $value !== null; }),
                 ],
             ];
         })->toArray();

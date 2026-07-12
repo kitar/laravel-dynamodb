@@ -471,6 +471,34 @@ class ModelTest extends TestCase
     }
 
     /** @test */
+    public function it_strips_null_attributes_from_putItem_on_insert()
+    {
+        $params = [
+            'TableName' => 'User',
+            'Item' => [
+                'partition' => [
+                    'S' => 'p'
+                ]
+                // 'name' must NOT appear: null attributes must be omitted,
+                // otherwise the Marshaler converts them to {"NULL":true} which
+                // DynamoDB rejects for typed key attributes (S/N/B).
+            ],
+            'ConditionExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition'
+            ]
+        ];
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with($params)->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p', 'name' => null]);
+        $user->timestamps = false;
+        $user->save();
+    }
+
+    /** @test */
     public function it_can_static_create_new_instance()
     {
         $params = [
