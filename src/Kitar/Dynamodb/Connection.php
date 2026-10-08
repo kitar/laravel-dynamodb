@@ -6,6 +6,7 @@ use Aws\Sdk as AwsSdk;
 use Aws\DynamoDb\DynamoDbClient;
 use Illuminate\Database\Connection as BaseConnection;
 use Illuminate\Support\Arr;
+use function Illuminate\Support\enum_value;
 
 class Connection extends BaseConnection
 {
@@ -38,7 +39,7 @@ class Connection extends BaseConnection
     {
         $query = new Query\Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
 
-        return $query->from($table, $as);
+        return $query->from(enum_value($table), $as);
     }
 
     /**

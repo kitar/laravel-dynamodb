@@ -10,6 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
+enum ConnectionTestTable: string
+{
+    case Users = 'users';
+}
+
 class ConnectionTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
@@ -66,6 +71,14 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf(Builder::class, $query);
 
         $this->assertEquals('test', $query->from);
+    }
+
+    #[Test]
+    public function it_accepts_enum_as_table_name()
+    {
+        $query = $this->connection->table(ConnectionTestTable::Users);
+
+        $this->assertEquals('users', $query->from);
     }
 
     #[Test]
