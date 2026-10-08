@@ -6,6 +6,8 @@ use Aws\Result;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery as m;
+use ReflectionMethod;
+use SensitiveParameter;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Hashing\BcryptHasher;
@@ -401,6 +403,41 @@ class AuthUserProviderTest extends TestCase
 
         $this->assertTrue($success);
         $this->assertFalse($fail);
+    }
+
+    #[Test]
+    public function it_cannot_validate_credentials_with_null_password()
+    {
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+
+        $user = new UserA([
+            'partition' => 'foo@bar.com',
+            'password' => '$2y$10$ouGGlM0C/YKgk8MbQHxVHOblxztk/PlXZbKw7w2wfA8FlXsB0Po9G'
+        ]);
+        $this->assertFalse($provider->validateCredentials($user, ['password' => null]));
+
+        $userWithoutPassword = new UserA(['partition' => 'foo@bar.com']);
+        $this->assertFalse($provider->validateCredentials($userWithoutPassword, ['password' => 'foo']));
+    }
+
+    #[Test]
+    public function it_marks_secret_parameters_as_sensitive()
+    {
+        $parameters = [
+            'retrieveByToken' => 'token',
+            'updateRememberToken' => 'token',
+            'retrieveByCredentials' => 'credentials',
+            'validateCredentials' => 'credentials',
+            'rehashPasswordIfRequired' => 'credentials',
+        ];
+
+        foreach ($parameters as $method => $name) {
+            foreach ((new ReflectionMethod(AuthUserProvider::class, $method))->getParameters() as $parameter) {
+                if ($parameter->getName() === $name) {
+                    $this->assertCount(1, $parameter->getAttributes(SensitiveParameter::class), "{$method}() \${$name}");
+                }
+            }
+        }
     }
 
     #[Test]
