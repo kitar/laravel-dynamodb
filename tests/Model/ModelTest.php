@@ -61,6 +61,7 @@ class ModelTest extends TestCase
         UserA::setConnectionResolver($connectionResolver);
         UserB::setConnectionResolver($connectionResolver);
         UserC::setConnectionResolver($connectionResolver);
+        UserF::setConnectionResolver($connectionResolver);
     }
 
     protected function newConnectionMock()
@@ -961,44 +962,11 @@ class ModelTest extends TestCase
     #[Test]
     public function it_can_increment_existing_instance()
     {
-        // The model takes the value returned by DynamoDB, and the incremented
-        // column is synced to the original attributes.
+        // The model takes the values returned by DynamoDB, and the incremented
+        // column and updated_at are synced to the original attributes.
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
         $this->recordModelEvents();
 
-        $connection = $this->newConnectionMock();
-        $connection->shouldReceive('updateItem')->with([
-            'TableName' => 'User',
-            'Key' => [
-                'partition' => ['S' => 'p']
-            ],
-            'UpdateExpression' => 'set #1 = #1 + :1',
-            'ReturnValues' => 'UPDATED_NEW',
-            'ExpressionAttributeNames' => [
-                '#1' => 'count'
-            ],
-            'ExpressionAttributeValues' => [
-                ':1' => ['N' => '2']
-            ]
-        ])->andReturn(new Result([
-            'Attributes' => ['count' => ['N' => '10']],
-            '@metadata' => ['statusCode' => 200],
-        ]))->once();
-        $this->setConnectionResolver($connection);
-
-        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
-        $result = $user->increment('count', 2);
-
-        $this->assertSame(['count' => 10], $result['Attributes']);
-        $this->assertSame(['updating', 'updated'], $this->firedEvents);
-        $this->assertSame(10, $user->count);
-        $this->assertSame(['count' => 10], $user->getChanges());
-        $this->assertFalse($user->isDirty('count'));
-        $this->assertSame(10, $user->getOriginal('count'));
-    }
-
-    #[Test]
-    public function it_keeps_extra_columns_dirty_after_increment()
-    {
         $connection = $this->newConnectionMock();
         $connection->shouldReceive('updateItem')->with([
             'TableName' => 'User',
@@ -1009,14 +977,55 @@ class ModelTest extends TestCase
             'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
                 '#1' => 'count',
-                '#2' => 'status'
+                '#2' => 'updated_at'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => ['N' => '2'],
-                ':2' => ['S' => 'active']
+                ':2' => ['S' => '2026-01-02 03:04:05']
             ]
         ])->andReturn(new Result([
-            'Attributes' => ['count' => ['N' => '10'], 'status' => ['S' => 'active']],
+            'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $result = $user->increment('count', 2);
+
+        $this->assertSame(['count' => 10, 'updated_at' => '2026-01-02 03:04:05'], $result['Attributes']);
+        $this->assertSame(['updating', 'updated'], $this->firedEvents);
+        $this->assertSame(10, $user->count);
+        $this->assertSame(['count' => 10, 'updated_at' => '2026-01-02 03:04:05'], $user->getChanges());
+        $this->assertFalse($user->isDirty());
+        $this->assertSame(10, $user->getOriginal('count'));
+        $this->assertSame('2026-01-02 03:04:05', $user->updated_at->format('Y-m-d H:i:s'));
+    }
+
+    #[Test]
+    public function it_keeps_extra_columns_dirty_after_increment()
+    {
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = #1 + :1, #2 = :2, #3 = :3',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'count',
+                '#2' => 'updated_at',
+                '#3' => 'status'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['N' => '2'],
+                ':2' => ['S' => '2026-01-02 03:04:05'],
+                ':3' => ['S' => 'active']
+            ]
+        ])->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['S' => '2026-01-02 03:04:05'], 'status' => ['S' => 'active']],
             '@metadata' => ['statusCode' => 200],
         ]))->once();
         $this->setConnectionResolver($connection);
@@ -1026,9 +1035,116 @@ class ModelTest extends TestCase
         $user->increment('count', 2, ['status' => 'active']);
 
         $this->assertFalse($user->isDirty('count'));
+        $this->assertFalse($user->isDirty('updated_at'));
         $this->assertTrue($user->isDirty('status'));
         $this->assertSame('inactive', $user->getOriginal('status'));
         $this->assertTrue($user->isDirty('name'));
+    }
+
+    #[Test]
+    public function it_writes_updated_at_through_mutator_on_save_and_increment()
+    {
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
+        $timestamp = Carbon::parse('2026-01-02 03:04:05')->timestamp;
+
+        $sent = [];
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->andReturnUsing(function ($params) use (&$sent, $timestamp) {
+            $sent[] = $params;
+
+            return new Result([
+                'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['N' => (string) $timestamp]],
+                '@metadata' => ['statusCode' => 200],
+            ]);
+        })->twice();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserF)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $user->name = 'foo';
+        $user->save();
+        $user->increment('count');
+
+        $savedAt = $sent[0]['ExpressionAttributeValues'][':2'];
+        $incrementedAt = $sent[1]['ExpressionAttributeValues'][':2'];
+        $this->assertSame(['N' => (string) $timestamp], $savedAt);
+        $this->assertSame($savedAt, $incrementedAt);
+
+        // The stored value from DynamoDB is applied as is, without running the mutator again.
+        $this->assertSame($timestamp, $user->getAttributes()['updated_at']);
+        $this->assertSame($timestamp, $user->getRawOriginal('updated_at'));
+        $this->assertFalse($user->isDirty());
+    }
+
+    #[Test]
+    public function it_does_not_write_updated_at_on_increment_when_timestamps_are_disabled()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['UpdateExpression'] === 'set #1 = #1 + :1'
+                && ! isset($params['ExpressionAttributeNames']['#2']);
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $user->timestamps = false;
+        $user->increment('count');
+
+        $this->assertSame(10, $user->count);
+        $this->assertFalse($user->isDirty());
+    }
+
+    #[Test]
+    public function it_does_not_overwrite_updated_at_passed_in_extra_on_increment()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['UpdateExpression'] === 'set #1 = #1 + :1, #2 = :2'
+                && $params['ExpressionAttributeNames']['#2'] === 'updated_at'
+                && $params['ExpressionAttributeValues'][':2'] === ['S' => '2020-05-06 07:08:09'];
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['S' => '2020-05-06 07:08:09']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $user->increment('count', 1, ['updated_at' => '2020-05-06 07:08:09']);
+
+        $this->assertSame('2020-05-06 07:08:09', $user->getAttributes()['updated_at']);
+        $this->assertTrue($user->isDirty('updated_at'));
+    }
+
+    #[Test]
+    public function it_keeps_mutable_cast_object_obtained_before_increment()
+    {
+        $sent = [];
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->andReturnUsing(function ($params) use (&$sent) {
+            $sent[] = $params;
+
+            return new Result([
+                'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+                '@metadata' => ['statusCode' => 200],
+            ]);
+        })->twice();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1, 'options' => '{"a":1}']);
+        $user->mergeCasts(['options' => AsArrayObject::class]);
+
+        $options = $user->options;
+        $user->increment('count');
+        $options['color'] = 'blue';
+
+        $user->timestamps = false;
+        $user->save();
+
+        $this->assertSame('set #1 = :1', $sent[1]['UpdateExpression']);
+        $this->assertSame(['options'], array_values($sent[1]['ExpressionAttributeNames']));
+        $this->assertSame(['S' => '{"a":1,"color":"blue"}'], $sent[1]['ExpressionAttributeValues'][':1']);
     }
 
     #[Test]
@@ -1053,6 +1169,7 @@ class ModelTest extends TestCase
     #[Test]
     public function it_increments_new_instance_without_firing_events()
     {
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
         $this->recordModelEvents();
 
         $connection = $this->newConnectionMock();
@@ -1061,16 +1178,18 @@ class ModelTest extends TestCase
             'Key' => [
                 'partition' => ['S' => 'p']
             ],
-            'UpdateExpression' => 'set #1 = #1 + :1',
+            'UpdateExpression' => 'set #1 = #1 + :1, #2 = :2',
             'ReturnValues' => 'UPDATED_NEW',
             'ExpressionAttributeNames' => [
-                '#1' => 'count'
+                '#1' => 'count',
+                '#2' => 'updated_at'
             ],
             'ExpressionAttributeValues' => [
-                ':1' => ['N' => '1']
+                ':1' => ['N' => '1'],
+                ':2' => ['S' => '2026-01-02 03:04:05']
             ]
         ])->andReturn(new Result([
-            'Attributes' => ['count' => ['N' => '10']],
+            'Attributes' => ['count' => ['N' => '10'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
             '@metadata' => ['statusCode' => 200],
         ]))->once();
         $this->setConnectionResolver($connection);
@@ -1078,7 +1197,7 @@ class ModelTest extends TestCase
         $user = new UserA(['partition' => 'p']);
         $result = $user->increment('count');
 
-        $this->assertSame(['count' => 10], $result['Attributes']);
+        $this->assertSame(['count' => 10, 'updated_at' => '2026-01-02 03:04:05'], $result['Attributes']);
         $this->assertSame([], $this->firedEvents);
         $this->assertNull($user->count);
     }

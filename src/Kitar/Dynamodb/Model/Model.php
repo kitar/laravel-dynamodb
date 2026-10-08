@@ -192,6 +192,21 @@ class Model extends BaseModel
     {
         $query = $this->newQuery()->key($this->getKey());
 
+        // Like Eloquent's query builder, write updated_at together with the
+        // incremented column unless the caller already passed it.
+        $syncColumns = [$column];
+
+        if ($this->usesTimestamps() && ! is_null($updatedAt = $this->getUpdatedAtColumn()) && ! array_key_exists($updatedAt, $extra)) {
+            $timestamp = $this->freshTimestampString();
+
+            if ($this->hasSetMutator($updatedAt) || $this->hasAttributeSetMutator($updatedAt) || $this->hasCast($updatedAt)) {
+                $timestamp = $this->newInstance()->forceFill([$updatedAt => $timestamp])->getAttributes()[$updatedAt] ?? $timestamp;
+            }
+
+            $extra = array_merge([$updatedAt => $timestamp], $extra);
+            $syncColumns[] = $updatedAt;
+        }
+
         if (! $this->exists) {
             return $query->{$method}($column, $amount, $extra);
         }
@@ -200,14 +215,26 @@ class Model extends BaseModel
             return false;
         }
 
-        return tap($query->{$method}($column, $amount, $extra), function ($response) use ($column) {
-            $this->forceFill($response['Attributes']);
+        // The values are computed by DynamoDB, so the model takes them from the response
+        // instead of calculating them before the update. They are already stored values,
+        // so they are set as raw attributes without running mutators or casts again.
+        return tap($query->{$method}($column, $amount, $extra), function ($response) use ($syncColumns) {
+            // setRawAttributes() clears the whole cast cache. Keep the cached cast objects of the
+            // attributes that are not in the response, so that objects obtained before stay attached.
+            $attributes = array_replace($this->getAttributes(), $response['Attributes']);
+            $classCastCache = array_diff_key($this->classCastCache, $response['Attributes']);
+            $attributeCastCache = array_diff_key($this->attributeCastCache, $response['Attributes']);
+
+            $this->setRawAttributes($attributes);
+
+            $this->classCastCache = $classCastCache;
+            $this->attributeCastCache = $attributeCastCache;
 
             $this->syncChanges();
 
             $this->fireModelEvent('updated', false);
 
-            $this->syncOriginalAttributes([$column]);
+            $this->syncOriginalAttributes($syncColumns);
         });
     }
 
