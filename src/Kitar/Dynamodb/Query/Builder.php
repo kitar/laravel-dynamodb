@@ -9,6 +9,7 @@ use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
 use Kitar\Dynamodb\Query\ExpressionAttributes;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Str;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Builder as BaseBuilder;
@@ -614,6 +615,10 @@ class Builder extends BaseBuilder
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
+        if ($values instanceof Arrayable) {
+            $values = $values->toArray();
+        }
+
         $column = $this->expression_attributes->addName($column);
 
         foreach ($values as &$value) {

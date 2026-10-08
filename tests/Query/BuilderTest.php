@@ -385,6 +385,17 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_can_process_filter_in_with_arrayable()
+    {
+        $query = $this->newQuery('ProductCatalog')
+                      ->filterIn('Id', collect([101, 102]))
+                      ->scan();
+
+        $this->assertEquals('(#1 in (:1, :2))', $query['params']['FilterExpression']);
+        $this->assertEquals([':1' => ['N' => 101], ':2' => ['N' => 102]], $query['params']['ExpressionAttributeValues']);
+    }
+
+    #[Test]
     public function it_can_process_filter_between()
     {
         $params = [
