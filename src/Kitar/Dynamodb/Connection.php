@@ -18,15 +18,19 @@ class Connection extends BaseConnection
 
     public function __construct($config)
     {
-        $this->config = $config;
-
+        // DynamoDB has no PDO or database name, so the client replaces them.
         $this->client = $this->createClient($config);
 
         $this->tablePrefix = $config['prefix'] ?? '';
 
-        $this->useDefaultPostProcessor();
+        $this->config = $config;
 
+        // We need to initialize a query grammar and the query post processors
+        // which are both very important parts of the database abstractions
+        // so we initialize these to their default values while starting.
         $this->useDefaultQueryGrammar();
+
+        $this->useDefaultPostProcessor();
     }
 
     /**
@@ -37,6 +41,7 @@ class Connection extends BaseConnection
      */
     public function table($table, $as = null)
     {
+        // Build the DynamoDB query builder instead of calling query(), which creates the SQL one.
         $query = new Query\Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
 
         return $query->from(enum_value($table), $as);
@@ -119,7 +124,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultPostProcessor()
     {
-        return new Query\Processor();
+        return new Query\Processor;
     }
 
     /**
@@ -127,7 +132,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return new Query\Grammar();
+        return new Query\Grammar($this);
     }
 
     /**
