@@ -131,19 +131,19 @@ class Builder extends BaseBuilder
      * Create a new query builder instance.
      *
      * @param \Kitar\Dynamodb\Connection $connection
-     * @param \Kitar\Dynamodb\Query\Grammar $grammar
-     * @param \Kitar\Dynamodb\Query\Processor $processor
+     * @param \Kitar\Dynamodb\Query\Grammar|null $grammar
+     * @param \Kitar\Dynamodb\Query\Processor|null $processor
      * @param \Kitar\Dynamodb\Query\ExpressionAttributes|null $expression_attributes
      * @param bool $is_nested_query
      * @return void
      */
-    public function __construct(Connection $connection, Grammar $grammar, Processor $processor, $expression_attributes = null, $is_nested_query = false)
+    public function __construct(Connection $connection, ?Grammar $grammar = null, ?Processor $processor = null, $expression_attributes = null, $is_nested_query = false)
     {
         $this->connection = $connection;
 
-        $this->grammar = $grammar;
+        $this->grammar = $grammar ?: $connection->getQueryGrammar();
 
-        $this->processor = $processor;
+        $this->processor = $processor ?: $connection->getPostProcessor();
 
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 

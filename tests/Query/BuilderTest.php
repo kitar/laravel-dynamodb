@@ -1282,6 +1282,15 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_falls_back_to_connection_grammar_and_processor()
+    {
+        $query = new Builder($this->connection);
+
+        $this->assertSame($this->connection->getQueryGrammar(), $query->getGrammar());
+        $this->assertSame($this->connection->getPostProcessor(), $query->getProcessor());
+    }
+
+    #[Test]
     public function it_returns_prefixed_builder()
     {
         $connection = new Connection(['prefix' => 'my_table_prefix_']);
