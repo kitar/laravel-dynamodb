@@ -4,6 +4,7 @@ namespace Kitar\Dynamodb\Query;
 
 use Closure;
 use BadMethodCallException;
+use InvalidArgumentException;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
@@ -543,6 +544,10 @@ class Builder extends BaseBuilder
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
+        if ($this->invalidOperatorAndValue($operator, $value)) {
+            throw new InvalidArgumentException('Illegal operator and value combination.');
+        }
+
         // Convert column and value to ExpressionAttributes.
         if (! $column instanceof Closure) {
             $column = $this->expression_attributes->addName($column);

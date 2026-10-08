@@ -4,6 +4,7 @@ namespace Kitar\Dynamodb\Tests\Query;
 
 use Aws\Result;
 use BadMethodCallException;
+use InvalidArgumentException;
 use Mockery as m;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Model\Model;
@@ -1211,6 +1212,24 @@ class BuilderTest extends TestCase
         $this->expectException(BadMethodCallException::class);
 
         $query->filterNotIn(['foo', 'bar']);
+    }
+
+    #[Test]
+    public function it_cannot_process_filter_with_illegal_operator_and_value_combination()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Illegal operator and value combination.');
+
+        $this->newQuery('ProductCatalog')->filter('Price', '>', null);
+    }
+
+    #[Test]
+    public function it_cannot_process_or_filter_with_illegal_operator_and_value_combination()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Illegal operator and value combination.');
+
+        $this->newQuery('ProductCatalog')->filter('Price', 1)->orFilter('Price', '>', null);
     }
 
     #[Test]
