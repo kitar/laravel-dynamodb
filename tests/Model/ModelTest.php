@@ -10,6 +10,10 @@ use Illuminate\Database\ConnectionResolver;
 use Kitar\Dynamodb\Model\KeyMissingException;
 use BadMethodCallException;
 use Kitar\Dynamodb\Helpers\Collection;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class ModelTest extends TestCase
 {
@@ -17,7 +21,35 @@ class ModelTest extends TestCase
 
     protected function tearDown() :void
     {
+        UserA::unsetEventDispatcher();
+        Carbon::setTestNow();
         m::close();
+    }
+
+    /**
+     * Model lifecycle events fired since recordModelEvents() was called.
+     *
+     * @var array
+     */
+    protected $firedEvents = [];
+
+    /**
+     * Set a fresh event dispatcher that records model lifecycle events
+     * (e.g. "saving") into $firedEvents. Other events such as "retrieved"
+     * are ignored. A listener that halts an event also stops this recorder,
+     * so the halted event itself is not recorded.
+     */
+    protected function recordModelEvents()
+    {
+        $this->firedEvents = [];
+        $dispatcher = new Dispatcher;
+        $dispatcher->listen('eloquent.*', function ($name) {
+            $event = Str::between($name, 'eloquent.', ':');
+            if (in_array($event, ['saving', 'saved', 'creating', 'created', 'updating', 'updated', 'deleting', 'deleted'])) {
+                $this->firedEvents[] = $event;
+            }
+        });
+        UserA::setEventDispatcher($dispatcher);
     }
 
     protected function setConnectionResolver($connection)
@@ -718,5 +750,361 @@ class ModelTest extends TestCase
         $this->expectException(BadMethodCallException::class);
 
         UserA::nonExistentScope();
+    }
+
+    /** @test */
+    public function it_fires_events_when_saving_new_instance()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+        $user->timestamps = false;
+
+        $this->assertTrue($user->save());
+        $this->assertSame(['saving', 'creating', 'created', 'saved'], $this->firedEvents);
+        $this->assertTrue($user->exists);
+        $this->assertTrue($user->wasRecentlyCreated);
+        $this->assertFalse($user->isDirty());
+    }
+
+    /** @test */
+    public function it_does_not_save_new_instance_when_saving_event_returns_false()
+    {
+        $this->recordModelEvents();
+        UserA::saving(function () {
+            return false;
+        });
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('putItem');
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+
+        $this->assertFalse($user->save());
+        $this->assertSame([], $this->firedEvents);
+        $this->assertFalse($user->exists);
+    }
+
+    /** @test */
+    public function it_does_not_save_new_instance_when_creating_event_returns_false()
+    {
+        $this->recordModelEvents();
+        UserA::creating(function () {
+            return false;
+        });
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('putItem');
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+
+        $this->assertFalse($user->save());
+        $this->assertSame(['saving'], $this->firedEvents);
+        $this->assertFalse($user->exists);
+    }
+
+    /** @test */
+    public function it_sets_timestamps_when_saving_new_instance()
+    {
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with([
+            'TableName' => 'User',
+            'Item' => [
+                'partition' => ['S' => 'p'],
+                'updated_at' => ['S' => '2026-01-02 03:04:05'],
+                'created_at' => ['S' => '2026-01-02 03:04:05'],
+            ],
+            'ConditionExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition'
+            ]
+        ])->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+        $user->save();
+
+        $this->assertSame('2026-01-02 03:04:05', $user->created_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-01-02 03:04:05', $user->updated_at->format('Y-m-d H:i:s'));
+    }
+
+    /** @test */
+    public function it_fires_events_when_saving_existing_instance()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->andReturn($this->sampleAwsResultEmpty())->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p']);
+        $user->timestamps = false;
+        $user->name = 'foo';
+
+        $this->assertTrue($user->save());
+        $this->assertSame(['saving', 'updating', 'updated', 'saved'], $this->firedEvents);
+        $this->assertFalse($user->wasRecentlyCreated);
+        $this->assertFalse($user->isDirty());
+        $this->assertSame(['name' => 'foo'], $user->getChanges());
+    }
+
+    /** @test */
+    public function it_does_not_update_existing_instance_when_updating_event_returns_false()
+    {
+        $this->recordModelEvents();
+        UserA::updating(function () {
+            return false;
+        });
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('updateItem');
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p']);
+        $user->name = 'foo';
+
+        $this->assertFalse($user->save());
+        $this->assertSame(['saving'], $this->firedEvents);
+        $this->assertTrue($user->isDirty('name'));
+    }
+
+    /** @test */
+    public function it_does_not_call_dynamodb_when_saving_clean_existing_instance()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('updateItem');
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p']);
+
+        $this->assertTrue($user->save());
+        $this->assertSame(['saving', 'saved'], $this->firedEvents);
+    }
+
+    /** @test */
+    public function it_updates_timestamp_when_saving_existing_instance()
+    {
+        Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = :1, #2 = :2',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'name',
+                '#2' => 'updated_at'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'foo'],
+                ':2' => ['S' => '2026-01-02 03:04:05']
+            ]
+        ])->andReturn($this->sampleAwsResultEmpty())->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'created_at' => '2025-01-01 00:00:00']);
+        $user->name = 'foo';
+        $user->save();
+
+        $this->assertSame('2025-01-01 00:00:00', $user->created_at->format('Y-m-d H:i:s'));
+    }
+
+    /** @test */
+    public function it_fires_events_when_deleting_existing_instance()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('deleteItem')->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p']);
+
+        $this->assertTrue($user->delete());
+        $this->assertSame(['deleting', 'deleted'], $this->firedEvents);
+        $this->assertFalse($user->exists);
+    }
+
+    /** @test */
+    public function it_does_not_delete_existing_instance_when_deleting_event_returns_false()
+    {
+        $this->recordModelEvents();
+        UserA::deleting(function () {
+            return false;
+        });
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('deleteItem');
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p']);
+
+        $this->assertFalse($user->delete());
+        $this->assertSame([], $this->firedEvents);
+        $this->assertTrue($user->exists);
+    }
+
+    /** @test */
+    public function it_can_increment_existing_instance()
+    {
+        // Records the current behavior: the model takes the value returned by
+        // DynamoDB, updated_at is not touched, and the column stays dirty.
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = #1 + :1',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'count'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['N' => '2']
+            ]
+        ])->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $result = $user->increment('count', 2);
+
+        $this->assertSame(['count' => 10], $result['Attributes']);
+        $this->assertSame(['updating', 'updated'], $this->firedEvents);
+        $this->assertSame(10, $user->count);
+        $this->assertSame(['count' => 10], $user->getChanges());
+        $this->assertTrue($user->isDirty('count'));
+        $this->assertSame(1, $user->getOriginal('count'));
+    }
+
+    /** @test */
+    public function it_does_not_increment_existing_instance_when_updating_event_returns_false()
+    {
+        $this->recordModelEvents();
+        UserA::updating(function () {
+            return false;
+        });
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('updateItem');
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+
+        $this->assertFalse($user->increment('count'));
+        $this->assertSame([], $this->firedEvents);
+        $this->assertSame(1, $user->count);
+    }
+
+    /** @test */
+    public function it_increments_new_instance_without_firing_events()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = #1 + :1',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'count'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['N' => '1']
+            ]
+        ])->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+        $result = $user->increment('count');
+
+        $this->assertSame(['count' => 10], $result['Attributes']);
+        $this->assertSame([], $this->firedEvents);
+        $this->assertNull($user->count);
+    }
+
+    /** @test */
+    public function it_cannot_delete_new_instance_without_key()
+    {
+        // The key is validated before checking whether the model exists.
+        $this->expectException(KeyMissingException::class);
+
+        (new UserA)->delete();
+    }
+
+    /** @test */
+    public function it_saves_mutated_cast_object_on_new_instance()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with([
+            'TableName' => 'User',
+            'Item' => [
+                'partition' => ['S' => 'p'],
+                'options' => ['S' => '{"a":1}'],
+            ],
+            'ConditionExpression' => 'attribute_not_exists(#1)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition'
+            ]
+        ])->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+        $user->timestamps = false;
+        $user->mergeCasts(['options' => AsArrayObject::class]);
+        $user->options = [];
+        $user->options['a'] = 1;
+        $user->save();
+    }
+
+    /** @test */
+    public function it_saves_mutated_cast_object_on_existing_instance()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = :1',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'options'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => '{"a":1,"b":2}']
+            ]
+        ])->andReturn($this->sampleAwsResultEmpty())->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'options' => '{"a":1}']);
+        $user->timestamps = false;
+        $user->mergeCasts(['options' => AsArrayObject::class]);
+        $user->options['b'] = 2;
+        $user->save();
     }
 }
