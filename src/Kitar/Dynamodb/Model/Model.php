@@ -176,6 +176,11 @@ class Model extends BaseModel
         // which is typically an auto-increment value managed by the database.
         else {
             $saved = $this->performInsert($query);
+
+            if (! $this->getConnectionName() &&
+                $connection = $query->getConnection()) {
+                $this->setConnection($connection->getName());
+            }
         }
 
         // If the model is successfully saved, we need to do a few more things once

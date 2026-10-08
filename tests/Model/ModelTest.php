@@ -800,6 +800,21 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_records_connection_name_after_saving_new_instance()
+    {
+        $connection = m::mock('Kitar\Dynamodb\Connection[clientQuery]', [['name' => 'dynamodb']]);
+        $connection->shouldReceive('putItem')->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserA(['partition' => 'p']);
+        $this->assertNull($user->getConnectionName());
+
+        $user->save();
+
+        $this->assertSame('dynamodb', $user->getConnectionName());
+    }
+
+    #[Test]
     public function it_does_not_save_new_instance_when_saving_event_returns_false()
     {
         $this->recordModelEvents();
