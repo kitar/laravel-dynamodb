@@ -1204,12 +1204,9 @@ class ModelTest extends TestCase
     }
 
     #[Test]
-    public function it_cannot_delete_new_instance_without_key()
+    public function it_returns_null_when_deleting_new_instance_without_key()
     {
-        // The key is validated before checking whether the model exists.
-        $this->expectException(KeyMissingException::class);
-
-        (new UserA)->delete();
+        $this->assertNull((new UserA)->delete());
     }
 
     #[Test]

@@ -334,14 +334,14 @@ class Model extends BaseModel
      */
     public function delete()
     {
-        $key = $this->getKey();
-
         // If the model doesn't exist, there is nothing to delete so we'll just return
         // immediately and not do anything else. Otherwise, we will continue with a
         // deletion process on the model, firing the proper events, and so forth.
         if (! $this->exists) {
             return;
         }
+
+        $key = $this->getKey();
 
         if ($this->fireModelEvent('deleting') === false) {
             return false;
