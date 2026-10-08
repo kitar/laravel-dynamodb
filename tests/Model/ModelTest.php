@@ -575,6 +575,94 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_updates_existing_instance_by_original_key_when_key_is_changed()
+    {
+        // The item is addressed by the original key. The changed key attributes are
+        // still sent in the update expression, and DynamoDB rejects updating them.
+        $params = [
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p'],
+                'sort' => ['S' => 's']
+            ],
+            'UpdateExpression' => 'set #1 = :1, #2 = :2',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition',
+                '#2' => 'sort'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'p2'],
+                ':2' => ['S' => 's2']
+            ]
+        ];
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with($params)->andReturn($this->sampleAwsResultEmpty())->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserC)->newFromBuilder(['partition' => 'p', 'sort' => 's']);
+        $user->timestamps = false;
+        $user->partition = 'p2';
+        $user->sort = 's2';
+        $user->save();
+    }
+
+    #[Test]
+    public function it_deletes_existing_instance_by_original_key_when_key_is_changed()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('deleteItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p'],
+                'sort' => ['S' => 's']
+            ]
+        ])->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserC)->newFromBuilder(['partition' => 'p', 'sort' => 's']);
+        $user->partition = 'p2';
+        $user->sort = 's2';
+
+        $this->assertTrue($user->delete());
+    }
+
+    #[Test]
+    public function it_increments_existing_instance_by_original_key_when_key_is_changed()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['Key'] === ['partition' => ['S' => 'p'], 'sort' => ['S' => 's']];
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '2'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserC)->newFromBuilder(['partition' => 'p', 'sort' => 's', 'count' => 1]);
+        $user->partition = 'p2';
+        $user->sort = 's2';
+        $user->increment('count');
+    }
+
+    #[Test]
+    public function it_increments_new_instance_by_current_key()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['Key'] === ['partition' => ['S' => 'p2'], 'sort' => ['S' => 's2']];
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '2']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserC(['partition' => 'p2', 'sort' => 's2']);
+        $user->increment('count');
+    }
+
+    #[Test]
     public function it_cannot_save_existing_instance_without_required_key()
     {
         $connection = $this->newConnectionMock();

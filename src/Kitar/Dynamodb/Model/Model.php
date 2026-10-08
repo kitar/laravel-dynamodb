@@ -199,7 +199,7 @@ class Model extends BaseModel
     protected function incrementOrDecrement($column, $amount, $extra, $method)
     {
         // The key is required even for an unsaved instance: without it Laravel would update every row.
-        $query = $this->newQuery()->key($this->getKey());
+        $query = $this->newQuery()->key($this->exists ? $this->getKeyForSaveQuery() : $this->getKey());
 
         // Like Eloquent's query builder, write updated_at together with the
         // incremented column unless the caller already passed it.
@@ -281,7 +281,7 @@ class Model extends BaseModel
 
         if (count($dirty) > 0) {
             // updateItem() with the key replaces setKeysForSaveQuery()->update(): DynamoDB has no where-based update.
-            $query->key($this->getKey())->updateItem($dirty);
+            $query->key($this->getKeyForSaveQuery())->updateItem($dirty);
 
             // refreshSavedAttributes() is omitted: it reads back through the SQL query builder.
             $this->syncChanges();
@@ -290,6 +290,23 @@ class Model extends BaseModel
         }
 
         return true;
+    }
+
+    /**
+     * Get the key that addresses the stored item: the original key values, not the current
+     * attribute values (which may be changed or cast). Like Laravel's getKeyForSaveQuery().
+     *
+     * @return array
+     */
+    protected function getKeyForSaveQuery()
+    {
+        $key = $this->getKey();
+
+        foreach (array_keys($key) as $name) {
+            $key[$name] = $this->original[$name] ?? $key[$name];
+        }
+
+        return $key;
     }
 
     /**
@@ -362,7 +379,7 @@ class Model extends BaseModel
             return;
         }
 
-        $key = $this->getKey();
+        $key = $this->getKeyForSaveQuery();
 
         if ($this->fireModelEvent('deleting') === false) {
             return false;
