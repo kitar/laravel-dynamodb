@@ -1215,6 +1215,29 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_can_process_filter_with_array_of_wheres()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '(#1 = :1 and #2 > :2)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ProductCategory',
+                '#2' => 'Price'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'Book'],
+                ':2' => ['N' => 10]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter(['ProductCategory' => 'Book', ['Price', '>', 10]])
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
     public function it_cannot_process_filter_with_illegal_operator_and_value_combination()
     {
         $this->expectException(InvalidArgumentException::class);

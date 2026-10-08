@@ -548,6 +548,12 @@ class Builder extends BaseBuilder
             throw new InvalidArgumentException('Illegal operator and value combination.');
         }
 
+        // If the column is an array, we will assume it is an array of key-value pairs
+        // and can add them each as a where clause.
+        if (is_array($column)) {
+            return $this->addArrayOfWheres($column, $boolean);
+        }
+
         // Convert column and value to ExpressionAttributes.
         if (! $column instanceof Closure) {
             $column = $this->expression_attributes->addName($column);
