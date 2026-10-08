@@ -562,7 +562,7 @@ class Builder extends BaseBuilder
         // Convert column and value to ExpressionAttributes.
         if (! $column instanceof Closure) {
             $column = $this->expression_attributes->addName($column);
-            if ($value !== null) {
+            if ($value !== null || in_array($operator, $this->operators, true)) {
                 $value = $this->expression_attributes->addValue($value);
             }
         }

@@ -356,6 +356,29 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_compares_null_value_as_dynamodb_null()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 and #2 <> :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Brand',
+                '#2' => 'Color'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['NULL' => true]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Brand', '=', null)
+                      ->filter('Color', '<>', null)
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
     public function it_can_process_filter_in()
     {
         $params = [
