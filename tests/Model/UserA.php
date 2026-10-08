@@ -4,6 +4,7 @@ namespace Kitar\Dynamodb\Tests\Model;
 
 use Kitar\Dynamodb\Model\Model;
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 
 class UserA extends Model implements AuthenticatableContract
@@ -54,5 +55,11 @@ class UserA extends Model implements AuthenticatableContract
     public function scopeOfPartitionOrSort($query, $partition)
     {
         $query->keyCondition('partition', '=', $partition)->orKeyCondition('sort', '=', 1);
+    }
+
+    #[Scope]
+    protected function recent($query)
+    {
+        $query->filter('recent', '=', true);
     }
 }

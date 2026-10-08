@@ -851,6 +851,46 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_can_start_with_named_scope_by_static_call()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('scan')->with([
+            'TableName' => 'User',
+            'FilterExpression' => '#1 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'status'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'active']
+            ]
+        ])->andReturn($this->sampleAwsResult())->once();
+        $this->setConnectionResolver($connection);
+
+        UserA::active()->scan();
+    }
+
+    #[Test]
+    public function it_can_call_scope_with_scope_attribute()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('scan')->with([
+            'TableName' => 'User',
+            'FilterExpression' => '#1 = :1 and #2 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'recent',
+                '#2' => 'status'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['BOOL' => true],
+                ':2' => ['S' => 'active']
+            ]
+        ])->andReturn($this->sampleAwsResult())->once();
+        $this->setConnectionResolver($connection);
+
+        UserA::recent()->active()->scan();
+    }
+
+    #[Test]
     public function it_can_chain_scopes_that_return_nothing()
     {
         $connection = $this->newConnectionMock();
