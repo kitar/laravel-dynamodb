@@ -211,7 +211,7 @@ class User extends Model implements AuthenticatableContract
 }
 ```
 
-> Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is **optional**, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model)) for more details.
+> Note that this model is implementing `Illuminate\Contracts\Auth\Authenticatable` and using `Illuminate\Auth\Authenticatable`. This is **optional**, but if we use them, we can use this model with authentication as well. For authentication, please refer to [Authentication section](#authentication-with-model) for more details.
 
 ### Basic Usage
 
@@ -522,7 +522,7 @@ DB::table('Thread')
 
 ### Projection Expressions
 
-A Projection Expression is a string that identifies the attributes that web want. (It's like `select` statement for SQL)
+A Projection Expression is a string that identifies the attributes that we want. (It's like `select` statement for SQL)
 
 #### select()
 
@@ -558,7 +558,7 @@ OR statements
 ```php
 DB::table('ProductCatalog')
     ->condition('Id', 'attribute_not_exists')
-    ->orCondition('Price', 'attribute_not_exists)
+    ->orCondition('Price', 'attribute_not_exists')
     ->putItem([...]);
 ```
 
@@ -567,7 +567,7 @@ AND statements
 ```php
 DB::table('ProductCatalog')
     ->condition('Id', 'attribute_not_exists')
-    ->condition('Price', 'attribute_not_exists)
+    ->condition('Price', 'attribute_not_exists')
     ->putItem([...]);
 ```
 
@@ -746,7 +746,7 @@ $response = DB::table('Reply')
 DynamoDB [supports Atomic Counter](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters). When we call `increment()` and `decrement()` [through Model](#increment--decrement) or Query Builder, Atomic Counter will be used under the hood.
 
 ```php
-DB::('Thread')->key([
+DB::table('Thread')->key([
     'ForumName' => 'Laravel',
     'Subject' => 'Laravel Thread 1'
 ])->increment('Replies', 2);
@@ -755,7 +755,7 @@ DB::('Thread')->key([
 We can also pass additional attributes to update.
 
 ```php
-DB::('Thread')->key([
+DB::table('Thread')->key([
     'ForumName' => 'Laravel',
     'Subject' => 'Laravel Thread 1'
 ])->increment('Replies', 2, [
