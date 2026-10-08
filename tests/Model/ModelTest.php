@@ -61,6 +61,7 @@ class ModelTest extends TestCase
         UserA::setConnectionResolver($connectionResolver);
         UserB::setConnectionResolver($connectionResolver);
         UserC::setConnectionResolver($connectionResolver);
+        UserE::setConnectionResolver($connectionResolver);
         UserF::setConnectionResolver($connectionResolver);
     }
 
@@ -1209,6 +1210,39 @@ class ModelTest extends TestCase
         $this->expectException(KeyMissingException::class);
 
         (new UserA)->delete();
+    }
+
+    #[Test]
+    public function it_sets_unique_id_when_saving_new_instance()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with(m::on(function ($params) {
+            return Str::isUuid($params['Item']['partition']['S'])
+                && $params['Item']['name'] === ['S' => 'foo'];
+        }))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserE(['name' => 'foo']);
+        $user->save();
+
+        $this->assertTrue(Str::isUuid($user->partition));
+    }
+
+    #[Test]
+    public function it_does_not_overwrite_unique_id_when_already_set()
+    {
+        $id = (string) Str::uuid();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('putItem')->with(m::on(function ($params) use ($id) {
+            return $params['Item']['partition'] === ['S' => $id];
+        }))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = new UserE(['partition' => $id]);
+        $user->save();
+
+        $this->assertSame($id, $user->partition);
     }
 
     #[Test]

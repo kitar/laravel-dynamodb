@@ -284,6 +284,10 @@ class Model extends BaseModel
      */
     protected function performInsert($query)
     {
+        if ($this->usesUniqueIds()) {
+            $this->setUniqueIds();
+        }
+
         if ($this->fireModelEvent('creating') === false) {
             return false;
         }
