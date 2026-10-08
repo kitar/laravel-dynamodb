@@ -961,8 +961,8 @@ class ModelTest extends TestCase
     #[Test]
     public function it_can_increment_existing_instance()
     {
-        // Records the current behavior: the model takes the value returned by
-        // DynamoDB, updated_at is not touched, and the column stays dirty.
+        // The model takes the value returned by DynamoDB, and the incremented
+        // column is synced to the original attributes.
         $this->recordModelEvents();
 
         $connection = $this->newConnectionMock();
@@ -992,8 +992,43 @@ class ModelTest extends TestCase
         $this->assertSame(['updating', 'updated'], $this->firedEvents);
         $this->assertSame(10, $user->count);
         $this->assertSame(['count' => 10], $user->getChanges());
-        $this->assertTrue($user->isDirty('count'));
-        $this->assertSame(1, $user->getOriginal('count'));
+        $this->assertFalse($user->isDirty('count'));
+        $this->assertSame(10, $user->getOriginal('count'));
+    }
+
+    #[Test]
+    public function it_keeps_extra_columns_dirty_after_increment()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => ['S' => 'p']
+            ],
+            'UpdateExpression' => 'set #1 = #1 + :1, #2 = :2',
+            'ReturnValues' => 'UPDATED_NEW',
+            'ExpressionAttributeNames' => [
+                '#1' => 'count',
+                '#2' => 'status'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['N' => '2'],
+                ':2' => ['S' => 'active']
+            ]
+        ])->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '10'], 'status' => ['S' => 'active']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1, 'status' => 'inactive']);
+        $user->name = 'unsaved';
+        $user->increment('count', 2, ['status' => 'active']);
+
+        $this->assertFalse($user->isDirty('count'));
+        $this->assertTrue($user->isDirty('status'));
+        $this->assertSame('inactive', $user->getOriginal('status'));
+        $this->assertTrue($user->isDirty('name'));
     }
 
     #[Test]

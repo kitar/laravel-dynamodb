@@ -200,12 +200,14 @@ class Model extends BaseModel
             return false;
         }
 
-        return tap($query->{$method}($column, $amount, $extra), function ($response) {
+        return tap($query->{$method}($column, $amount, $extra), function ($response) use ($column) {
             $this->forceFill($response['Attributes']);
 
             $this->syncChanges();
 
             $this->fireModelEvent('updated', false);
+
+            $this->syncOriginalAttributes([$column]);
         });
     }
 
