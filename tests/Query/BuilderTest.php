@@ -1643,4 +1643,75 @@ class BuilderTest extends TestCase
         // LastEvaluatedKey stays in the DynamoDB format so that it can be passed to exclusiveStartKey().
         $this->assertSame(['ForumName' => ['S' => 'Amazon DynamoDB']], $response['LastEvaluatedKey']);
     }
+
+    #[Test]
+    public function it_groups_wheres_of_scope_containing_or_after_existing_filter()
+    {
+        $query = $this->newQuery('User')->usingModel(UserA::class)
+                      ->filter('owner', '=', 'alice')
+                      ->openOrRecent()
+                      ->scan();
+
+        $this->assertEquals('#1 = :1 and (#2 = :2 or #3 = :3)', $query['params']['FilterExpression']);
+        $this->assertEquals(
+            ['#1' => 'owner', '#2' => 'state', '#3' => 'recent'],
+            $query['params']['ExpressionAttributeNames']
+        );
+        $this->assertEquals(
+            [':1' => ['S' => 'alice'], ':2' => ['S' => 'open'], ':3' => ['BOOL' => true]],
+            $query['params']['ExpressionAttributeValues']
+        );
+    }
+
+    #[Test]
+    public function it_groups_wheres_containing_or_before_a_scope()
+    {
+        $query = $this->newQuery('User')->usingModel(UserA::class)
+                      ->filter('a', '=', 1)
+                      ->orFilter('b', '=', 2)
+                      ->ownedBy('alice')
+                      ->scan();
+
+        $this->assertEquals('(#1 = :1 or #2 = :2) and #3 = :3', $query['params']['FilterExpression']);
+    }
+
+    #[Test]
+    public function it_does_not_group_wheres_of_scope_without_or()
+    {
+        $query = $this->newQuery('User')->usingModel(UserA::class)
+                      ->filter('a', '=', 1)
+                      ->ownedBy('alice')
+                      ->scan();
+
+        $this->assertEquals('#1 = :1 and #2 = :2', $query['params']['FilterExpression']);
+    }
+
+    #[Test]
+    public function it_groups_wheres_of_scope_containing_or_without_existing_filter()
+    {
+        $query = $this->newQuery('User')->usingModel(UserA::class)->openOrRecent()->scan();
+
+        $this->assertEquals('(#1 = :1 or #2 = :2)', $query['params']['FilterExpression']);
+    }
+
+    #[Test]
+    public function it_groups_wheres_of_scope_for_condition_and_key_condition()
+    {
+        $query = $this->newQuery('User')->usingModel(UserA::class)
+                      ->condition('exists', 'attribute_exists')
+                      ->guarded()
+                      ->ofPartitionOrSort('p')
+                      ->putItem(['partition' => 'p']);
+
+        $this->assertEquals('attribute_exists(#1) and (#2 = :1 or #3 = :2)', $query['params']['ConditionExpression']);
+        $this->assertEquals('(#4 = :3 or #5 = :4)', $query['params']['KeyConditionExpression']);
+
+        $query = $this->newQuery('User')->usingModel(UserA::class)
+                      ->ofPartition('p')
+                      ->guarded()
+                      ->query();
+
+        $this->assertEquals('#1 = :1', $query['params']['KeyConditionExpression']);
+        $this->assertEquals('(#2 = :2 or #3 = :3)', $query['params']['ConditionExpression']);
+    }
 }

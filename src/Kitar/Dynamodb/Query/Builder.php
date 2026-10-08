@@ -532,8 +532,88 @@ class Builder extends BaseBuilder
      */
     protected function callNamedScope($scope, array $parameters = [])
     {
-        // Global scopes do not exist here, so the scope is called without callScope().
-        return (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters)) ?? $this;
+        // Like Eloquent's callScope(), count the wheres before the scope so that the ones it adds
+        // are grouped on their own. The wheres are kept in three dedicated queries here, so each
+        // of them is grouped. Global scopes do not exist here.
+        $queries = [$this->filter_query, $this->condition_query, $this->key_condition_query];
+
+        $originalWhereCounts = array_map(fn ($query) => count($query->wheres), $queries);
+
+        $result = (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters)) ?? $this;
+
+        foreach ($queries as $i => $query) {
+            if (count($query->wheres) > $originalWhereCounts[$i]) {
+                $this->addNewWheresWithinGroup($query, $originalWhereCounts[$i]);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Nest where conditions by slicing them at the given where count.
+     *
+     * @param  \Kitar\Dynamodb\Query\Builder  $query
+     * @param  int  $originalWhereCount
+     * @return void
+     */
+    protected function addNewWheresWithinGroup(self $query, $originalWhereCount)
+    {
+        // Here, we totally remove all of the where clauses since we are going to
+        // rebuild them as nested queries by slicing the groups of wheres into
+        // their own sections. This is to prevent any confusing logic order.
+        $allWheres = $query->wheres;
+
+        $query->wheres = [];
+
+        $this->groupWhereSliceForScope(
+            $query, array_slice($allWheres, 0, $originalWhereCount)
+        );
+
+        $this->groupWhereSliceForScope(
+            $query, array_slice($allWheres, $originalWhereCount)
+        );
+    }
+
+    /**
+     * Create a where slice for scope and add it to the query when it contains an "or".
+     *
+     * @param  \Kitar\Dynamodb\Query\Builder  $query
+     * @param  array  $whereSlice
+     * @return void
+     */
+    protected function groupWhereSliceForScope(self $query, $whereSlice)
+    {
+        $whereBooleans = collect($whereSlice)->pluck('boolean');
+
+        // Here we'll check if the given subset of where clauses contains any "or"
+        // booleans and in this case create a nested where expression. That way
+        // we don't add any unnecessary nesting thus keeping the query clean.
+        if ($whereBooleans->contains(fn ($logicalOperator) => str_contains($logicalOperator, 'or'))) {
+            $query->wheres[] = $this->createNestedWhere(
+                $query, $whereSlice, str_replace(' not', '', $whereBooleans->first())
+            );
+        } else {
+            $query->wheres = array_merge($query->wheres, $whereSlice);
+        }
+    }
+
+    /**
+     * Create a nested where from the given slice of wheres.
+     *
+     * @param  \Kitar\Dynamodb\Query\Builder  $query  The dedicated query that holds the wheres.
+     * @param  array  $whereSlice
+     * @param  string  $boolean
+     * @return array
+     */
+    protected function createNestedWhere(self $query, $whereSlice, $boolean = 'and')
+    {
+        // Unlike Eloquent, the nested query comes from the dedicated query, not from this builder.
+        $whereGroup = $query->forNestedWhere();
+
+        $whereGroup->wheres = $whereSlice;
+
+        return ['type' => 'Nested', 'query' => $whereGroup, 'boolean' => $boolean];
     }
 
     /**
