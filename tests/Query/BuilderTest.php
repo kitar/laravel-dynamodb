@@ -379,6 +379,52 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_can_process_two_argument_where_with_null()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 or #2 = :1',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Brand',
+                '#2' => 'Color'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['NULL' => true]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Brand', null)
+                      ->orFilter('Color', null)
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
+    public function it_can_process_two_argument_or_where_with_value_and_function()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 or attribute_exists(#2)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Brand',
+                '#2' => 'Color'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'Mountain A']
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Brand', 'Mountain A')
+                      ->orFilter('Color', 'attribute_exists')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
     public function it_can_process_filter_in()
     {
         $params = [
