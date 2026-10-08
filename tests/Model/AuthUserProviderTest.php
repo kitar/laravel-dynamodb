@@ -302,6 +302,31 @@ class AuthUserProviderTest extends TestCase
     }
 
     #[Test]
+    public function it_ignores_all_password_keys_when_retrieving_by_credentials()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('getItem')->with([
+            'TableName' => 'User',
+            'Key' => [
+                'partition' => [
+                    'S' => 'foo@bar.com'
+                ]
+            ]
+        ])->andReturn($this->sampleAwsResult());
+        $this->setConnectionResolver($connection);
+
+        $provider = new AuthUserProvider($this->hasher, UserA::class);
+
+        $user = $provider->retrieveByCredentials([
+            'partition' => 'foo@bar.com',
+            'password' => 'foo',
+            'password_confirmation' => 'foo'
+        ]);
+
+        $this->assertInstanceOf(UserA::class, $user);
+    }
+
+    #[Test]
     public function it_can_retrieve_by_credentials_with_api_token()
     {
         $connection = $this->newConnectionMock();

@@ -107,9 +107,11 @@ class AuthUserProvider implements BaseUserProvider
      */
     public function retrieveByCredentials(array $credentials)
     {
-        if (isset($credentials['password'])) {
-            unset($credentials['password']);
-        }
+        $credentials = array_filter(
+            $credentials,
+            fn ($key) => ! str_contains($key, 'password'),
+            ARRAY_FILTER_USE_KEY
+        );
 
         if (count($credentials) !== 1) {
             return;
