@@ -3,6 +3,7 @@
 namespace Kitar\Dynamodb\Query;
 
 use Aws\DynamoDb\Marshaler;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Str;
 use Kitar\Dynamodb\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar as BaseGrammer;
@@ -41,8 +42,10 @@ class Grammar extends BaseGrammer
         'size'
     ];
 
-    public function __construct()
+    public function __construct(Connection $connection)
     {
+        parent::__construct($connection);
+
         $this->marshaler = new Marshaler;
     }
 
@@ -403,6 +406,16 @@ class Grammar extends BaseGrammer
         $values = implode(', ', $where['values']);
 
         return "({$where['column']} in ({$values}))";
+    }
+
+    /**
+     * Get the function names usable in the second argument of a where clause.
+     *
+     * @return array
+     */
+    public function getFunctions()
+    {
+        return $this->functions;
     }
 
     /**

@@ -3,8 +3,6 @@
 namespace Kitar\Dynamodb\Query;
 
 use Closure;
-use BadMethodCallException;
-use InvalidArgumentException;
 use Traversable;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
@@ -12,7 +10,6 @@ use Kitar\Dynamodb\Query\Processor;
 use Kitar\Dynamodb\Query\ExpressionAttributes;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Str;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Builder as BaseBuilder;
 
 class Builder extends BaseBuilder
@@ -147,6 +144,7 @@ class Builder extends BaseBuilder
 
         $this->processor = $processor ?: $connection->getPostProcessor();
 
+        // Nested queries share the ExpressionAttributes and do not need dedicated queries.
         $this->expression_attributes = $expression_attributes ?? new ExpressionAttributes();
 
         if (! $is_nested_query) {
@@ -517,7 +515,8 @@ class Builder extends BaseBuilder
             return $this->macroCall($method, $parameters);
         }
 
-        throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
+        // Laravel's dynamic where (e.g. whereName()) is omitted: wheres on this builder are not compiled.
+        static::throwBadMethodCallException($method);
     }
 
     /**
@@ -527,8 +526,9 @@ class Builder extends BaseBuilder
      *
      * @return bool
      */
-    public function hasNamedScope(string $scope): bool
+    public function hasNamedScope($scope)
     {
+        // This builder has the model class instead of an instance.
         return $this->model_class && (new $this->model_class)->hasNamedScope($scope);
     }
 
@@ -540,37 +540,38 @@ class Builder extends BaseBuilder
      *
      * @return mixed
      */
-    protected function callNamedScope(string $scope, array $parameters = [])
+    protected function callNamedScope($scope, array $parameters = [])
     {
+        // Global scopes do not exist here, so the scope is called without callScope().
         return (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters)) ?? $this;
     }
 
     /**
      * @inheritdoc
+     *
+     * The Expression, subquery, JSON and bitwise branches of Laravel's where() are omitted
+     * because DynamoDB cannot express them.
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
-        if ($this->invalidOperatorAndValue($operator, $value)) {
-            throw new InvalidArgumentException('Illegal operator and value combination.');
-        }
-
         // If the column is an array, we will assume it is an array of key-value pairs
-        // and can add them each as a where clause.
+        // and can add them each as a where clause. We will maintain the boolean we
+        // received when the method was called and pass it into the nested where.
         if (is_array($column)) {
             return $this->addArrayOfWheres($column, $boolean);
         }
 
-        // Convert column and value to ExpressionAttributes.
-        if (! $column instanceof Closure) {
-            $column = $this->expression_attributes->addName($column);
-            if ($value !== null || in_array($operator, $this->operators, true)) {
-                $value = $this->expression_attributes->addValue($value);
-            }
-        }
+        // Here we will make some assumptions about the operator. If only 2 values are
+        // passed to the method, we will assume that the operator is an equals sign
+        // and keep going. Otherwise, we'll require the operator to be passed in.
+        // A function name such as attribute_exists is an operator, not a value.
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value, $operator, func_num_args() === 2 && ! in_array($operator, $this->grammar->getFunctions(), true)
+        );
 
-        // If the columns is actually a Closure instance, we will assume the developer
-        // wants to begin a nested where statement which is wrapped in parenthesis.
-        // We'll add that Closure to the query then return back out immediately.
+        // If the column is actually a Closure instance, we will assume the developer
+        // wants to begin a nested where statement which is wrapped in parentheses.
+        // We will add that Closure to the query and return back out immediately.
         if ($column instanceof Closure) {
             return $this->whereNested($column, $boolean);
         }
@@ -579,8 +580,15 @@ class Builder extends BaseBuilder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately.
         if ($this->invalidOperator($operator)) {
-            $operator = $this->expression_attributes->addValue($operator);
             [$value, $operator] = [$operator, '='];
+        }
+
+        // Convert column and value to ExpressionAttributes. A null value is a DynamoDB
+        // NULL for comparison operators, and absent for functions such as attribute_exists.
+        $column = $this->expression_attributes->addName($column);
+
+        if ($value !== null || in_array($operator, $this->operators, true)) {
+            $value = $this->expression_attributes->addValue($value);
         }
 
         $type = 'Basic';
@@ -588,17 +596,11 @@ class Builder extends BaseBuilder
         // Now that we are working with just a simple query we can put the elements
         // in our array and add the query binding to our array of bindings that
         // will be bound to each SQL statements when it is finally executed.
-        $this->wheres[] = compact(
-            'type',
-            'column',
-            'operator',
-            'value',
-            'boolean'
-        );
+        $this->wheres[] = [
+            'type' => $type, 'column' => $column, 'operator' => $operator, 'value' => $value, 'boolean' => $boolean,
+        ];
 
-        if (! $value instanceof Expression) {
-            $this->addBinding($value, 'where');
-        }
+        $this->addBinding($this->flattenValue($value), 'where');
 
         return $this;
     }
@@ -608,6 +610,10 @@ class Builder extends BaseBuilder
      */
     public function orWhere($column, $operator = null, $value = null)
     {
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value, $operator, func_num_args() === 2 && ! in_array($operator, $this->grammar->getFunctions(), true)
+        );
+
         return $this->where($column, $operator, $value, 'or');
     }
 
@@ -620,6 +626,7 @@ class Builder extends BaseBuilder
             $values = $values->toArray();
         }
 
+        // Replace the column and values with placeholders before the parent builds the clause.
         $column = $this->expression_attributes->addName($column);
 
         foreach ($values as &$value) {
@@ -638,6 +645,7 @@ class Builder extends BaseBuilder
             $values = iterator_to_array($values, false);
         }
 
+        // Replace the column and values with placeholders before the parent builds the clause.
         $column = $this->expression_attributes->addName($column);
 
         foreach ($values as &$value) {
@@ -652,6 +660,7 @@ class Builder extends BaseBuilder
      */
     public function newQuery()
     {
+        // Share the ExpressionAttributes so that placeholders stay unique across the nested queries.
         return new static($this->connection, $this->grammar, $this->processor, $this->expression_attributes, true);
     }
 

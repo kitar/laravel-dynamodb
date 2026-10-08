@@ -425,6 +425,57 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_treats_non_operator_in_operator_position_as_value()
+    {
+        // The third argument is discarded, and no unused value is registered.
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 or #2 = :2',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Brand',
+                '#2' => 'Color'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'foo'],
+                ':2' => ['S' => 'red']
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Brand', 'foo', 'bar')
+                      ->orFilter('Color', 'red', 'blue')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
+    public function it_treats_second_argument_as_value_unless_it_is_a_function()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 or #2 = :2 and attribute_exists(#3)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'Brand',
+                '#2' => 'Color',
+                '#3' => 'Size'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'like'],
+                ':2' => ['S' => '>']
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('Brand', 'like')
+                      ->orFilter('Color', '>')
+                      ->filter('Size', 'attribute_exists')
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
     public function it_can_process_filter_in()
     {
         $params = [
@@ -1266,7 +1317,7 @@ class BuilderTest extends TestCase
                    ->andReturn(new Result(['Items' => []]))
                    ->once();
 
-        $query = new Builder($connection, new Grammar, new Processor);
+        $query = new Builder($connection, new Grammar($connection), new Processor);
 
         $query->from('Forum')->scan();
     }
@@ -1289,7 +1340,7 @@ class BuilderTest extends TestCase
                        ]
                     ])->andReturn(new Result(['Items' => []]))->once();
 
-        $query = new Builder($connection, new Grammar, new Processor);
+        $query = new Builder($connection, new Grammar($connection), new Processor);
 
         $query->from('Thread')->putItem([
             'ForumName' => 'Laravel',
