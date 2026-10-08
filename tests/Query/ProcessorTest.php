@@ -173,7 +173,7 @@ class ProcessorTest extends TestCase
 
         $count = $this->processor->processCount($awsResult, User::class);
 
-        $this->assertEquals(5, $count);
+        $this->assertSame(5, $count);
     }
 
     #[Test]
@@ -193,6 +193,6 @@ class ProcessorTest extends TestCase
 
         $count = $this->processor->processCount($awsResult, User::class);
 
-        $this->assertEquals(0, $count);
+        $this->assertSame(0, $count);
     }
 }

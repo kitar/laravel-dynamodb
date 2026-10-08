@@ -1524,23 +1524,6 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
-    public function it_can_process_count_without_conditions()
-    {
-        $method = 'clientQuery';
-        $params = [
-            'TableName' => 'ProductCatalog',
-            'Select' => 'COUNT'
-        ];
-        $processor = 'processCount';
-
-        $query = $this->newQuery('ProductCatalog')->count();
-
-        $this->assertEquals($method, $query['method']);
-        $this->assertEquals($params, $query['params']);
-        $this->assertEquals($processor, $query['processor']);
-    }
-
-    #[Test]
     public function it_can_process_count_with_key_condition()
     {
         $method = 'clientQuery';
@@ -1575,24 +1558,89 @@ class BuilderTest extends TestCase
         $params = [
             'TableName' => 'Thread',
             'Select' => 'COUNT',
-            'FilterExpression' => '#1 = :1',
+            'KeyConditionExpression' => '#1 = :1',
+            'FilterExpression' => '#2 = :2',
             'ExpressionAttributeNames' => [
-                '#1' => 'ForumName'
+                '#1' => 'ForumName',
+                '#2' => 'Subject'
             ],
             'ExpressionAttributeValues' => [
                 ':1' => [
                     'S' => 'Amazon DynamoDB'
+                ],
+                ':2' => [
+                    'S' => 'DynamoDB Thread 1'
                 ]
             ]
         ];
         $processor = 'processCount';
 
         $query = $this->newQuery('Thread')
-                      ->filter('ForumName', '=', 'Amazon DynamoDB')
+                      ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                      ->filter('Subject', '=', 'DynamoDB Thread 1')
                       ->count();
 
         $this->assertEquals($method, $query['method']);
         $this->assertEquals($params, $query['params']);
         $this->assertEquals($processor, $query['processor']);
+    }
+
+    #[Test]
+    public function count_does_not_change_the_builder()
+    {
+        $builder = $this->newQuery('Thread')
+                        ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                        ->select('Subject');
+
+        $count = $builder->count();
+        $query = $builder->query();
+
+        $this->assertEquals('COUNT', $count['params']['Select']);
+        $this->assertArrayNotHasKey('Select', $query['params']);
+        $this->assertEquals('#2', $query['params']['ProjectionExpression']);
+        $this->assertEquals('Subject', $query['params']['ExpressionAttributeNames']['#2']);
+    }
+
+    #[Test]
+    public function count_after_query_with_select_does_not_send_unused_names()
+    {
+        $builder = $this->newQuery('Thread')
+                        ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+                        ->select('Subject');
+
+        $first = $builder->query();
+        $count = $builder->count();
+        $second = $builder->query();
+
+        $this->assertEquals('#2', $first['params']['ProjectionExpression']);
+        $this->assertEquals(['#1' => 'ForumName'], $count['params']['ExpressionAttributeNames']);
+        $this->assertArrayNotHasKey('ProjectionExpression', $count['params']);
+
+        // The builder keeps its columns and conditions, and numbers the names in the same way.
+        $this->assertEquals($first['params'], $second['params']);
+    }
+
+    #[Test]
+    public function it_returns_the_response_of_count_without_model()
+    {
+        $connection = m::mock(Connection::class);
+        $connection->shouldReceive('getTablePrefix');
+        $connection->shouldReceive('clientQuery')
+                   ->andReturn(new Result([
+                       'Count' => 3,
+                       'ScannedCount' => 5,
+                       'LastEvaluatedKey' => ['ForumName' => ['S' => 'Amazon DynamoDB']],
+                   ]))
+                   ->once();
+
+        $response = (new Builder($connection, new Grammar($connection), new Processor))
+            ->from('Thread')
+            ->keyCondition('ForumName', '=', 'Amazon DynamoDB')
+            ->count();
+
+        $this->assertSame(3, $response['Count']);
+        $this->assertSame(5, $response['ScannedCount']);
+        // LastEvaluatedKey stays in the DynamoDB format so that it can be passed to exclusiveStartKey().
+        $this->assertSame(['ForumName' => ['S' => 'Amazon DynamoDB']], $response['LastEvaluatedKey']);
     }
 }

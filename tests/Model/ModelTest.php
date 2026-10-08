@@ -466,6 +466,20 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_int_from_count()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('clientQuery')->andReturn(
+            new Result(['Count' => 3, 'ScannedCount' => 3]),
+            new Result(['Count' => 0, 'ScannedCount' => 0])
+        )->twice();
+        $this->setConnectionResolver($connection);
+
+        $this->assertSame(3, UserA::keyCondition('partition', '=', 'p')->count());
+        $this->assertSame(0, UserA::keyCondition('partition', '=', 'p')->count());
+    }
+
+    #[Test]
     public function it_can_get_last_evaluated_key()
     {
         $params = [

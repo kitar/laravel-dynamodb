@@ -280,15 +280,6 @@ class Builder extends BaseBuilder
     }
 
     /**
-     * Get the selectAttributes attribute.
-     *
-     * @return string
-     */
-    public function getSelectAttributes() {
-        return $this->selectAttributes;
-    }
-
-    /**
      * Get item.
      *
      * @param array|null $key
@@ -397,10 +388,9 @@ class Builder extends BaseBuilder
     }
 
     public function count($columns = '*') {
-        // reset columns selection
-        $this->select([])->selectAttributes('COUNT');
-
-        return $this->process('clientQuery', 'processCount');
+        // Like Laravel's count(), run on a clone so that this builder keeps its columns and
+        // select attributes for the following calls (e.g. query()).
+        return (clone $this)->select([])->selectAttributes('COUNT')->process('clientQuery', 'processCount');
     }
 
     /**
@@ -676,12 +666,16 @@ class Builder extends BaseBuilder
     {
         $table_name = $this->connection->getTablePrefix() . $this->from;
 
+        // Projection names are registered for this request only, so that they don't remain
+        // in the shared ExpressionAttributes and reach a later request without a projection.
+        $expression_attributes = clone $this->expression_attributes;
+
         // Compile columns and wheres attributes.
         // These attributes needs to interact with ExpressionAttributes during compile,
         // so it need to run before compileExpressionAttributes.
         $params = array_merge(
             $this->grammar->compileSelectAttributes($this->selectAttributes),
-            $this->grammar->compileProjectionExpression($this->columns, $this->expression_attributes),
+            $this->grammar->compileProjectionExpression($this->columns, $expression_attributes),
             $this->grammar->compileConditions($this->filter_query),
             $this->grammar->compileConditions($this->condition_query),
             $this->grammar->compileConditions($this->key_condition_query)
@@ -701,7 +695,7 @@ class Builder extends BaseBuilder
             $this->grammar->compileScanIndexForward($this->scan_index_forward),
             $this->grammar->compileExclusiveStartKey($this->exclusive_start_key),
             $this->grammar->compileConsistentRead($this->consistent_read),
-            $this->grammar->compileExpressionAttributes($this->expression_attributes)
+            $this->grammar->compileExpressionAttributes($expression_attributes)
         );
 
         // Dry run.

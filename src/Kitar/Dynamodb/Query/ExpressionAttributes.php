@@ -20,6 +20,15 @@ class ExpressionAttributes
         $this->value_keys_iterator = new NumberIterator(1, ':');
     }
 
+    /**
+     * Clone the key iterators as well, so that a clone numbers its keys on its own.
+     */
+    public function __clone()
+    {
+        $this->name_keys_iterator = clone $this->name_keys_iterator;
+        $this->value_keys_iterator = clone $this->value_keys_iterator;
+    }
+
     public function addName($name)
     {
         if (! in_array($name, $this->names, true)) {
