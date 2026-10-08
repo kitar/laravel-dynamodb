@@ -404,7 +404,7 @@ class Model extends BaseModel
             "keyConditionBetween",
         ];
 
-        if (in_array($method, ['increment', 'decrement'])) {
+        if (in_array($method, ['increment', 'decrement', 'incrementQuietly', 'decrementQuietly'])) {
             return $this->$method(...$parameters);
         }
 

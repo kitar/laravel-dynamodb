@@ -1067,6 +1067,37 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_can_increment_and_decrement_quietly()
+    {
+        $this->recordModelEvents();
+
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['UpdateExpression'] === 'set #1 = #1 + :1, #2 = :2'
+                && $params['ExpressionAttributeValues'][':1'] === ['N' => '2'];
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '3'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            return $params['UpdateExpression'] === 'set #1 = #1 - :1, #2 = :2'
+                && $params['ExpressionAttributeValues'][':1'] === ['N' => '1'];
+        }))->andReturn(new Result([
+            'Attributes' => ['count' => ['N' => '2'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserA)->newFromBuilder(['partition' => 'p', 'count' => 1]);
+        $user->incrementQuietly('count', 2);
+        $this->assertSame(3, $user->count);
+        $user->decrementQuietly('count');
+        $this->assertSame(2, $user->count);
+
+        $this->assertSame([], $this->firedEvents);
+    }
+
+    #[Test]
     public function it_writes_updated_at_through_mutator_on_save_and_increment()
     {
         Carbon::setTestNow(Carbon::parse('2026-01-02 03:04:05'));
