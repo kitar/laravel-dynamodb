@@ -511,6 +511,10 @@ class Builder extends BaseBuilder
             return $this->callNamedScope($method, $parameters);
         }
 
+        if (static::hasMacro($method)) {
+            return $this->macroCall($method, $parameters);
+        }
+
         throw new BadMethodCallException('Call to undefined method ' . static::class . "::{$method}()");
     }
 

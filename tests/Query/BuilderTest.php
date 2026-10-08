@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Mockery as m;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Model\Model;
+use Kitar\Dynamodb\Tests\Model\UserA;
 use Kitar\Dynamodb\Query\Builder;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
@@ -32,6 +33,7 @@ class BuilderTest extends TestCase
 
     protected function tearDown() :void
     {
+        Builder::flushMacros();
         m::close();
     }
 
@@ -1253,6 +1255,30 @@ class BuilderTest extends TestCase
         $this->expectExceptionMessage('Illegal operator and value combination.');
 
         $this->newQuery('ProductCatalog')->filter('Price', 1)->orFilter('Price', '>', null);
+    }
+
+    #[Test]
+    public function it_can_call_macro()
+    {
+        Builder::macro('onlyBooks', function () {
+            return $this->filter('ProductCategory', 'Book');
+        });
+
+        $query = $this->newQuery('ProductCatalog')->onlyBooks()->scan();
+
+        $this->assertEquals('#1 = :1', $query['params']['FilterExpression']);
+    }
+
+    #[Test]
+    public function it_prefers_named_scope_over_macro()
+    {
+        Builder::macro('active', function () {
+            return $this->filter('status', '=', 'from_macro');
+        });
+
+        $query = $this->newQuery('User')->usingModel(UserA::class)->active()->scan();
+
+        $this->assertEquals(['S' => 'active'], $query['params']['ExpressionAttributeValues'][':1']);
     }
 
     #[Test]
