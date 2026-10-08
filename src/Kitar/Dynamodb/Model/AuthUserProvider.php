@@ -38,6 +38,7 @@ class AuthUserProvider implements BaseUserProvider
 
     public function __construct(HasherContract $hasher, $model, $apiTokenName = null, $apiTokenIndex = null)
     {
+        // The api token name and index are used to find a user in DynamoDB without its key.
         $this->model = $model;
         $this->hasher = $hasher;
         $this->apiTokenName = $apiTokenName;
@@ -54,6 +55,7 @@ class AuthUserProvider implements BaseUserProvider
     {
         $model = $this->createModel();
 
+        // The user is fetched by its key, not by a where clause.
         return $model->find($identifier);
     }
 
@@ -66,16 +68,15 @@ class AuthUserProvider implements BaseUserProvider
      */
     public function retrieveByToken($identifier, #[\SensitiveParameter] $token)
     {
-        $user = $this->retrieveById($identifier);
+        $retrievedModel = $this->retrieveById($identifier);
 
-        if (! $user) {
+        if (! $retrievedModel) {
             return;
         }
 
-        $rememberToken = $user->getRememberToken();
+        $rememberToken = $retrievedModel->getRememberToken();
 
-        return $rememberToken && hash_equals($rememberToken, $token)
-                        ? $user : null;
+        return $rememberToken && hash_equals($rememberToken, $token) ? $retrievedModel : null;
     }
 
     /**
@@ -113,6 +114,7 @@ class AuthUserProvider implements BaseUserProvider
             ARRAY_FILTER_USE_KEY
         );
 
+        // DynamoDB can only look up one condition: the key or the api token.
         if (count($credentials) !== 1) {
             return;
         }
