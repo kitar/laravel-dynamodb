@@ -151,6 +151,9 @@ class Model extends BaseModel
      */
     public function save(array $options = [])
     {
+        $this->mergeAttributesFromCachedCasts();
+
+        // newModelQuery() would build the SQL query builder.
         $query = $this->newQuery();
 
         // If the "saving" event returns false we'll bail out of the save and return
@@ -165,7 +168,7 @@ class Model extends BaseModel
         // clause to only update this model. Otherwise, we'll just insert them.
         if ($this->exists) {
             $saved = $this->isDirty() ?
-                        $this->performUpdate($query) : true;
+                $this->performUpdate($query) : true;
         }
 
         // If the model is brand new, we'll insert it into our database and set the
@@ -190,6 +193,7 @@ class Model extends BaseModel
      */
     protected function incrementOrDecrement($column, $amount, $extra, $method)
     {
+        // The key is required even for an unsaved instance: without it Laravel would update every row.
         $query = $this->newQuery()->key($this->getKey());
 
         // Like Eloquent's query builder, write updated_at together with the
@@ -268,11 +272,13 @@ class Model extends BaseModel
         // Once we have run the update operation, we will fire the "updated" event for
         // this model instance. This will allow developers to hook into these after
         // models are updated, giving them a chance to do any special processing.
-        $dirty = $this->getDirty();
+        $dirty = $this->getDirtyForUpdate();
 
         if (count($dirty) > 0) {
-            $this->newQuery()->key($this->getKey())->updateItem($dirty);
+            // updateItem() with the key replaces setKeysForSaveQuery()->update(): DynamoDB has no where-based update.
+            $query->key($this->getKey())->updateItem($dirty);
 
+            // refreshSavedAttributes() is omitted: it reads back through the SQL query builder.
             $this->syncChanges();
 
             $this->fireModelEvent('updated', false);
@@ -304,9 +310,9 @@ class Model extends BaseModel
             $this->updateTimestamps();
         }
 
-        $attributes = $this->getAttributes();
+        $attributes = $this->getAttributesForInsert();
 
-        // If the table isn't incrementing we'll simply insert these attributes as they
+        // DynamoDB has no incrementing key, so we'll simply insert these attributes as they
         // are. These attribute arrays must contain an "id" column previously placed
         // there by the developer as the manually determined key for these models.
         if (empty($attributes)) {
@@ -327,6 +333,7 @@ class Model extends BaseModel
 
         $this->wasRecentlyCreated = true;
 
+        // refreshSavedAttributes() is omitted: it reads back through the SQL query builder.
         $this->fireModelEvent('created', false);
 
         return true;
@@ -339,6 +346,10 @@ class Model extends BaseModel
      */
     public function delete()
     {
+        $this->mergeAttributesFromCachedCasts();
+
+        // The LogicException for a missing primary key name is omitted: getKey() throws KeyMissingException.
+
         // If the model doesn't exist, there is nothing to delete so we'll just return
         // immediately and not do anything else. Otherwise, we will continue with a
         // deletion process on the model, firing the proper events, and so forth.
@@ -352,6 +363,8 @@ class Model extends BaseModel
             return false;
         }
 
+        // touchOwners() is omitted because relationships are not supported, and
+        // deleteItem() replaces performDeleteOnModel(): DynamoDB has no where-based delete.
         $this->newQuery()->deleteItem($key);
 
         $this->exists = false;
@@ -409,6 +422,8 @@ class Model extends BaseModel
             "keyConditionBetween",
         ];
 
+        // Relation resolvers and the incrementEach() family are omitted: relations are not
+        // supported, and incrementEach() would run SQL.
         if (in_array($method, ['increment', 'decrement', 'incrementQuietly', 'decrementQuietly'])) {
             return $this->$method(...$parameters);
         }
