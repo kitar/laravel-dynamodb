@@ -553,6 +553,81 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_can_process_negated_filter_in_and_filter_between()
+    {
+        $params = [
+            'TableName' => 'ProductCatalog',
+            'FilterExpression' => '#1 = :1 and not (#2 in (:2, :3)) or not (#3 between :4 and :5)',
+            'ExpressionAttributeNames' => [
+                '#1' => 'ProductCategory',
+                '#2' => 'Brand',
+                '#3' => 'Price'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'Bicycle'],
+                ':2' => ['S' => 'A'],
+                ':3' => ['S' => 'B'],
+                ':4' => ['N' => 10],
+                ':5' => ['N' => 100]
+            ]
+        ];
+
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter('ProductCategory', 'Bicycle')
+                      ->filterIn('Brand', ['A', 'B'], 'and', true)
+                      ->filterBetween('Price', [10, 100], 'or', true)
+                      ->scan();
+
+        $this->assertEquals($params, $query['params']);
+    }
+
+    #[Test]
+    public function it_can_process_negated_condition_in_and_condition_between()
+    {
+        $query = $this->newQuery('ProductCatalog')
+                      ->conditionIn('Brand', ['A', 'B'], 'and', true)
+                      ->conditionBetween('Price', [10, 100], 'and', true)
+                      ->putItem(['Id' => 1]);
+
+        $this->assertEquals(
+            'not (#1 in (:1, :2)) and not (#2 between :3 and :4)',
+            $query['params']['ConditionExpression']
+        );
+    }
+
+    #[Test]
+    public function it_can_process_negated_key_condition_between_and_in()
+    {
+        // DynamoDB itself does not accept NOT in a KeyConditionExpression;
+        // the expression is compiled in the same way as for the other expressions.
+        $query = $this->newQuery('ProductCatalog')
+                      ->keyConditionIn('Brand', ['A'], 'and', true)
+                      ->keyConditionBetween('Price', [10, 100], 'and', true)
+                      ->query();
+
+        $this->assertEquals(
+            'not (#1 in (:1)) and not (#2 between :2 and :3)',
+            $query['params']['KeyConditionExpression']
+        );
+    }
+
+    #[Test]
+    public function it_can_process_nested_negated_filters()
+    {
+        $query = $this->newQuery('ProductCatalog')
+                      ->filter(function ($query) {
+                          $query->where('Brand', 'A')->whereIn('Color', ['red', 'blue'], 'or', true);
+                      })
+                      ->filter('Price', '>', 10)
+                      ->scan();
+
+        $this->assertEquals(
+            '(#1 = :1 or not (#2 in (:2, :3))) and #3 > :4',
+            $query['params']['FilterExpression']
+        );
+    }
+
+    #[Test]
     public function it_can_process_nested_filters()
     {
         $params = [

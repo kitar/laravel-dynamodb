@@ -395,7 +395,10 @@ class Grammar extends BaseGrammer
 
         $max = end($where['values']);
 
-        return "({$where['column']} between {$min} and {$max})";
+        // DynamoDB negates a condition with NOT (...), not with "not between".
+        $not = $where['not'] ? 'not ' : '';
+
+        return "{$not}({$where['column']} between {$min} and {$max})";
     }
 
     /**
@@ -406,6 +409,18 @@ class Grammar extends BaseGrammer
         $values = implode(', ', $where['values']);
 
         return "({$where['column']} in ({$values}))";
+    }
+
+    /**
+     * Compile a negated "in" condition with NOT (...), which DynamoDB accepts instead of "not in".
+     *
+     * @param \Kitar\Dynamodb\Query\Builder $query
+     * @param array $where
+     * @return string
+     */
+    protected function whereNotIn($query, $where)
+    {
+        return 'not ' . $this->whereIn($query, $where);
     }
 
     /**
