@@ -215,6 +215,11 @@ class Model extends BaseModel
             return false;
         }
 
+        // A cast that deviates the value (e.g. stores cents) needs the amount in its stored form.
+        if ($this->isClassDeviable($column)) {
+            $amount = (clone $this)->setAttribute($column, $amount)->getAttributeFromArray($column);
+        }
+
         // The values are computed by DynamoDB, so the model takes them from the response
         // instead of calculating them before the update. They are already stored values,
         // so they are set as raw attributes without running mutators or casts again.

@@ -63,6 +63,7 @@ class ModelTest extends TestCase
         UserC::setConnectionResolver($connectionResolver);
         UserE::setConnectionResolver($connectionResolver);
         UserF::setConnectionResolver($connectionResolver);
+        UserG::setConnectionResolver($connectionResolver);
     }
 
     protected function newConnectionMock()
@@ -1171,6 +1172,29 @@ class ModelTest extends TestCase
 
         $this->assertSame('2020-05-06 07:08:09', $user->getAttributes()['updated_at']);
         $this->assertTrue($user->isDirty('updated_at'));
+    }
+
+    #[Test]
+    public function it_converts_amount_through_deviable_cast_on_increment()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('updateItem')->with(m::on(function ($params) {
+            // 2.5 is sent as 250 cents.
+            return $params['UpdateExpression'] === 'set #1 = #1 + :1, #2 = :2'
+                && $params['ExpressionAttributeValues'][':1'] === ['N' => '250'];
+        }))->andReturn(new Result([
+            'Attributes' => ['price' => ['N' => '1250'], 'updated_at' => ['S' => '2026-01-02 03:04:05']],
+            '@metadata' => ['statusCode' => 200],
+        ]))->once();
+        $this->setConnectionResolver($connection);
+
+        $user = (new UserG)->newFromBuilder(['partition' => 'p', 'price' => 1000]);
+        $user->increment('price', 2.5);
+
+        // The stored value from DynamoDB is applied as is, and the cast reads it as 12.5.
+        $this->assertSame(1250, $user->getAttributes()['price']);
+        $this->assertEquals(12.5, $user->price);
+        $this->assertFalse($user->isDirty('price'));
     }
 
     #[Test]
