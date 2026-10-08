@@ -3,6 +3,7 @@
 namespace Kitar\Dynamodb\Tests\Model;
 
 use Aws\Result;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Mockery as m;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
@@ -101,7 +102,7 @@ class AuthUserProviderTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_retrieve_by_id()
     {
         $connection = $this->newConnectionMock();
@@ -122,7 +123,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertInstanceOf(UserA::class, $res);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_retrieve_by_id_with_default_sort_key()
     {
         $connection = $this->newConnectionMock();
@@ -146,7 +147,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertInstanceOf(UserC::class, $res);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_id_without_default_sort_key()
     {
         $connection = $this->newConnectionMock();
@@ -159,7 +160,7 @@ class AuthUserProviderTest extends TestCase
         $provider->retrieveById('foo@bar.com');
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_id_if_not_exists()
     {
         $connection = $this->newConnectionMock();
@@ -180,7 +181,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertNull($res);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_retrieve_by_token()
     {
         $connection = $this->newConnectionMock();
@@ -201,7 +202,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertInstanceOf(UserA::class, $res);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_token_if_not_exists()
     {
         $connection = $this->newConnectionMock();
@@ -222,7 +223,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertNull($res);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_token_with_invalid_token()
     {
         $connection = $this->newConnectionMock();
@@ -243,7 +244,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertNull($res);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_update_remember_token()
     {
         $connection = $this->newConnectionMock();
@@ -276,7 +277,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertEquals('new_token', $user->getRememberToken());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_retrieve_by_credentials_with_basic_credentials()
     {
         $connection = $this->newConnectionMock();
@@ -300,7 +301,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertInstanceOf(UserA::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_retrieve_by_credentials_with_api_token()
     {
         $connection = $this->newConnectionMock();
@@ -328,7 +329,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertInstanceOf(UserA::class, $user);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_credentials_with_multiple_conditions()
     {
         $provider = new AuthUserProvider($this->hasher, UserA::class);
@@ -341,7 +342,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertNull($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_cannot_retrieve_by_credentials_if_key_is_not_supported()
     {
         $provider = new AuthUserProvider($this->hasher, UserA::class);
@@ -353,7 +354,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertNull($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_validate_credentials()
     {
         $user = new UserA([
@@ -377,7 +378,7 @@ class AuthUserProviderTest extends TestCase
         $this->assertFalse($fail);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_rehash_password_if_required()
     {
         if (! method_exists(\Illuminate\Contracts\Auth\UserProvider::class, 'rehashPasswordIfRequired')) {

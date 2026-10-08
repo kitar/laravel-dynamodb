@@ -3,11 +3,12 @@
 namespace Kitar\Dynamodb\Tests\Helpers;
 
 use Kitar\Dynamodb\Helpers\NumberIterator;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class NumberIteratorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_can_use_prefix()
     {
         $iterator = new NumberIterator(1, '#');
@@ -15,7 +16,7 @@ class NumberIteratorTest extends TestCase
         $this->assertEquals('#1', $iterator->current());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_increment()
     {
         $iterator = new NumberIterator(1, ':');
@@ -29,7 +30,7 @@ class NumberIteratorTest extends TestCase
         $this->assertEquals(':3', $iterator->current());
     }
 
-    /** @test */
+    #[Test]
     public function key_returns_number_without_prefix()
     {
         $iterator = new NumberIterator(1, '#');
@@ -39,7 +40,7 @@ class NumberIteratorTest extends TestCase
         $this->assertEquals(2, $iterator->key());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_rewind()
     {
         $iterator = new NumberIterator(1, '#');
@@ -52,7 +53,7 @@ class NumberIteratorTest extends TestCase
         $this->assertEquals('#1', $iterator->current());
     }
 
-    /** @test */
+    #[Test]
     public function it_is_always_valid()
     {
         $iterator = new NumberIterator(1);
