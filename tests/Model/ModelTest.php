@@ -1228,6 +1228,19 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_cannot_increment_new_instance_without_key()
+    {
+        // Unlike Laravel, which would update the whole table, the key is required.
+        $connection = $this->newConnectionMock();
+        $connection->shouldNotReceive('updateItem');
+        $this->setConnectionResolver($connection);
+
+        $this->expectException(KeyMissingException::class);
+
+        (new UserA)->increment('count');
+    }
+
+    #[Test]
     public function it_returns_null_when_deleting_new_instance_without_key()
     {
         $this->assertNull((new UserA)->delete());
