@@ -748,6 +748,30 @@ class ModelTest extends TestCase
     }
 
     #[Test]
+    public function it_can_chain_scopes_that_return_nothing()
+    {
+        $connection = $this->newConnectionMock();
+        $connection->shouldReceive('clientQuery')->with([
+            'TableName' => 'User',
+            'KeyConditionExpression' => '#1 = :1',
+            'FilterExpression' => '#2 = :2 and #3 = :3',
+            'ExpressionAttributeNames' => [
+                '#1' => 'partition',
+                '#2' => 'status',
+                '#3' => 'name'
+            ],
+            'ExpressionAttributeValues' => [
+                ':1' => ['S' => 'test'],
+                ':2' => ['S' => 'active'],
+                ':3' => ['S' => 'John']
+            ]
+        ])->andReturn($this->sampleAwsResult())->once();
+        $this->setConnectionResolver($connection);
+
+        UserA::keyCondition('partition', '=', 'test')->voidActive()->byName('John')->query();
+    }
+
+    #[Test]
     public function it_cannot_call_non_existent_scope_on_model()
     {
         $this->expectException(BadMethodCallException::class);

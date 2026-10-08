@@ -542,7 +542,7 @@ class Builder extends BaseBuilder
      */
     protected function callNamedScope(string $scope, array $parameters = [])
     {
-        return (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters));
+        return (new $this->model_class)->callNamedScope($scope, array_merge([$this], $parameters)) ?? $this;
     }
 
     /**

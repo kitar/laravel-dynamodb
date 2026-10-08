@@ -25,4 +25,9 @@ class UserA extends Model implements AuthenticatableContract
     {
         return $query->filter('name', '=', $name);
     }
+
+    public function scopeVoidActive($query)
+    {
+        $query->filter('status', '=', 'active');
+    }
 }
