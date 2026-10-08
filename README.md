@@ -23,6 +23,7 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
     + [delete()](#delete)
     + [increment() / decrement()](#increment--decrement)
   * [Advanced Queries](#advanced-queries)
+  * [Query Scopes](#query-scopes)
 - [Authentication with model](#authentication-with-model)
   * [Register custom user provider](#register-custom-user-provider)
   * [Change auth config](#change-auth-config)
@@ -41,6 +42,7 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
   * [Working with Queries](#working-with-queries)
     + [query() and keyCondition()](#query-and-keycondition)
     + [keyConditionBetween()](#keyconditionbetween)
+    + [count()](#count)
     + [Sort order](#sort-order)
   * [Working with Scans](#working-with-scans)
     + [scan()](#scan)
@@ -76,13 +78,15 @@ You can find an example implementation in [kitar/simplechat](https://github.com/
 
 ## Installation
 
+Requires PHP 8.3+ and Laravel 13. For Laravel 6.x to 12.x, use [v1.x](https://github.com/kitar/laravel-dynamodb/tree/1.x). To upgrade from v1.x, see [UPGRADE.md](UPGRADE.md).
+
 Install the package via Composer:
 
 ```
 $ composer require kitar/laravel-dynamodb
 ```
 
-### Laravel (13.x)
+### Laravel
 
 Add dynamodb configs to `config/database.php`:
 
@@ -110,7 +114,7 @@ Update the `DB_CONNECTION` variable in your `.env` file:
 DB_CONNECTION=dynamodb
 ```
 
-> **Note for Laravel 11+**: Laravel 11 and later versions default to `database` driver for session, cache, and queue, which are not compatible with this DynamoDB package. You'll need to configure these services to use alternative drivers. For instance:
+> **Note**: Laravel uses the `database` driver for session, cache, and queue by default, which doesn't work with this package. Use other drivers, for example:
 >
 > ```
 > SESSION_DRIVER=file
@@ -335,6 +339,8 @@ $user->increment('views', 1, [
 ]);
 ```
 
+If the model uses timestamps, `updated_at` is also set. The model then takes the new values returned from DynamoDB.
+
 ### Advanced Queries
 We can use Query Builder functions through model such as `query` `scan` `filter` `condition` `keyCondition` etc.
 
@@ -348,6 +354,31 @@ Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')
 ```
 
 Please refer to [Query Builder](#query-builder) for the details.
+
+### Query Scopes
+
+We can define [local scopes](https://laravel.com/docs/eloquent#local-scopes) on the model and chain them with Query Builder functions.
+
+```php
+use Kitar\Dynamodb\Model\Model;
+use Kitar\Dynamodb\Query\Builder;
+
+class Thread extends Model
+{
+    ...
+
+    public function scopeAnswered(Builder $query)
+    {
+        $query->filter('Answered', '=', true);
+    }
+}
+```
+
+```php
+Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')
+    ->answered()
+    ->query();
+```
 
 ## Authentication with model
 
@@ -616,6 +647,17 @@ $response = DB::table('Thread')
     ->keyConditionBetween('Subject', ['DynamoDB Thread 1', 'DynamoDB Thread 2'])
     ->query();
 ```
+
+#### count()
+
+To get the number of matching items without fetching them, use `count()` instead of `query()`. Like `query()`, it requires a key condition set by `keyCondition()`. Through a model, it returns an int.
+
+```php
+$count = Thread::keyCondition('ForumName', '=', 'Amazon DynamoDB')
+    ->count();
+```
+
+Like `query`, `count` reads up to 1 MB of data per call, so it may not count every matching item. To count across pages, use `DB::table()`, which returns the raw response including `Count` and `LastEvaluatedKey`. See [Paginating the Results](#paginating-the-results).
 
 #### Sort order
 
