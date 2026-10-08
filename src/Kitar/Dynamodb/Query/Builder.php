@@ -5,6 +5,7 @@ namespace Kitar\Dynamodb\Query;
 use Closure;
 use BadMethodCallException;
 use InvalidArgumentException;
+use Traversable;
 use Kitar\Dynamodb\Connection;
 use Kitar\Dynamodb\Query\Grammar;
 use Kitar\Dynamodb\Query\Processor;
@@ -633,6 +634,10 @@ class Builder extends BaseBuilder
      */
     public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
     {
+        if ($values instanceof Traversable) {
+            $values = iterator_to_array($values, false);
+        }
+
         $column = $this->expression_attributes->addName($column);
 
         foreach ($values as &$value) {

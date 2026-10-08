@@ -445,6 +445,17 @@ class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function it_can_process_filter_between_with_traversable()
+    {
+        $query = $this->newQuery('ProductCatalog')
+                      ->filterBetween('Price', collect([0, 100]))
+                      ->scan();
+
+        $this->assertEquals('(#1 between :1 and :2)', $query['params']['FilterExpression']);
+        $this->assertEquals([':1' => ['N' => 0], ':2' => ['N' => 100]], $query['params']['ExpressionAttributeValues']);
+    }
+
+    #[Test]
     public function it_can_process_nested_filters()
     {
         $params = [
